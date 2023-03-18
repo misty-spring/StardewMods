@@ -1,0 +1,7 @@
+*.json
+*.tbin
+*.tmx
+*.xnb
+*.png
+README.md
+.gitignore
