@@ -1,25 +1,15 @@
 {
     /* Config */
     "config.CoolDown.name": "Cooldown timer",
-    "config.CoolDown.description": "If a sound is repetitive (e.g barking), the mod will wait this many seconds before notifying again (doesn't affect other sounds).",
-    "config.TrackCue.name": "Track name",
-    "config.TrackCue.description": "Shows the title of the music playing, and a description if the mouse is passed over.",
+    "config.CoolDown.description": "If a sound is repetitive (e.g barking), the mod will wait this time before notifying again (doesn't affect other sounds).",
     "config.NPCs.name": "NPCs",
     "config.NPCs.description": "Includes NPC noises (e.g, cows mooing).",
     "config.Environment.name": "Environment",
     "config.Environment.description": "Sounds made by environment (e.g, water drops)",
     "config.ItemSounds.name": "Item sounds",
     "config.ItemSounds.description": "Sounds made by items (e.g, door creak).",
-    "config.FishingCatch.name": "Fishing-related",
-    "config.FishingCatch.description": "Notifies when a fish bites the bait.",
-    /* Track names */
-    "Track.rain": "Rain",
-    "Track.none": "None",
-    "Track.IslandMusic": "Island",
-    "Track.upper_ambient": "Ambient",
-    "Track.tropical_island_day_ambient": "Ambient (island)",
-    "Track.frost_ambient": "Ambient (frost)",
-    "Track.lava_ambient": "Ambient (lava)",
+    "config.Fishing.name": "Fishing-related",
+    "config.Fishing.description": "Notifies when a fish bites the bait.",
     /* Sound descriptions */
     "axe": "A wooden, echoy sound",
     "boulderCrack": "Boulder cracking",
@@ -137,5 +127,5 @@
     "crit": "Thin metal clinking",
     "Stadium_cheer": "Crowd cheer",
     "parrot": "Parrot squawk",
-    "submarine_landing": "Thrum and bubble, creaking wood"
+    "submarine_landing": "Thrum and bubble, creaking wood."
 }

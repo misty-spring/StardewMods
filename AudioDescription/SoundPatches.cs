@@ -10,7 +10,7 @@ namespace AudioDescription
     {
         internal static void PostFix_playSound(string cueName)
         {
-            if(!(bool)(ModEntry.AllowedCues?.Contains(cueName)))
+            if(!(bool)(ModEntry.AllowedCues?.Contains(cueName), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -26,7 +26,7 @@ namespace AudioDescription
             if(desc == null)
                 return;
 
-            Game1.addHUDMessage(new HUDMessage(desc,12345));
+            Game1.addHUDMessage(new HUDMessage(desc,16294));
         }
 
         internal static void PostFix_playSoundPitched(string cueName, int pitch)
@@ -47,12 +47,12 @@ namespace AudioDescription
             if (desc == null)
                 return;
 
-            Game1.addHUDMessage(new HUDMessage(desc, 12345));
+            Game1.addHUDMessage(new HUDMessage(desc, 16294));
         }
 
         internal static bool PrefixHUDdraw(ref HUDMessage __instance, SpriteBatch b, int i)
         {
-            if (__instance.whatType != 12345) //replace with nexusiD
+            if (__instance.whatType != 16294) //replace with nexusiD
                 return true;
             else
             {

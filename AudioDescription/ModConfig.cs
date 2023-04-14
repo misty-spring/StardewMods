@@ -3,7 +3,6 @@
     internal class ModConfig
     {
         public int CoolDown { get; set; } = 5;
-        //public bool TrackCue { get; set; } = true;
         public bool PlayerSounds { get; set; } = true;
         public bool NPCs { get; set; } = true;
         public bool Environment { get; set; } = true;
