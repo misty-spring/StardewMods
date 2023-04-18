@@ -3,11 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewValley;
-using StardewValley.Menus;
 using System.Collections.Generic;
 using GenericModConfigMenu;
-using System;
 
 namespace AudioDescription
 {
@@ -22,15 +19,31 @@ namespace AudioDescription
         #region utilities
         internal static IModHelper Help { get; private set; }
         internal static IMonitor Mon { get; private set; }
-        //internal static Dictionary<string, string> Sounds { get; set; } = new();
         public static Texture2D MuteIcon { get; internal set; }
+        internal const int NexusID = 16294;
+        internal const int MaxMsgs = 5;
         #endregion
+
+        #region variables
+        internal static string LastSound { get; set; }
+        internal static string[] NotifType = new string[2]
+        {
+            "HUDMessage",
+            "Box"
+        };
+        internal static List<SoundInfo> SoundMessages { get; set; } = new();
+        internal static Vector2 SafePositionTop { get; set; } = new Vector2(99f, 99f);
+        internal static Vector2 WidthandHeight { get; set; } = new();
+#endregion
 
         public override void Entry(IModHelper helper)
         {
             helper.Events.GameLoop.GameLaunched += OnGameStart;
             helper.Events.GameLoop.SaveLoaded += ConfigInfo.SaveLoaded;
             helper.Events.GameLoop.OneSecondUpdateTicked += SecondPassed;
+
+            //if custom box
+            helper.Events.Display.RenderedHud += SoundBox.RenderedHUD;
 
             ModEntry.Config = this.Helper.ReadConfig<ModConfig>();
             Help = this.Helper;
@@ -55,6 +68,12 @@ namespace AudioDescription
                 original: AccessTools.Method(typeof(StardewValley.HUDMessage), nameof(StardewValley.HUDMessage.draw)),
                 prefix: new HarmonyMethod(typeof(SoundPatches), nameof(SoundPatches.PrefixHUDdraw))
                 );
+
+            this.Monitor.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"FarmAnimal.makeSound()\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(StardewValley.FarmAnimal), nameof(StardewValley.FarmAnimal.makeSound)),
+                postfix: new HarmonyMethod(typeof(SoundPatches), nameof(SoundPatches.PostFix_makeSound))
+                );
         }
 
         private void SecondPassed(object sender, OneSecondUpdateTickedEventArgs e)
@@ -76,6 +95,16 @@ namespace AudioDescription
                 save: () => this.Helper.WriteConfig(Config)
             );
 
+            configMenu.AddTextOption(
+                mod: this.ModManifest,
+                name: () => this.Helper.Translation.Get("config.msg.name"),
+                tooltip: () => this.Helper.Translation.Get("config.msg.description"),
+                getValue: () => Config.Type,
+                setValue: value => Config.Type = value,
+                allowedValues:  NotifType,
+                formatAllowedValue: value => this.Helper.Translation.Get($"config.msg.values.{value}")
+            );
+            
             configMenu.AddNumberOption(
                 mod: this.ModManifest,
                 name: () => this.Helper.Translation.Get("config.Cooldown.name"),

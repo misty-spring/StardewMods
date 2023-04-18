@@ -21,7 +21,7 @@ namespace AudioDescription
                 {
                     "doorClose",
                     "cricketsAmbient",
-                    "boulderCrack",
+                    //"boulderCrack",
                     "dropItemInWater",
                     "explosion",
                     "crafting",
@@ -33,7 +33,7 @@ namespace AudioDescription
                     "thunder",
                     "crickets",
                     "cavedrip",
-                    "treethud",
+                    //"treethud",
                     "treecrack",
                     "leafrustle",
                     "crystal",
@@ -41,7 +41,6 @@ namespace AudioDescription
                     "busDriveOff",
                     "Stadium_cheer",
                     "submarine_landing",
-                    "cacklingWitch",
                     "thunder_small",
                     "trainWhistle",
                     "distantTrain",
@@ -96,7 +95,12 @@ namespace AudioDescription
                     "flameSpellHit",
                     "flameSpell",
                     "monsterdead",
-                    "rockGolemSpawn"
+                    "rockGolemSpawn",
+                    "shadowpeep",
+                    //"batFlap",
+                    "dustMeep",
+                    "serpentDie",
+                    "cacklingWitch"
                 });
             }
 
@@ -132,7 +136,7 @@ namespace AudioDescription
                     "openBox",
                     "axchop",
                     "seeds",
-                    "detector",
+                    //"detector",
                     "crit"
                 });
             }

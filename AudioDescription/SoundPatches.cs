@@ -10,15 +10,15 @@ namespace AudioDescription
     {
         internal static void PostFix_playSound(string cueName)
         {
-            if(!(bool)(ModEntry.AllowedCues?.Contains(cueName), StringComparison.OrdinalIgnoreCase))
+            if (!(bool)(ModEntry.AllowedCues?.Contains(cueName)))
             {
                 return;
             }
 
-            if (ModEntry._lastTrack == cueName && ModEntry.Cooldown != 0)
+            if (ModEntry.LastSound == cueName && ModEntry.Cooldown != 0)
                 return;
 
-            ModEntry._lastTrack = cueName;
+            ModEntry.LastSound = cueName;
             ModEntry.Cooldown = ModEntry.Config.CoolDown;
 
             string desc = ModEntry.Help.Translation.Get(cueName);
@@ -26,33 +26,33 @@ namespace AudioDescription
             if(desc == null)
                 return;
 
-            Game1.addHUDMessage(new HUDMessage(desc,16294));
+            //depending on chosen type: either send as HUDm, or to the sounds box.
+            if(ModEntry.Config.Type == ModEntry.NotifType[0])
+            {
+                Game1.addHUDMessage(new HUDMessage(desc, ModEntry.NexusID));
+            }
+            else
+            {
+                ModEntry.SoundMessages.Add(new SoundInfo(desc));
+            }
         }
 
-        internal static void PostFix_playSoundPitched(string cueName, int pitch)
+        internal static void PostFix_playSoundPitched(string cueName, int pitch) => PostFix_playSound(cueName);
+
+        internal static void PostFix_makeSound(ref FarmAnimal __instance)
         {
-            if (!(bool)(ModEntry.AllowedCues?.Contains(cueName)))
+            if (ModEntry.Config.NPCs == false)
+                return;
+
+            if (!Game1.options.muteAnimalSounds)
             {
-                return;
+                PostFix_playSound(__instance.sound.Value);
             }
-
-            if (ModEntry._lastTrack == cueName && ModEntry.Cooldown != 0)
-                return;
-
-            ModEntry._lastTrack = cueName;
-            ModEntry.Cooldown = ModEntry.Config.CoolDown;
-
-            string desc = ModEntry.Help.Translation.Get(cueName);
-
-            if (desc == null)
-                return;
-
-            Game1.addHUDMessage(new HUDMessage(desc, 16294));
         }
 
         internal static bool PrefixHUDdraw(ref HUDMessage __instance, SpriteBatch b, int i)
         {
-            if (__instance.whatType != 16294) //replace with nexusiD
+            if (__instance.whatType != ModEntry.NexusID)
                 return true;
             else
             {
