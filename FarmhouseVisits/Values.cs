@@ -176,6 +176,16 @@ namespace FarmVisitors
             
             var r = Game1.random.Next(1, 4);
             int type = Game1.random.Next(0, 3);
+            
+            if(which == DialogueType.Retiring && ModEntry.UniqueVanilla)
+            {
+                var r2 = Game1.random.Next(0,3);
+                if(r2 == 2)
+                {
+                    return ModEntry.TL.Get($"NPC{which}.{c.Name}.{r}");
+                }
+            }
+            
             if (type is 0)
             {
                 if (c.SocialAnxiety.Equals(0))

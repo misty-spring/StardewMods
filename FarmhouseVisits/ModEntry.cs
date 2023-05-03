@@ -194,6 +194,15 @@ namespace FarmVisitors
                 mod: this.ModManifest,
                 titleScreenOnly: true
                 );
+            
+            configMenu.AddBoolOption(
+                mod: this.ModManifest,
+                name: () => this.Helper.Translation.Get("config.UniqueDialogue.name"),
+                tooltip: () => this.Helper.Translation.Get("config.UniqueDialogue.description"),
+                getValue: () => this.Config.UniqueDialogue,
+                setValue: value => this.Config.UniqueDialogue = value
+            );
+
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
                 name: () => this.Helper.Translation.Get("config.AskForConfirmation.name"),
@@ -259,6 +268,7 @@ namespace FarmVisitors
             ReplacerOn = Config.ReplacerCompat;
             CanFollow = Config.WalkOnFarm;
             Debug = Config.Debug;
+            UniqueVanilla = Config.UniqueDialogue;
 
             //get translations
             if (ResponseList?.Count is not 2)
@@ -644,14 +654,19 @@ namespace FarmVisitors
         }
         private void ClearValues()
         {
+            InLaws.Clear();
+            NameAndLevel?.Clear();
+            RepeatedByLV?.Clear();
+            TodaysVisitors?.Clear();
+            FurnitureList?.Clear();
+            currentCustom?.Clear();
+            SchedulesParsed?.Clear();
+            BlacklistRaw = null;
+            BlacklistParsed?.Clear();
+            
             if (!string.IsNullOrWhiteSpace(Config.Blacklist))
             {
                 ParseBlacklist();
-            }
-            else
-            {
-                BlacklistRaw = null;
-                BlacklistParsed?.Clear();
             }
 
             TimeOfArrival = 0;
@@ -664,14 +679,6 @@ namespace FarmVisitors
 
             VisitorName = null;
             VisitorData = null;
-
-            InLaws.Clear();
-            NameAndLevel?.Clear();
-            RepeatedByLV?.Clear();
-            TodaysVisitors?.Clear();
-            FurnitureList?.Clear();
-            currentCustom?.Clear();
-            SchedulesParsed?.Clear();
         }
         private void ReloadCustomschedules()
         {
@@ -992,5 +999,6 @@ namespace FarmVisitors
         public static bool IsOutside { get; internal set; }
         public static bool Debug { get; internal set; }
         public static int GiftChance { get; internal set; }
+        public static bool UniqueVanilla { get; private set; }
 }
 }

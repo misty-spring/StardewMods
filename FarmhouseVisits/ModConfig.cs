@@ -16,5 +16,6 @@
         public bool NeedsConfirmation { get; set; } = false;
         public bool RejectionDialogue { get; set; } = true;
         public bool WalkOnFarm { get; set; } = true;
+        public bool UniqueDialogue { get; set; } = true;
     }
 }

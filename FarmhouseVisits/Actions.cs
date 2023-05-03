@@ -75,13 +75,13 @@ namespace FarmVisitors
                     enterDialogue = string.Format(withGift, Values.GetSeasonalGifts());
                 }
 
-                if (ModEntry.Debug)
+                /*if (ModEntry.Debug)
                 {
                     ModEntry.Log($"enterDialogue: {enterDialogue}", LogLevel.Trace);
                     visitor.setNewDialogue("testing if dialogue works via setNewDialogue.", true, true);
                     visitor.CurrentDialogue.Push(new Dialogue("This is a new Dialogue being pushed to CurrentDialogue.", visitor));
                     visitor.CurrentDialogue.Push(new Dialogue($"TESTING, {enterDialogue}", visitor));
-                }
+                }*/
 
                 visitor.setNewDialogue($"{enterDialogue}", true, true);
                 visitor.CurrentDialogue.Push(new Dialogue(Values.GetDialogueType(visitor, DialogueType.Thanking), visitor));
