@@ -55,6 +55,7 @@ namespace ExtraGingerIslandMaps
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            HasJackie = Game1.player.mailReceived.Contains("Island_Resort");
             
             if(jsonAssets is not null)
             {
@@ -82,8 +83,11 @@ namespace ExtraGingerIslandMaps
             CloudyBG_night = null;
             Ostrich = null;
 
-            //get jackie text 
-            UpsetJackie = Game1.content.LoadString("Characters/Dialogue/Jackie:StoleMoney");
+            if(HasJackie)
+            {
+                //get jackie text 
+                UpsetJackie = Game1.content.LoadString("Characters/Dialogue/Jackie:StoleMoney");
+            }
 
             //get $ dialogue
             var coines = Game1.content.LoadString("Strings/StringsFromCSFiles:Debris.cs.625");
@@ -112,7 +116,7 @@ namespace ExtraGingerIslandMaps
         private void OnDayStart(object sender, DayStartedEventArgs e)
         {
             //if player hasnt seen jackie's entry event: make invisible for the day
-            if(Game1.player.eventsSeen.Contains(121951) == false)
+            if(Game1.player.eventsSeen.Contains(121951) == false && HasJackie)
             {
                 var jackie = Game1.getCharacterFromName("Jackie",false);
                 jackie.IsInvisible = true;
@@ -138,6 +142,7 @@ namespace ExtraGingerIslandMaps
         internal static string RopeQuestion { get; private set; }
         internal static string FoundG { get; private set; }
         internal static string UpsetJackie { get; private set; }
+        internal static bool HasJackie {get; private set;} = false;
         internal static bool HasSGI { get; private set; } = false;
         internal static bool HasObtainedCashToday { get; set; } = false;
     }
