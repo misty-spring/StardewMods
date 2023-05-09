@@ -161,6 +161,38 @@ namespace AudioDescription
                     "discoverMineral"
                 });
             }
+
+            if (!string.IsNullOrWhitespace(ModEntry.Config.Blacklist))
+            {
+                var cleanlist = ParseBlackList();
+                foreach(var sound in cleanlist)
+                {
+                    ModEntry.AllowedCues?.Remove(sound);
+                }
+            }
+
+            internal static List<string> ParseBlackList(string which)
+            {
+                this.Monitor.Log("Getting raw blacklist.");
+                BlacklistRaw = ModEntry.Config.Blacklist;
+                if (BlacklistRaw is null)
+                {
+                    this.Monitor.Log("No characters in blacklist.");
+                }
+
+                var charsToRemove = new string[] { "-", ",", ".", ";", "\"", "\'", "/" };
+                foreach (var c in charsToRemove)
+                {
+                    BlacklistRaw = BlacklistRaw.Replace(c, string.Empty);
+                }
+                if (ModEntry.Config.Verbose)
+                {
+                    Monitor.Log($"Raw blacklist: \n {BlacklistRaw} \nWill be parsed to list now.", LogLevel.Debug);
+                }
+                var BlacklistParsed = BlacklistRaw.Split(' ').ToList();
+
+                return BlacklistParsed;
+            }
         }
     }
 }
