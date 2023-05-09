@@ -518,23 +518,36 @@ namespace FarmVisitors
                         var FarmhouseRandomPoint = Actions.RandomPoint_Farmhouse(farmHouse, Game1.random);
 
                         c.controller = new PathFindController(c, farmHouse, FarmhouseRandomPoint, Random.Next(0, 4));
-
-                        var AnyDialogue = currentCustom?[VisitorName]?.Dialogues.Any<string>();
-                        bool hasCustomDialogue = AnyDialogue ?? false;
-
-                        if (CustomVisiting && hasCustomDialogue)
+                        
+                        if (CustomVisiting)
                         {
-                            c.setNewDialogue(currentCustom[VisitorName].Dialogues[0], true, false);
-
-                            this.Monitor.Log($"Adding custom dialogue for {c.Name}...");
-                            if (ModEntry.Config.Verbose)
+                            if(ModEntry.Config.Verbose)
+                            this.Monitor.Log("Checking if NPC has any custom dialogue...");
+                        
+                            bool hasCustomDialogue = false;
+                            try
                             {
-                                this.Monitor.Log($"Custom dialogue: {currentCustom[VisitorName].Dialogues[0]}", LogLevel.Debug);
+                                var AnyDialogue = currentCustom?[VisitorName]?.Dialogues.Any<string>();
+                                hasCustomDialogue = (bool)AnyDialogue;
+                            }
+                            catch (System.Exception)
+                            {
                             }
 
-                            //remove this dialogue from the queue
-                            currentCustom[VisitorName].Dialogues.RemoveAt(0);
+                            if(hasCustomDialogue)
+                            {
+                                c.setNewDialogue(currentCustom[VisitorName].Dialogues[0], true, false);
+
+                                this.Monitor.Log($"Adding custom dialogue for {c.Name}...");
+                                
+                                if (ModEntry.Config.Verbose)
+                                    this.Monitor.Log($"C. Dialogue: {currentCustom[VisitorName].Dialogues[0]}", LogLevel.Debug);
+
+                                //remove this dialogue from the queue
+                                currentCustom[VisitorName].Dialogues.RemoveAt(0);
+                            }
                         }
+                        
                         else if (Random.Next(0, 11) <= 5 && FurnitureList.Any())
                         {
                             c.setNewDialogue(
