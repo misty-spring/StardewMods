@@ -18,6 +18,7 @@ namespace DynamicDialogues
             //get status and information
             helper.Events.GameLoop.SaveLoaded += SaveLoaded;
             helper.Events.GameLoop.DayStarted += OnDayStart;
+            helper.Events.Content.LocaleChanged += GetYesNo;
 
             helper.Events.GameLoop.ReturnedToTitle += OnTitleReturn;
 
@@ -50,10 +51,6 @@ namespace DynamicDialogues
 
         internal void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
-            GetYesNo();
-
-            //based off atravita's SpecialOrdersExtended ↓
-
             spaceCoreAPI = this.Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
 
             if (spaceCoreAPI != null)
@@ -114,12 +111,8 @@ namespace DynamicDialogues
                 //get questions
                 var QRaw = Game1.content.Load<Dictionary<string, RawQuestions>>($"mistyspring.dynamicdialogues/Questions/{name}");
                 GetQuestions(QRaw, name);
-
-
-                //get missions
-                var missionRaw = Game1.content.Load<Dictionary<string, RawMission>>($"mistyspring.dynamicdialogues/Quests/{name}");
-                GetMissions(missionRaw, name);
             }
+
             var dc = Dialogues?.Count ?? 0;
             this.Monitor.Log($"Loaded {dc} user patches. (Dialogues)", LogLevel.Debug);
 
@@ -143,11 +136,7 @@ namespace DynamicDialogues
             var rr = RandomPool?.Count ?? 0;
             this.Monitor.Log($"Loaded {rr} user patches. (Dialogue pool)", LogLevel.Debug);
 
-            //missions
-            var m = MissionData?.Count ?? 0;
-            this.Monitor.Log($"Loaded {m} user patches. (Mission/Quests)", LogLevel.Debug);
-
-            this.Monitor.Log($"{dc + gc + nc + qc + rr + m} total user patches loaded.",LogLevel.Debug);
+            this.Monitor.Log($"{dc + gc + nc + qc + rr} total user patches loaded.",LogLevel.Debug);
         }
 
         private void OnTitleReturn(object sender, ReturnedToTitleEventArgs e)
@@ -160,7 +149,7 @@ namespace DynamicDialogues
         /* Methods used to get dialogues 
          * do NOT change unless bug-fixing is required
          */
-        private static void GetYesNo()
+        private static void GetYesNo(object sender, LocaleChangedEventArgs e)
         {
             Yes = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_Yes");
             No = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_No");
@@ -222,7 +211,7 @@ namespace DynamicDialogues
                 }
             }
         }
-        private void GetNotifs(Dictionary<string, RawNotifs> notifRaw)
+        private static void GetNotifs(Dictionary<string, RawNotifs> notifRaw)
         {
             foreach (var pair in notifRaw)
             {
@@ -307,73 +296,6 @@ namespace DynamicDialogues
                 }
             }
         }
-        private void GetMissions(Dictionary<string, RawMission> data, string who)
-        {
-            this.Monitor.Log($"Checking {who} quests...");
-            foreach(var group in data)
-            {
-                var mission = group.Value;
-
-                //if any of the values aren't valid, give error and continue
-                if (string.IsNullOrWhiteSpace(mission.Dialogue))
-                {
-                    this.Monitor.Log($"Quest dialogue for {group.Key} is empty! It won't be added.",LogLevel.Error);
-                    continue;
-                }
-                if (mission.From < 600 || mission.To > 2600 || mission.From > mission.To)
-                {
-                    this.Monitor.Log($"Time in quest '{group.Key}' has a faulty hour! Make sure it's between 600 and 2600", LogLevel.Error);
-                    continue;
-                }
-                if (mission.Location is not "any")
-                {
-                    if (Game1.getLocationFromName(mission.Location) == null)
-                    {
-                        this.Monitor.Log($"Location for quest '{group.Key}' could not be found. Mission won't be added.", LogLevel.Error);
-                        continue;
-                    }
-                }
-                if (StardewValley.Quests.Quest.getQuestFromId(mission.ID) == null)
-                {
-                    this.Monitor.Log($"ID for '{group.Key}' doesn't exist!", LogLevel.Error);
-                    continue;
-                }
-
-                var ParsedMission = mission;
-
-                //if using the default answers and not playing in english
-                if(mission.AcceptQuest.Equals("Yes") && mission.RejectQuest.Equals("No") && LocalizedContentManager.CurrentLanguageCode is not LocalizedContentManager.LanguageCode.en)
-                {
-                    try
-                    {
-                        //get the yes/no for native language and use them here
-                        var yes = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_Yes");
-                        var no = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_No");
-
-                        ParsedMission.AcceptQuest = yes;
-                        ParsedMission.RejectQuest = no;
-
-                    }
-                    catch(Exception ex)
-                    {
-                        this.Monitor.Log($"Error: {ex}",LogLevel.Error);
-                    }
-                }    
-                
-                //if a list for npc already exists, just add value
-                if(MissionData.ContainsKey(who))
-                {
-                    MissionData[who].Add(ParsedMission);
-                }
-                //else, create it
-                else
-                {
-                    var list = new List<RawMission>();
-                    list.Add(ParsedMission);
-                    MissionData.Add(who, list);
-                }
-            }
-        }
 
         private void GetFriendedNPCs()
         {
@@ -410,35 +332,38 @@ namespace DynamicDialogues
             PatchableNPCs?.Clear();
             QuestionCounter?.Clear();
             RandomPool?.Clear();
-            CurrentQuests?.Clear();
+            //CurrentQuests?.Clear();
         }
 
         /* Required by mod to work */
+        #region own data
         internal static Dictionary<string, List<RawQuestions>> Questions { get; private set; } = new();
         internal static Dictionary<string, List<RawDialogues>> Dialogues { get; private set; } = new();
         internal static Dictionary<(string, string), string> Greetings { get; private set; } = new();
         internal static List<RawNotifs> Notifs { get; private set; } = new();
         internal static Dictionary<string, List<string>> RandomPool { get; private set; } = new();
-
+        #endregion
         internal static Dictionary<string, int> QuestionCounter { get; set; } = new();
-        internal static Dictionary<string, List<RawMission>> MissionData { get; set; } = new();
-
-        internal static List<string> CurrentQuests { get; set; } = new();
-
+        #region variable data
         internal static List<string> PatchableNPCs { get; private set; } = new();
         internal static List<string> NPCDispositions { get; private set; } = new();
-
-        //changes int to string (due to adding dialogues' from-to)
         internal static List<(string, string, string)> AlreadyPatched { get; set; } = new();
-        internal static IMonitor Mon { get; private set; }
+        #endregion
 
-        internal static ModConfig Config;
-        private ISpaceCoreAPI? spaceCoreAPI;
+        #region constants
+        internal const string PlayerFind = "playerFind";
         internal const string AddScene = "AddScene";
         internal const string RemoveScene = "RemoveScene";
-
-        //their default value is in eng, we get localized on SaveLoaded
         internal static string Yes { get; set; } = "Yes";
         internal static string No { get; set; } = "No";
+        #endregion
+
+        internal static IMonitor Mon { get; private set; }
+        internal static ModConfig Config;
+
+#pragma warning disable CS8632
+        private ISpaceCoreAPI? spaceCoreAPI;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+
     }
 }

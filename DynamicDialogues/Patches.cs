@@ -62,6 +62,11 @@ namespace DynamicDialogues
                 EventScene.Remove(__instance, location, time, split);
                 return false;
             }
+            else if(split[0].Equals(ModEntry.PlayerFind, StringComparison.Ordinal))
+            {
+                //
+                return false;
+            }
             return true;
         }
 
@@ -105,7 +110,7 @@ namespace DynamicDialogues
                 ModEntry.Mon.Log("Error: " + ex, StardewModdingAPI.LogLevel.Error);
             }
         }
-
+6
         internal static void PostDialogueAction(ref GameLocation __instance, string questionAndAnswer, string[] questionParams)
         {
             foreach (var data in ModEntry.Questions)
@@ -126,5 +131,56 @@ namespace DynamicDialogues
                 }
             }
         }
+
+        internal static bool Prefix_parseDialogueString(ref Dialogue __instance,string masterString)
+	    {
+		    if (masterString == null)
+		    {
+			    masterString = "...";
+		    }
+		    __instance.temporaryDialogue = null;
+		    if (__instance.playerResponses != null)
+		    {
+			    __instance.playerResponses.Clear();
+		    }
+		
+            if(!masterString.startsWith("$qna")) // "$qna¬question1_question2_(...)¬answer1_answer2_(...)"
+                return true;
+
+            string[] masterDialogueSplit = masterString.Split('¬');
+
+		    masterDialogueSplit[1] = __instance.checkForSpecialCharacters(masterDialogueSplit[1]);
+		    masterDialogueSplit[2] = __instance.checkForSpecialCharacters(masterDialogueSplit[2]);
+
+            __instance.quickResponse = true;
+			__instance.isLastDialogueInteractive = true;
+
+		    if (__instance.quickResponses == null)
+		    {
+		    	__instance.quickResponses = new List<string>();
+			}
+
+		    if (__instance.playerResponses == null)
+		    {
+			    __instance.playerResponses = new List<NPCDialogueResponse>();
+			}
+
+            string rawQ = masterDialogueSplit[1];
+			string[] rawQSplit = rawQ.Split('_');
+
+            string rawA = masterDialogueSplit[2];
+            string[] rawAsplit = rawA.Split('_');
+
+			__instance.dialogues.Add("...");
+
+			for (int j = 0; j < rawQsplit.Length; j ++)
+			{
+    		    //__instance.playerResponses.Add(new NPCDialogueResponse(-1, -1, "quickResponse" + j, Game1.parseTextrawSplit[j])));
+			    //__instance.quickResponses.Add(rawSplit[j + 1].Replace("*", "#$b#"));
+                __instance.playerResponses.Add(new NPCDialogueResponse(1));
+                __instance.quickResponses.Add(rawAsplit[j]);
+			}
+            return false;
+	    }
     }
 }
