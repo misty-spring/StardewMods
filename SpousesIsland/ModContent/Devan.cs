@@ -4,11 +4,73 @@ using System.Collections.Generic;
 using xTile;
 using Microsoft.Xna.Framework;
 using System;
+using StardewValley;
 
 namespace SpousesIsland
 {
     internal class Devan
     {
+        /// <summary>
+        /// Changes Devan's schedule depending on how many kids there are.
+        /// </summary>
+        /// <param name="who">Devan.</param>
+        internal static void CorrectSchedule(string who = "Devan")
+        {
+            if (BedCode.HasCrib(Game1.player) == false) //no crib
+            {
+                ModEntry.Mon.Log("no cribs found. reloading schedule...", LogLevel.Debug);
+
+                var npc = Game1.getCharacterFromName(who);
+
+                var nocrib = "0 FarmHouse 6 6 0/630 FarmHouse 8 5 1/640 FarmHouse 17 6 1/700 FarmHouse 12 13 2/730 FarmHouse 9 14 0/830 FarmHouse 5 14 0 Devan_spoon/900 FarmHouse 5 14 2 Devan_bottle/1000 FarmHouse 8 14 0 Devan_washing/1100 FarmHouse 8 15 2/1150 FarmHouse 5 14 0 Devan_cook/1250 FarmHouse 5 14 2 Devan_plate/1400 FarmHouse 8 14 0 Devan_washing/1700 FarmHouse 11 16 0 Devan_broom/2130 FarmHouse 12 13 3/2200 FarmHouse 10 14 2/a2300 FarmHouse 12 19 2";
+
+                //stop any npc action
+                npc.Halt();
+                npc.followSchedule = false;
+                npc.clearSchedule();
+
+                //set data
+                var schedule = npc.parseMasterSchedule(nocrib);
+                npc.Schedule = schedule;
+                npc.followSchedule = true;
+            }
+        }
+
+        internal static void WalkTo(Character who)
+        {
+            var devan = Utility.fuzzyCharacterSearch("Devan", false);
+
+            var position = who.Position.ToPoint();
+            position.X++;
+
+            devan.controller = new PathFindController(devan, devan.currentLocation, position, 0);
+        }
+
+        internal static void Wander(int maxDistance)
+        {
+            var devan = Utility.fuzzyCharacterSearch("Devan", false);
+
+            var randomlocation = Point.Zero;
+            Point difference;
+
+            //can try at max. 10 times to fix position
+            for (int i = 0; i < 10; i++)
+            {
+                randomlocation = new Point(Game1.random.Next(devan.currentLocation.Map.Layers[0].LayerWidth), Game1.random.Next(devan.currentLocation.Map.Layers[0].LayerHeight));
+
+                difference = new Point(
+                (int)(randomlocation.X - devan.Position.X),
+                (int)(randomlocation.Y - devan.Position.Y));
+
+                if (Math.Abs(difference.X) <= maxDistance && Math.Abs(difference.Y) <= maxDistance)
+                {
+                    break;
+                }
+            }
+            
+            devan.controller = new PathFindController(devan, devan.currentLocation, randomlocation, Game1.random.Next(0, 4));
+        }
+
         /* Required for devan to load 
          * All content here has been made international (by adding TL keys)! */
         internal static void MainData(AssetRequestedEventArgs e)

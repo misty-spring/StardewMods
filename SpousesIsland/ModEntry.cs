@@ -7,7 +7,6 @@ using StardewModdingAPI.Enums;
 using StardewValley;
 using System.Linq;
 using HarmonyLib;
-using JsonAssets;
 using xTile;
 
 namespace SpousesIsland
@@ -67,12 +66,15 @@ namespace SpousesIsland
             ClearValues();
 
             //check for compatibility, log result
-            HasSVE = Information.HasMod("FlashShifter.StardewValleyExpandedCP");
-            HasC2N_Or_LNPCs = Information.HasMod("Loe2run.ChildToNPC") || Information.HasMod("Candidus42.LittleNPCs");
-            HasExGIM = Information.HasMod("mistyspring.extraGImaps");
+            InstalledMods["SVE"] = Information.HasMod("FlashShifter.StardewValleyExpandedCP");
+            InstalledMods["C2N"] = Information.HasMod("Loe2run.ChildToNPC");
+            InstalledMods["LNPCs"] = Information.HasMod("Candidus42.LittleNPCs");
+            InstalledMods["ExGIM"] = Information.HasMod("mistyspring.extraGImaps");
+            InstalledMods["Devan"] = Information.HasMod("mistyspring.NPCDevan");
+
             notfurniture = Config.UseFurnitureBed == false;
 
-            this.Monitor.Log($"\n   HasSVE = {HasSVE}\n   HasC2N_Or_LNPCs = {HasC2N_Or_LNPCs}\n   HasExGIM = {HasExGIM}", LogLevel.Debug);
+            this.Monitor.Log($"\n   Mod info: {InstalledMods.ToString()}", LogLevel.Debug);
 
             //choose random
             RandomizedInt = Random.Next(1, 101);
@@ -155,8 +157,6 @@ namespace SpousesIsland
 
             //InfoChildren = ChildrenData.GetInformation(Config.ChildSchedules);
 
-            jsonAssets = Helper.ModRegistry.GetApi<IApi>("spacechase0.JsonAssets");
-
             // get Generic Mod Config Menu's API (if it's installed)
             var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
             if (configMenu is not null)
@@ -210,7 +210,7 @@ namespace SpousesIsland
                     //tooltip: () => this.Helper.Translation.Get("config.advancedConfig.description")
                 );
                 
-                if (HasC2N_Or_LNPCs)
+                if (InstalledMods["C2N"]||InstalledMods["LPNCs"])
                 {
                     configMenu.AddPageLink(
                         mod: this.ModManifest,
@@ -228,7 +228,7 @@ namespace SpousesIsland
                     tooltip: () => this.Helper.Translation.Get("config.advancedConfig.description")
                 );
 
-                if (HasC2N_Or_LNPCs is true)
+                if (InstalledMods["C2N"]||InstalledMods["LPNCs"])
                 {
                     configMenu.AddPage(
                         mod: this.ModManifest,
@@ -393,7 +393,7 @@ namespace SpousesIsland
                     setValue: value => this.Config.Allow_Shane = value
                 );
 
-                if (HasSVE is true)
+                if (InstalledMods["SVE"])
                 {
                     configMenu.AddSectionTitle(
                     mod: this.ModManifest,
@@ -489,7 +489,7 @@ namespace SpousesIsland
             }
 
             //same with devan
-            if (Config.NPCDevan == true)
+            if (Config.NPCDevan == true && !InstalledMods["Devan"])
             {
                 this.Monitor.LogOnce("Adding Devan", LogLevel.Debug);
 
@@ -542,6 +542,7 @@ namespace SpousesIsland
             }
         }
 
+        change loadstage to saveloaded and use daystarted OK?
         //if SP, loadstagechanged will obtain required data. if MP, peercontext will.
         private void LoadStageChanged(object sender, LoadStageChangedEventArgs e)
         {
@@ -555,7 +556,7 @@ namespace SpousesIsland
                 Children = Information.PlayerChildren(Game1.player);
                 //get for patching
                 MustPatchPF = Information.PlayerSpouses(Player_MP_ID); //add all spouses
-                if (!HasC2N_Or_LNPCs)
+                if (!InstalledMods["C2N"] && !InstalledMods["LPNCs"])
                     return;
                 foreach(var kid in Children)
                 {
@@ -691,7 +692,7 @@ namespace SpousesIsland
             Children = Information.PlayerChildren(Game1.player);
             //get for patching
             MustPatchPF = Information.PlayerSpouses(Player_MP_ID); //add all spouses
-            if (!HasC2N_Or_LNPCs)
+            if (!InstalledMods["C2N"] && !InstalledMods["LPNCs"])
                 return;
             foreach (var kid in Children)
             {
@@ -758,6 +759,8 @@ namespace SpousesIsland
         }
         private void ReadModData(Farmer player)
         {
+            DevanExists = Config.NPCDevan;
+
             var userID = player.UniqueMultiplayerID.ToString(); //userID causes a NRE, use MP id. 
             var file = Helper.Data.ReadJsonFile<Dictionary<string, ModStatus>>("moddata.json");
             if(file == null)
@@ -804,7 +807,6 @@ namespace SpousesIsland
         /* Helpers + things the mod uses */
 
         private ModConfig Config;
-        public static IApi jsonAssets;
         private static Random random;
         internal static IModHelper Help { get; private set; }
         internal static ITranslationHelper TL { get; private set; }
@@ -839,10 +841,17 @@ namespace SpousesIsland
         public static List<string> MarriedAndAllowed { get; private set; } = new();
         internal static bool BoatFixed;
         internal static bool IslandHouse = false;
-        internal static bool HasSVE;
-        internal static bool HasC2N_Or_LNPCs;
-        internal static bool HasExGIM;
+        
+        internal static Dictionary<string,bool> InstalledMods = new{
+            {"SVE",false},
+            {"C2N",false},
+            {"LPNCs",false},
+            {"ExGIM",false},
+            {"Devan",false}
+        };
+        
         internal static bool notfurniture;
+        internal static bool DevanExists;
         internal static List<string> MustPatchPF { get; set; } = new();
 
         internal static Dictionary<string, ModStatus> Status { get; private set; } = new();

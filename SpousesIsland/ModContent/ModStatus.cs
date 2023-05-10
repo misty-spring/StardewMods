@@ -41,9 +41,8 @@ namespace SpousesIsland
         /// <param name="who">player</param>
         internal static bool tryToReceiveTicket(ref NPC __instance, Farmer who)
         {
-            //ModEntry.jsonAssets?.GetObjectId("Island ticket (day)") <- old one didnt work. we check name instead
-            bool isDay = who?.ActiveObject?.Name == "Island ticket (day)";
-            bool isWeek = who?.ActiveObject?.Name == "Island ticket (week)";
+            bool isDay = item.QualifiedItemId == "(O)mistyspring.spousesislandCP_ticketD"; //old: who?.ActiveObject?.Name == "Island ticket (day)";
+            bool isWeek = item.QualifiedItemId == "(O)mistyspring.spousesislandCP_ticketW"; //old: who?.ActiveObject?.Name == "Island ticket (week)";
 
             if (who?.ActiveObject == null || (!isDay && !isWeek))
             {

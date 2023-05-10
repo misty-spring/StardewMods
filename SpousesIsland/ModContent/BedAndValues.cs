@@ -73,6 +73,12 @@ namespace SpousesIsland
             {
                 if (Game1.IsMasterGame && Game1.timeOfDay >= 2200 && c.getTileLocationPoint() != GetSpouseBedSpot() && (Game1.timeOfDay == 2200 || (c.controller == null && Game1.timeOfDay % 100 % 30 == 0)))
                 {
+                    //stop npc first
+                    c.Halt();
+                    c.followSchedule = false;
+                    c.ignoreScheduleToday = true;
+
+                    //path to bed
                     c.controller =
                         new PathFindController(
                             c,
@@ -135,6 +141,13 @@ namespace SpousesIsland
             }
         }
 
+        internal static bool HasCrib(Farmer player)
+        {
+            var where = Utility.getHomeOfFarmer(player);
+
+            //0 means no crib. so, we return whether crib isn't 0 (doing it this way in case any mod changes crib int to something other than 1)
+            return where.cribStyle.Value != 0;
+        }
     }
     internal class Values
     {
