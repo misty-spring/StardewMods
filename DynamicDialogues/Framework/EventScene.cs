@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 using System;
 
-namespace DynamicDialogues
+namespace DynamicDialogues.Framework
 {
 	internal class EventScene
 	{
@@ -134,7 +134,7 @@ namespace DynamicDialogues
                 }
 
                 instance.aboveMapSprites.Add(Scene);
-                instance.currentCommand++;
+                instance.CurrentCommand++;
 
             }
             catch (Exception ex)
@@ -161,7 +161,7 @@ namespace DynamicDialogues
                 var tempID = split.Length >= 2 ? float.Parse(split[1]) : 69420f;
 
                 location.removeTemporarySpritesWithIDLocal(tempID);
-                instance.currentCommand++;
+                instance.CurrentCommand++;
             }
             catch (Exception ex)
             {

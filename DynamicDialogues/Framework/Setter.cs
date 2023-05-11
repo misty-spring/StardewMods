@@ -1,12 +1,12 @@
 ﻿using StardewModdingAPI.Events;
 using StardewValley;
-using static DynamicDialogues.Parser;
-using static DynamicDialogues.Getter;
+using static DynamicDialogues.Framework.Parser;
+using static DynamicDialogues.Framework.Getter;
 using System.Collections.Generic;
 using System.Linq;
 using System;
 
-namespace DynamicDialogues
+namespace DynamicDialogues.Framework
 {
     internal class Setter
     {
@@ -14,26 +14,6 @@ namespace DynamicDialogues
         {
             if (e.NewTime % 30 == 0)
             {
-                foreach (var group in ModEntry.MissionData)
-                {
-                    var who = Game1.getCharacterFromName(group.Key);
-                    if (!(who.currentLocation.Name.Equals(Game1.player.currentLocation.Name)))
-                    {
-                        continue;
-                    }
-
-                    if (who.CurrentDialogue.Count == 0 && Game1.random.Next(100) <= ModEntry.Config.MissionChance && ModEntry.CurrentQuests.Contains(who.Name) == false)
-                    {
-                        var mission = RandomMission(group.Value);
-
-                        if (mission is null)
-                        {
-                            continue;
-                        }
-
-                        Game1.player.currentLocation.createQuestionDialogue(mission.Dialogue, GetResponses(mission), new GameLocation.afterQuestionBehavior(AddMission), who);
-                    }
-                }
                 foreach (var name in ModEntry.RandomPool?.Keys)
                 {
                     var who = Game1.getCharacterFromName(name);
@@ -44,6 +24,7 @@ namespace DynamicDialogues
                             continue;
 
                         who.setNewDialogue(random, true, true);
+                        //who.Dialogue.Add(new QuestionData(who,null,random));
                     }
                 }
             }
@@ -162,7 +143,7 @@ namespace DynamicDialogues
                                 //if npc in location OR force true
                                 if (Game1.player.currentLocation.Name == d.Location || d.Force)
                                 {
-                                    Game1.drawDialogue(chara, d.Dialogue);
+                                    Game1.drawDialogue(chara);
                                 }
                             }
                             else
@@ -230,13 +211,14 @@ namespace DynamicDialogues
                 if (!chara.CurrentDialogue.Any())
                 {
                     var qna = QuestionDialogue(NaQ.Value, chara);
-                    if (qna is "$y '...'")
+                    if (qna is "$qna#")//old: "$y '...'")
                     {
                         continue;
                     }
 
                     //use a method in "getter" that returns the proper string by giving it NaQ.Value - 
-                    chara.setNewDialogue(qna, true, true);
+                    //old: chara.setNewDialogue(qna, true, true);
+                    chara.setNewDialogue(new QuestionData(chara, qna));
                 }
             }
         }
@@ -274,14 +256,14 @@ namespace DynamicDialogues
                 );
                 }
 
-                //mission/quests
+                /*//mission/quests - deprecated (can be used from Questions)
                 if (e.NameWithoutLocale.IsEquivalentTo($"mistyspring.dynamicdialogues/Quests/{name}"))
                 {
                     e.LoadFrom(
                     () => new Dictionary<string, RawMission>(),
                     AssetLoadPriority.Low
                     );
-                }
+                }*/
             }
 
             //greetings
@@ -301,20 +283,14 @@ namespace DynamicDialogues
                 AssetLoadPriority.Low
                 );
             }
-        }
 
-        //on day end, we remove repeatable events from 'seen' list
-        internal static void OnDayEnded(object sender, DayEndingEventArgs e)
-        {
-            foreach(var data in ModEntry.Questions)
+            //event data - playerFind
+            if (e.NameWithoutLocale.IsEquivalentTo("mistyspring.dynamicdialogues/Commands/playerFind", true))
             {
-                foreach(var raw in data.Value)
-                {
-                    if(raw.CanRepeatEvent)
-                    {
-                        Game1.player.eventsSeen.Remove(int.Parse(raw.EventToStart));
-                    }
-                }
+                e.LoadFrom(
+                    () => new Dictionary<string, string>(),
+                    AssetLoadPriority.Low, 
+                    null);
             }
         }
     }

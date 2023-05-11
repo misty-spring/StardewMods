@@ -2,13 +2,13 @@
 using StardewValley;
 using System;
 
-namespace DynamicDialogues
+namespace DynamicDialogues.Framework
 {
 
     /// <summary>
     /// A class used for Dialogues with special commands (e.g jump, emote etc).
     /// </summary>
-    internal class RawDialogues
+    internal abstract class RawDialogues
     {
         public int Time { get; set; } = -1;  //time to add dialogue at, mut. exclusive w/ from-to
         public int From { get; set; } = 600; //from this hour
@@ -22,7 +22,7 @@ namespace DynamicDialogues
         public bool Force { get; set; } = false;  // if Immediate, prints dialogue regardless of location
         //public bool ApplyWhenMoving { get; set; } = false;
 
-        public bool IsBubble { get; set; } = false; //showtextoverhead instead
+        public bool IsBubble { get; set; } = false; //show text overhead instead
         
         public string FaceDirection { get; set; } //string to change facing to
         public bool Jump { get; set; } = false; //makes npc jump when addition is placed
@@ -31,7 +31,7 @@ namespace DynamicDialogues
 
         public RawAnimation Animation { get; set; } = new RawAnimation(); //animation to play, if any
 
-        public PlayerItems { get; set; } = new PlayerItems();
+        public PlayerConditions PlayerItems { get; set; } = new PlayerConditions();
 
         public RawDialogues()
         {
@@ -61,7 +61,7 @@ namespace DynamicDialogues
     }
     
     ///<summary>Notifications sent to game HUD.</summary>
-    internal class RawNotifs
+    internal abstract class RawNotifs
     {
         public int Time { get; set; } = -1; //time to show at
         public string Location  { get; set; } = "any"; //the location to show at
@@ -71,7 +71,7 @@ namespace DynamicDialogues
         //public int FadeOut { get; set; } = -1; //fadeout is auto set by game
         
         public bool IsBox { get; set; } = false; //if box instead
-        public PlayerItems { get; set; } = new PlayerItems();
+        public PlayerConditions PlayerItems { get; set; } = new PlayerConditions();
 
         public RawNotifs()
         {
@@ -99,12 +99,10 @@ namespace DynamicDialogues
         public string Location { get; set; } = "any"; //if avaiable only in a specific location
         public int From { get; set; } = 610; //from this hour
         public int To { get; set; } = 2550; //until this hour
-        //
-        public string EventToStart { get; set; } = "none";
+        //public string EventToStart { get; set; } = "none"; 1.6 allows events
         public string QuestToStart { get; set; } = "none";
         public bool CanRepeatEvent { get; set; } = false;
-        
-        public PlayerItems { get; set; } = new PlayerItems();
+        public PlayerConditions PlayerItems{ get; set; } = new PlayerConditions();
 
         public RawQuestions()
         {
@@ -122,7 +120,6 @@ namespace DynamicDialogues
             From = q.From;
             To = q.To;
 
-            EventToStart = q.EventToStart;
             QuestToStart = q.QuestToStart;
             CanRepeatEvent = q.CanRepeatEvent;
         }
@@ -148,7 +145,7 @@ namespace DynamicDialogues
     }
 
     ///<summary>Conditions for a dialogue to be added.</summary>
-    internal class PlayerItems
+    internal class PlayerConditions
     {
         public string Hat { get; set; } = null; // null means 'any'
         public string Shirt { get; set; } = null; 
@@ -159,12 +156,12 @@ namespace DynamicDialogues
 
         public string GameQuery { get; set; } = null; //must be a game query. see https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Game_state_queries 
         
-        public PlayerItems()
+        public PlayerConditions()
         {
 
         }
 
-        public PlayerItems(PlayerItems p)
+        public PlayerConditions(PlayerConditions p)
         {
             Hat = p.Hat;
             Shirt = p.Shirt;

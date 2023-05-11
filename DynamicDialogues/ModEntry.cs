@@ -4,10 +4,12 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using static DynamicDialogues.Parser;
-using static DynamicDialogues.Getter;
+using static DynamicDialogues.Framework.Parser;
+using static DynamicDialogues.Framework.Getter;
+using DynamicDialogues.Framework;
 using System.Linq;
 using System.Reflection;
+// ReSharper disable All
 
 namespace DynamicDialogues
 {
@@ -26,12 +28,12 @@ namespace DynamicDialogues
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.TimeChanged += Setter.OnTimeChange;
             helper.Events.Content.AssetRequested += Setter.OnAssetRequest;
-            helper.Events.GameLoop.DayEnding += Setter.OnDayEnded;
 
             ModEntry.Config = this.Helper.ReadConfig<ModConfig>();
             Mon = this.Monitor;
 
             helper.ConsoleCommands.Add("ddprint", "Prints dialogue type", Debug.Print);
+            helper.ConsoleCommands.Add("sayHiTo", "Test sayHiTo command", Debug.SayHiTo);
 
             var harmony = new Harmony(this.ModManifest.UniqueID);
 
@@ -40,13 +42,12 @@ namespace DynamicDialogues
                 original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.sayHiTo)),
                 prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.SayHiTo_Prefix))
                 );
-
-            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": postfixing SDV method \"Dialogue.exitCurrentDialogue\".");
+            
+            this.Monitor.Log($"Applying Harmony patch \"{nameof(Patches)}\": prefixing SDV method \"NPC.tryToReceiveActiveObject(Farmer who)\".");
             harmony.Patch(
-                original: AccessTools.Method(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.exitCurrentDialogue)),
-                postfix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.PostCurrentDialogue))
-                );
-
+                original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.tryToReceiveActiveObject)),
+                prefix: new HarmonyMethod(typeof(Patches), nameof(ModPatches.TryToReceiveItem))
+            );
         }
 
         internal void OnGameLaunched(object sender, GameLaunchedEventArgs e)
@@ -57,9 +58,11 @@ namespace DynamicDialogues
             {
                 MethodInfo adder = typeof(EventScene).GetMethod(nameof(EventScene.Add)); //old: StaticMethodNamed
                 MethodInfo remover = typeof(EventScene).GetMethod(nameof(EventScene.Remove));
+                MethodInfo hunt = typeof(EventScene).GetMethod(nameof(Finder.ObjectHunt));
 
                 spaceCoreAPI.AddEventCommand(AddScene, adder);
                 spaceCoreAPI.AddEventCommand(RemoveScene, remover);
+                spaceCoreAPI.AddEventCommand(PlayerFind, hunt);
             }
             else
             {
@@ -145,7 +148,7 @@ namespace DynamicDialogues
             NPCDispositions?.Clear();
         }
 
-
+        #region get data
         /* Methods used to get dialogues 
          * do NOT change unless bug-fixing is required
          */
@@ -334,7 +337,7 @@ namespace DynamicDialogues
             RandomPool?.Clear();
             //CurrentQuests?.Clear();
         }
-
+#endregion
         /* Required by mod to work */
         #region own data
         internal static Dictionary<string, List<RawQuestions>> Questions { get; private set; } = new();
@@ -348,6 +351,7 @@ namespace DynamicDialogues
         internal static List<string> PatchableNPCs { get; private set; } = new();
         internal static List<string> NPCDispositions { get; private set; } = new();
         internal static List<(string, string, string)> AlreadyPatched { get; set; } = new();
+        internal static Dictionary<string,string> CustomDialogues { get; set; } = new();
         #endregion
 
         #region constants

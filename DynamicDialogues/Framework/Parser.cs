@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DynamicDialogues
+namespace DynamicDialogues.Framework
 {
-    internal class Parser
+    internal static class Parser
     {
         /// <summary>
         /// If the NPC is in the required location, return true. Defaults to true if location is any/null.
@@ -14,29 +14,15 @@ namespace DynamicDialogues
         /// <param name="who"> The NPC to check.</param>
         /// <param name="place">The place to use for comparison.</param>
         /// <returns></returns>
-        internal static bool InRequiredLocation(NPC who, GameLocation place)
-        {
+        internal static bool InRequiredLocation(NPC who, GameLocation place) => InRequiredLocation(who, place.Name);
 
-            if (who.currentLocation == place)
-            {
-                return true;
-            }
-            else if (place is null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
         internal static bool InRequiredLocation(NPC who, string place)
         {
             if (who.currentLocation.Name == place)
             {
                 return true;
             }
-            else if (place is null || place is "any")
+            else if (place is null or "any")
             {
                 return true;
             }
@@ -50,24 +36,13 @@ namespace DynamicDialogues
         {
             var npc = Game1.getCharacterFromName(who);
             
-            if (npc.currentLocation == place)
-            {
-                return true;
-            }
-            else if (place is null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return InRequiredLocation(npc,place.Name);
         }
         
         /// <summary>
         /// For validating user additions. Passes the values to another bool, then returns that result.
         /// </summary>
-        /// <param name="which">The raw dialogue data to check.</param>
+        /// <param name="data">The raw dialogue data to check.</param>
         /// <returns></returns>
         internal static bool IsValid(RawDialogues data, string who) //rename to += dialogue
         {
@@ -113,9 +88,9 @@ namespace DynamicDialogues
                     }
                 }
 
-                if (ModEntry.Dialogues.ContainsKey(who))
+                if (ModEntry.Dialogues.TryGetValue(who, out var dialogue))
                 {
-                    foreach(var addition in ModEntry.Dialogues[who])
+                    foreach(var addition in dialogue)
                     {
                         if(addition.Time == data.Time && addition.Location.ToString() == data.Location)
                         {
@@ -136,7 +111,7 @@ namespace DynamicDialogues
 
         internal static bool InTimeRange(int newTime, int patchTime, int from, int to, NPC who)
         {
-            var MapWithNPC = who.currentLocation.Name;
+            var mapWithNpc = who.currentLocation.Name;
 
             if (patchTime > 0)
             {
@@ -155,7 +130,7 @@ namespace DynamicDialogues
                     return false;
                 }
 
-                if (!(Game1.player.currentLocation.Name == MapWithNPC))
+                if (Game1.player.currentLocation.Name != mapWithNpc)
                 {
                     if (ModEntry.Config.Debug)
                     {
@@ -184,26 +159,9 @@ namespace DynamicDialogues
         /// <returns></returns>
         internal static bool Exists(string who) //rename to CharacterExists
         {
-            var monitor = ModEntry.Mon;
-            var admitted = ModEntry.NPCDispositions;
-            var character = Game1.getCharacterFromName(who);
-
-            if (character is null)
-            {
-                monitor.Log($"NPC {who} could not be found! See log for more details.", LogLevel.Error);
-                monitor.Log($"NPC {who} returned null when calling  Game1.getCharacterFromName({who}).");
-                return false;
-            }
-
-            if (!admitted.Contains(character.Name))
-            {
-                monitor.Log($"NPC {who} is not in characters! Did you type their name correctly?", LogLevel.Warn);
-                monitor.Log($"NPC {who} seems to exist, but wasn't found in the list of admitted NPCs. This may occur if you haven't met them yet, or if they haven't been unlocked.");
-                return false;
-            }
-
-            return true;
+            return Exists(Game1.getCharacterFromName(who));
         }
+        
         internal static bool Exists(NPC who)
         {
             var monitor = ModEntry.Mon;
@@ -211,8 +169,8 @@ namespace DynamicDialogues
 
             if (who is null)
             {
-                monitor.Log($"NPC {who} could not be found! See log for more details.", LogLevel.Error);
-                monitor.Log($"NPC {who} returned null when calling  Game1.getCharacterFromName({who}).");
+                monitor.Log($"NPC could not be found! See log for more details.", LogLevel.Error);
+                monitor.Log($"NPC returned null when calling  Game1.getCharacterFromName().");
                 return false;
             }
 

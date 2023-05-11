@@ -1,8 +1,10 @@
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace DynamicDialogues
+namespace DynamicDialogues.Framework
 {
     internal class Getter
     {
@@ -71,7 +73,11 @@ namespace DynamicDialogues
         internal static string QuestionDialogue(List<RawQuestions> QAs, NPC who)
         {
             //$y seems to be infinite version of question. so it's used for this
-            string result = "$y '...";
+            var result = "$qna#";
+            var questions = "";
+            var answers = "";
+            var missions = "";
+
             foreach(var extra in QAs)
             {
                 if(extra.From > Game1.timeOfDay || extra.To < Game1.timeOfDay)
@@ -85,10 +91,10 @@ namespace DynamicDialogues
 
                 if(extra.MaxTimesAsked > 0)
                 {
-                    int count = 0;
-                    if (ModEntry.QuestionCounter.ContainsKey(extra.Question))
+                    var count = 0;
+                    if (ModEntry.QuestionCounter.TryGetValue(extra.Question, out var value))
                     {
-                        count = ModEntry.QuestionCounter[extra.Question];
+                        count = value;
                     }
                     else
                     {
@@ -97,16 +103,38 @@ namespace DynamicDialogues
 
                     if (count < extra.MaxTimesAsked)
                     {
-                        result += $"_{extra.Question}_{extra.Answer}";
+                        questions += $"{extra.Question}_";
+                        answers += $"{extra.Answer}_";
+                        missions += $"{extra.QuestToStart ?? "none"}_";
                         ModEntry.QuestionCounter[extra.Question]++;
                     }
                 }
                 else
                 {
-                    result += $"_{extra.Question}_{extra.Answer}";
+                    questions += $"{extra.Question}_";
+                    answers += $"{extra.Answer}_";
+                    missions += $"{extra.QuestToStart ?? "none"}_";
                 }
             }
-            result += "'";
+            
+            //if the last char is '_', remove it from string.
+            if(questions.Last().Equals('_'))
+            {
+                var q = new StringBuilder(questions);
+                var a = new StringBuilder(answers);
+                var m = new StringBuilder(missions);
+                //q.Remove(q.Length, 0);
+                q[questions.Length - 1] = Convert.ToChar(""); //will this work?
+                a[questions.Length - 1] = Convert.ToChar("");
+                m[questions.Length - 1] = Convert.ToChar("");
+
+                questions = q.ToString();
+                answers = a.ToString();
+                missions = m.ToString();
+            }
+
+            result += $"{questions}#{answers}#{missions}"; //changed ¬ to #
+
             return result;
         }
 
@@ -156,6 +184,8 @@ namespace DynamicDialogues
             return data[index];
         }
         
+        /*
+         * deprecated in uhh check later
         /// <summary>
         /// Return a formatted question, which uses a random RawMission from a list.
         /// </summary>
@@ -251,7 +281,7 @@ namespace DynamicDialogues
                 //if parsed correctly, add quest to player
                 who.addQuest(numOnly);
             }
-        }
+        }*/
         
         /// <summary>
         /// Return the index in a dictionary.

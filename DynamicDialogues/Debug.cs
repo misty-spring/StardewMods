@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using StardewValley;
 using lv = StardewModdingAPI.LogLevel;
 
 namespace DynamicDialogues
 {
-    internal class Debug
+    internal static class Debug
     {
         internal static void Print(string arg1, string[] arg2)
         {
-            if (!arg2.Any() || arg2 == null || arg2?.Length == 0)
+            if (!arg2.Any() || arg2?.Length == 0)
             {
                 ModEntry.Mon.Log("Please specify a type. (Possible values: Dialogues, Random, Questions, Notifs", lv.Warn);
                 return;
@@ -94,7 +95,7 @@ namespace DynamicDialogues
                     ModEntry.Mon.Log(Qs, lv.Info);
                 }
             }
-            
+            /*
             if(arg2.Contains("Missions") || arg2.Contains("Quests"))
             {
                 string mis = "Missions: ";
@@ -111,27 +112,56 @@ namespace DynamicDialogues
                     }
                     ModEntry.Mon.Log(mis, lv.Info);
                 }
-            }
+            }*/
         }
-
+/*
         private static string Listify(List<RawMission> value)
         {
-            string result = "\n";
+            var result = "\n";
             foreach (var msn in value)
             {
                 result += $"ID: {msn.ID}, Text: \"{msn.Dialogue}\", Location: {msn.Location}, Time: {msn.From} - {msn.To}\n";
             }
             return result;
-        }
+        }*/
 
         private static string Listify(List<string> value)
         {
-            string result = "\n";
+            var result = "\n";
             foreach(var text in value)
             {
                 result += $"\"{text}\"\n";
             }
             return result;
+        }
+
+        public static void SayHiTo(string arg1, string[] arg2)
+        {
+            try
+            {
+                if (arg2.Length != 2)
+                {
+                    ModEntry.Mon.Log("Format: sayHiTo <npc talking> <npc to greet>.\nExample: `sayHiTo Alex Evelyn`",lv.Warn);
+                    return;
+                }
+
+                var chara = arg2[0];
+                var who = Game1.getCharacterFromName(chara);
+                var pos = Game1.player.Position;
+                pos.X++;
+                
+                Game1.warpCharacter(who,Game1.player.currentLocation,pos);
+
+                var chara2 = arg2[1];
+                var greeted = Game1.getCharacterFromName(chara);
+
+                who.sayHiTo(greeted);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }
