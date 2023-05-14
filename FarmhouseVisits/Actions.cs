@@ -5,7 +5,9 @@ using StardewValley.Locations;
 using StardewValley.Network;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using StardewValley.Audio;
 
 namespace FarmVisitors
 {
@@ -13,7 +15,7 @@ namespace FarmVisitors
     {
         #region normal visit
         //regular visit: the one used by non-scheduled NPCs
-        internal static void AddToFarmHouse(NPC visitor, FarmHouse farmHouse, bool HadConfirmation)
+        internal static void AddToFarmHouse(NPC visitor, FarmHouse farmHouse, bool hadConfirmation)
         {
             try
             {
@@ -39,10 +41,9 @@ namespace FarmVisitors
                 visitor.ignoreScheduleToday = true;
                 visitor.temporaryController = null;
 
-                if(HadConfirmation == false)
+                if(hadConfirmation == false)
                 {
-                    //Game1.drawDialogue(npcv, Values.GetIntroDialogue(npcv));
-                    Game1.drawDialogue(visitor, Values.GetDialogueType(visitor, DialogueType.Introduce));
+                    DrawDialogue(visitor,Values.GetDialogueType(visitor,DialogueType.Introduce));
                 }
 
                 var position = farmHouse.getEntryLocation();
@@ -84,11 +85,11 @@ namespace FarmVisitors
                 }*/
 
                 visitor.setNewDialogue($"{enterDialogue}", true, true);
-                visitor.CurrentDialogue.Push(new Dialogue(Values.GetDialogueType(visitor, DialogueType.Thanking), visitor));
+                visitor.CurrentDialogue.Push(new Dialogue(visitor,null,Values.GetDialogueType(visitor, DialogueType.Thanking)));
 
                 if (Game1.currentLocation == farmHouse)
                 {
-                    Game1.currentLocation.playSound("doorClose", NetAudio.SoundContext.NPC);
+                    Game1.currentLocation.playSound("doorClose", visitor.Position,null,SoundContext.NPC);
                 }
 
                 position.Y--;
@@ -130,12 +131,11 @@ namespace FarmVisitors
                 }
                 finally
                 {
-                    //Game1.drawDialogue(c, Values.GetRetireDialogue(c));
-                    Game1.drawDialogue(c, Values.GetDialogueType(c, DialogueType.Retiring));
+                    DrawDialogue(c, Values.GetDialogueType(c, DialogueType.Retiring));
                     ReturnToNormal(c, currentTime);
                     if (!inFarm)
                     {
-                        Game1.currentLocation.playSound("doorClose", NetAudio.SoundContext.NPC);
+                        Game1.currentLocation.playSound("doorClose",c.Position ,null,SoundContext.NPC);
                     }
                 }
             }
@@ -214,12 +214,12 @@ namespace FarmVisitors
                 {
                     if (!string.IsNullOrWhiteSpace(data.EntryQuestion))
                     {
-                        Game1.drawDialogue(npcv, data.EntryQuestion);
+                        DrawDialogue(npcv, data.EntryQuestion);
                     }
                     else
                     {
                         //Game1.drawDialogue(npcv, Values.GetIntroDialogue(npcv));
-                        Game1.drawDialogue(npcv, Values.GetDialogueType(npcv, DialogueType.Introduce));
+                        DrawDialogue(npcv, Values.GetDialogueType(npcv, DialogueType.Introduce));
                     }
                 }
                 var position = farmHouse.getEntryLocation();
@@ -253,7 +253,7 @@ namespace FarmVisitors
 
                 if (Game1.currentLocation == farmHouse)
                 {
-                    Game1.currentLocation.playSound("doorClose", NetAudio.SoundContext.NPC);
+                    Game1.currentLocation.playSound("doorClose",c.Position ,null,SoundContext.NPC);
                 }
 
                 position.Y--;
@@ -284,10 +284,10 @@ namespace FarmVisitors
                 }
                 finally
                 {
-                    Game1.drawDialogue(c, text);
+                    DrawDialogue(c, text);
 
                     ReturnToNormal(c, currentTime);
-                    Game1.currentLocation.playSound("doorClose", NetAudio.SoundContext.NPC);
+                    Game1.currentLocation.playSound("doorClose", c.Position ,null,SoundContext.NPC);
                 }
             }
             else
@@ -349,6 +349,20 @@ namespace FarmVisitors
         #endregion
 
         #region used by both
+
+        private static void DrawDialogue(NPC visitor, string text)
+        {
+            
+            //make stack since now it works like this
+            var intro = new Dialogue(visitor, null,
+                Values.GetDialogueType(visitor, DialogueType.Introduce));
+            var stack = new Stack<Dialogue>();
+            stack.Push(intro);
+            visitor.CurrentDialogue = stack;
+                    
+            //draw dialogue
+            Game1.drawDialogue(visitor);
+        }
         internal static void ReturnToNormal(NPC c, int currentTime)
         {
             //special NPCs (locked by conditions in game)
@@ -412,12 +426,8 @@ namespace FarmVisitors
                 {
                     c.InvalidateMasterSchedule();
 
-                    var sched = c.getSchedule(Game1.dayOfMonth);
-                    c.Schedule.Clear();
-                    foreach (KeyValuePair<int, SchedulePathDescription> pair in sched)
-                    {
-                        c.Schedule.Add(pair.Key, pair.Value);
-                    }
+                    var sched = c.TryLoadSchedule(c.dayScheduleName.Value);
+                    c.ignoreScheduleToday = false;
                 }
 
                 c.checkSchedule(currentTime);
