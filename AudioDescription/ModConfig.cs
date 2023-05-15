@@ -10,5 +10,6 @@
         public bool Environment { get; set; } = true;
         public bool ItemSounds { get; set; } = false;
         public bool FishingCatch { get; set; } = true;
+	public bool Minigames { get; set; } = false;
     }
 }

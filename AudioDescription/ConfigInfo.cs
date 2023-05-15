@@ -21,7 +21,7 @@ namespace AudioDescription
                 {
                     "doorClose",
                     "cricketsAmbient",
-                    //"boulderCrack",
+                    "boulderCrack",
                     "dropItemInWater",
                     "explosion",
                     "crafting",
@@ -33,7 +33,7 @@ namespace AudioDescription
                     "thunder",
                     "crickets",
                     "cavedrip",
-                    //"treethud",
+                    "treethud",
                     "treecrack",
                     "leafrustle",
                     "crystal",
@@ -58,8 +58,8 @@ namespace AudioDescription
                     "cameraNoise",
                     "mouseClick",
                     "whistle",
-                    "barrelBreak"
-
+                    "barrelBreak",
+                    "cracklingFire"
                 });
             }
 
@@ -97,7 +97,7 @@ namespace AudioDescription
                     "monsterdead",
                     "rockGolemSpawn",
                     "shadowpeep",
-                    //"batFlap",
+                    "batFlap",
                     "dustMeep",
                     "serpentDie",
                     "cacklingWitch"
@@ -162,6 +162,27 @@ namespace AudioDescription
                 });
             }
 
+            if (ModEntry.Config.Minigames)
+            {
+                ModEntry.AllowedCues?.AddRange(new List<string>
+                {
+                    "Cowboy_Secret",
+                    "Cowboy_monsterDie",
+                    "Cowboy_monsterDie",
+                    "Cowboy_gunshot",
+                    "cowboy_dead",
+                    "Cowboy_Footstep",
+                    "Cowboy_undead",
+                    "cowboy_powerup",
+                    "cowboy_gunload",
+                    "Pickup_Coin15",
+                    "cowboy_monsterhit",
+                    "cowboy_gopher",
+                    "cowboy_explosion"
+
+                });
+            }
+
             if (!string.IsNullOrWhitespace(ModEntry.Config.Blacklist))
             {
                 var cleanlist = ParseBlackList();
@@ -173,17 +194,17 @@ namespace AudioDescription
 
             internal static List<string> ParseBlackList(string which)
             {
-                this.Monitor.Log("Getting raw blacklist.");
+                ModEntry.Mon.Log("Getting raw blacklist.");
                 BlacklistRaw = ModEntry.Config.Blacklist;
                 if (BlacklistRaw is null)
                 {
-                    this.Monitor.Log("No characters in blacklist.");
+                    ModEntry.Mon.Log("No characters in blacklist.");
                 }
 
                 var charsToRemove = new string[] { "-", ",", ".", ";", "\"", "\'", "/" };
                 foreach (var c in charsToRemove)
                 {
-                    BlacklistRaw = BlacklistRaw.Replace(c, string.Empty);
+                    BlacklistRaw = BlacklistRaw.Replace(c, ' '); //string.Empty erased them. this ensures they still have a separator
                 }
                 if (ModEntry.Config.Verbose)
                 {

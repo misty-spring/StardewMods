@@ -84,6 +84,8 @@ namespace AudioDescription
 
         private void OnGameStart(object sender, GameLaunchedEventArgs e)
         {
+            HasDailyPlanner = ModEntry.Help.ModRegistry.Get("MevNav.DailyPlanner") != null;
+
             var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
             if (configMenu is null)
                 return;
@@ -146,6 +148,13 @@ namespace AudioDescription
                 tooltip: () => this.Helper.Translation.Get("config.Fishing.description"),
                 getValue: () => Config.FishingCatch,
                 setValue: value => Config.FishingCatch = value
+            );
+            configMenu.AddBoolOption(
+                mod: this.ModManifest,
+                name: () => this.Helper.Translation.Get("config.Minigames.name"),
+                tooltip: () => this.Helper.Translation.Get("config.Minigames.description"),
+                getValue: () => Config.Minigames,
+                setValue: value => Config.Minigames = value
             );
         }
     }
