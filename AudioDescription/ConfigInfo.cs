@@ -2,10 +2,12 @@
 using StardewModdingAPI.Events;
 using StardewValley;
 using System.Collections.Generic;
+using System.Linq;
+using StardewModdingAPI;
 
 namespace AudioDescription
 {
-    internal class ConfigInfo
+    internal static class ConfigInfo
     {
         internal static void SaveLoaded(object sender, SaveLoadedEventArgs e)
         {
@@ -63,7 +65,7 @@ namespace AudioDescription
                 });
             }
 
-            if (ModEntry.Config.NPCs)
+            if (ModEntry.Config.NpCs)
             {
                 ModEntry.AllowedCues?.AddRange(new List<string>
                 {
@@ -168,7 +170,6 @@ namespace AudioDescription
                 {
                     "Cowboy_Secret",
                     "Cowboy_monsterDie",
-                    "Cowboy_monsterDie",
                     "Cowboy_gunshot",
                     "cowboy_dead",
                     "Cowboy_Footstep",
@@ -183,37 +184,33 @@ namespace AudioDescription
                 });
             }
 
-            if (!string.IsNullOrWhitespace(ModEntry.Config.Blacklist))
+            if (string.IsNullOrWhiteSpace(ModEntry.Config.Blacklist)) return;
+            
+            var cleanlist = ParseBlackList();
+            foreach (var sound in cleanlist)
             {
-                var cleanlist = ParseBlackList();
-                foreach(var sound in cleanlist)
-                {
-                    ModEntry.AllowedCues?.Remove(sound);
-                }
+                ModEntry.AllowedCues?.Remove(sound);
+            }
+        }
+
+        private static List<string> ParseBlackList()
+        {
+            ModEntry.Mon.Log("Getting raw blacklist.");
+            var blacklistRaw = ModEntry.Config.Blacklist;
+            if (blacklistRaw is null)
+            {
+                ModEntry.Mon.Log("No characters in blacklist.");
             }
 
-            internal static List<string> ParseBlackList(string which)
+            var charsToRemove = new string[] { "-", ",", ".", ";", "\"", "\'", "/" };
+            foreach (var c in charsToRemove)
             {
-                ModEntry.Mon.Log("Getting raw blacklist.");
-                BlacklistRaw = ModEntry.Config.Blacklist;
-                if (BlacklistRaw is null)
-                {
-                    ModEntry.Mon.Log("No characters in blacklist.");
-                }
-
-                var charsToRemove = new string[] { "-", ",", ".", ";", "\"", "\'", "/" };
-                foreach (var c in charsToRemove)
-                {
-                    BlacklistRaw = BlacklistRaw.Replace(c, ' '); //string.Empty erased them. this ensures they still have a separator
-                }
-                if (ModEntry.Config.Verbose)
-                {
-                    Monitor.Log($"Raw blacklist: \n {BlacklistRaw} \nWill be parsed to list now.", LogLevel.Debug);
-                }
-                var BlacklistParsed = BlacklistRaw.Split(' ').ToList();
-
-                return BlacklistParsed;
+                blacklistRaw = blacklistRaw?.Replace(c," "); //string.Empty erased them. this ensures they still have a separator
             }
+            ModEntry.Mon.Log($"Raw blacklist: \n {blacklistRaw} \nWill be parsed to list now.", LogLevel.Debug);
+            var blacklistParsed = blacklistRaw?.Split(' ').ToList();
+
+            return blacklistParsed;
         }
     }
 }
