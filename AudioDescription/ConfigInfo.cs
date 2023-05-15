@@ -65,7 +65,7 @@ namespace AudioDescription
                 });
             }
 
-            if (ModEntry.Config.NpCs)
+            if (ModEntry.Config.NPCs)
             {
                 ModEntry.AllowedCues?.AddRange(new List<string>
                 {

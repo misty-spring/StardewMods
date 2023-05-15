@@ -8,7 +8,7 @@
 		public int YOffset { get; set; } = 0;
 		public int XOffset { get; set; } = 0;
         public bool PlayerSounds { get; set; } = false;
-        public bool NpCs { get; set; } = true;
+        public bool NPCs { get; set; } = true;
         public bool Environment { get; set; } = true;
         public bool ItemSounds { get; set; } = false;
         public bool FishingCatch { get; set; } = true;

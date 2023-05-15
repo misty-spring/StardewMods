@@ -155,8 +155,8 @@ namespace AudioDescription
                 mod: this.ModManifest,
                 name: () => this.Helper.Translation.Get("config.NPCs.name"),
                 tooltip: () => this.Helper.Translation.Get("config.NPCs.description"),
-                getValue: () => Config.NpCs,
-                setValue: value => Config.NpCs = value
+                getValue: () => Config.NPCs,
+                setValue: value => Config.NPCs = value
             );
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
