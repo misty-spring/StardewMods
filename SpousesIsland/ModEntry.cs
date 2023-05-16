@@ -19,7 +19,7 @@ namespace SpousesIsland
             helper.Events.GameLoop.GameLaunched += this.OnGameLaunched;
             helper.Events.Content.AssetRequested += this.OnAssetRequested;
 
-            //changes mod info (and npcs)
+            //changes mod info (and NPCs)
             helper.Events.GameLoop.DayStarted += Changes.DayStart;
             helper.Events.GameLoop.DayEnding += this.OnDayEnding;
             helper.Events.GameLoop.ReturnedToTitle += this.TitleReturn;
@@ -29,8 +29,7 @@ namespace SpousesIsland
             helper.Events.GameLoop.UpdateTicked += Changes.UpdateTicked;
 
             //gets user data
-            helper.Events.Multiplayer.PeerContextReceived += PeerContextReceived;
-            helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
+            helper.Events.GameLoop.SaveLoaded += SaveLoaded;
 
             this.Config = this.Helper.ReadConfig<ModConfig>();
 
@@ -58,6 +57,44 @@ namespace SpousesIsland
                 original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.tryToReceiveActiveObject)),
                 prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.tryToReceiveTicket))
                 );
+        }
+
+        private void SaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            LoadedBasicData = true;
+
+            //try to read file from moddata. if empty, check mail
+            //read here. 
+            ReadModData(Game1.player);
+
+            //now get user data
+            var boatFix = Game1.player?.mailReceived?.Contains("willyBoatFixed");
+            BoatFixed = boatFix ?? false;
+            this.Monitor.Log($"BoatFixed = {BoatFixed};", LogLevel.Debug);
+
+            IslandHouse = Game1.player?.mailReceived?.Contains("Island_UpgradeHouse") ?? false;
+
+            var married = Values.GetAllSpouses(Game1.player);
+            foreach (var name in married)
+            {
+                this.Monitor.Log($"Checking NPC {name}...", IsDebug ? LogLevel.Debug : LogLevel.Trace); //log to debug or trace depending on config
+
+                if (!Values.IntegratedAndEnabled(name, Config)) continue;
+                
+                MarriedAndAllowed.Add(name);
+                this.Monitor.Log($"{name} is married to player.", LogLevel.Debug);
+            }
+            //e
+            Children = Information.PlayerChildren(Game1.player);
+            
+            MustPatchPF = Information.PlayerSpouses(Player_MP_ID); //add all spouses
+            
+            if (!InstalledMods["C2N"] && !InstalledMods["LPNCs"])
+                return;
+            foreach(var kid in Children)
+            {
+                MustPatchPF.Add(kid.Name);
+            }
         }
 
         //these add and/or depend on config
@@ -104,7 +141,7 @@ namespace SpousesIsland
                         return Information.PlayerSpouses(Player_MP_ID);
                     //if ticket island
                     else if (IsFromTicket && LoadedBasicData)
-                        return Status[Player_MP_ID].Who.ToArray();
+                        return Status.Who.ToArray();
                     else
                         return new string[] { "none" };
                 });
@@ -537,48 +574,10 @@ namespace SpousesIsland
                     e.LoadFrom(
                         () => new Dictionary<string, string>(),
                         AssetLoadPriority.Low);
-                }
-                    Integrated.KidSchedules(e);
+                } 
+                Integrated.KidSchedules(e);
             }
         }
-
-        change loadstage to saveloaded and use daystarted OK?
-        //if SP, loadstagechanged will obtain required data. if MP, peercontext will.
-        private void LoadStageChanged(object sender, LoadStageChangedEventArgs e)
-        {
-            if (e.NewStage == LoadStage.SaveLoadedBasicInfo)
-            {
-                GetRequiredData(Game1.MasterPlayer);
-            }
-            if(e.NewStage == LoadStage.Ready)
-            {
-                //get kids
-                Children = Information.PlayerChildren(Game1.player);
-                //get for patching
-                MustPatchPF = Information.PlayerSpouses(Player_MP_ID); //add all spouses
-                if (!InstalledMods["C2N"] && !InstalledMods["LPNCs"])
-                    return;
-                foreach(var kid in Children)
-                {
-                    MustPatchPF.Add(kid.Name);
-                }
-            }
-        }
-        private void PeerContextReceived(object sender, PeerContextReceivedEventArgs e)
-        {
-            var PID = e.Peer?.PlayerID ?? 0; //set in a variable just in case
-
-            var newFarmer = Game1.getFarmer(PID);
-
-            if (!newFarmer.IsLocalPlayer)
-            {
-                return;
-            }
-
-            GetRequiredData(newFarmer);
-        }
-
-        //these happen regardless of SP/MP
         private void OnDayEnding(object sender, DayEndingEventArgs e)
         {
             //get new %
@@ -593,7 +592,7 @@ namespace SpousesIsland
              * if island yesterday AND not today (or viceversa).*/
             if (IslandToday && !hadYesterday || hadYesterday && RandomizedInt > Config.CustomChance)
             {
-                foreach (var spouse in Status[Player_MP_ID].Who)
+                foreach (var spouse in Status.Who)
                 {
                     //invalidate schedule, portrait AND dialogue
                     Helper.GameContent.InvalidateCache($"Characters/schedules/{spouse}");
@@ -615,8 +614,8 @@ namespace SpousesIsland
             }
 
             //if flag is set in status
-            var ticketday = Status[Player_MP_ID].DayVisit;
-            var ticketweek = Status[Player_MP_ID].WeekVisit.Item1;
+            var ticketday = Status.DayVisit;
+            var ticketweek = Status.WeekVisit.Item1;
 
             //if player used a visit ticket
             if (ticketday || ticketweek)
@@ -628,25 +627,22 @@ namespace SpousesIsland
                 //remove flags
                 Game1.player.RemoveMail("VisitTicket_day");
 
-                //get id + set them in mod file. ticketday set to true for future loading
-                var playerID = Game1.player.UniqueMultiplayerID.ToString();
-
-                Status[playerID].DayVisit = ticketday;
-                Status[playerID].WeekVisit = (ticketweek, Status[playerID]?.WeekVisit.Item2 ?? 0);
+                Status.DayVisit = ticketday;
+                Status.WeekVisit = (ticketweek, Status?.WeekVisit.Item2 ?? 0);
 
 
                 //if true, check int value. if 7, reset. else, add 1
-                var week = Status[playerID].WeekVisit;
+                var week = Status.WeekVisit;
                 if (week.Item1)
                 {
                     if(week.Item2 == 7)
                     {
                         Game1.player.RemoveMail("VisitTicket_week");
-                        Status[playerID].WeekVisit = (false, 0);
+                        Status.WeekVisit = (false, 0);
                     }
                     else
                     {
-                        Status[playerID].WeekVisit = (true, week.Item2 + 1);
+                        Status.WeekVisit = (true, week.Item2 + 1);
                     }
                 }
             }
@@ -654,12 +650,12 @@ namespace SpousesIsland
             else
             {
                 //clear inviteds list
-                Status[Player_MP_ID].Who.Clear();
+                Status.Who.Clear();
 
                 //if still island
                 if (IslandToday)
                 {
-                    Status[Player_MP_ID].Who = Information.PlayerSpouses(Player_MP_ID);
+                    Status.Who = Information.PlayerSpouses(Game1.player);
                 }
             }
 
@@ -667,27 +663,12 @@ namespace SpousesIsland
 
              * check if theres other savedata(s), and include accordingly
              */
-            var file = Helper.Data.ReadJsonFile<Dictionary<string, ModStatus>>("moddata.json");
 
-            //remove user outdated info
-            file?.Remove(Player_MP_ID);
-            var allStatuses = Status;
-
-            //if theres data of other savefiles
-            if (file != null && file?.Count != 0)
-            {
-                //add each one
-                foreach (var data in file)
-                {
-                    allStatuses.TryAdd(data.Key, data.Value);
-                }
-            }
-
-            this.Helper.Data.WriteJsonFile("moddata.json", allStatuses);
+            this.Helper.Data.WriteJsonFile(Datapath, Status);
 
             //remove the values from status
             //(only do for day, week has its own thing).
-            Status[Player_MP_ID].DayVisit = false;
+            Status.DayVisit = false;
 
             Children = Information.PlayerChildren(Game1.player);
             //get for patching
@@ -724,83 +705,46 @@ namespace SpousesIsland
 
             this.Monitor.Log("SawDevan4H = false; CCC = false; RandomizedInt = 0;");
         }
-        private void GetRequiredData(Farmer player)
-        {
-            CanRandomize = Config.ScheduleRandom;
 
-            IslandAtt = Config.IslandClothes;
-
-            //set for using in Integrated.cs
-            Player_MP_ID = player.UniqueMultiplayerID.ToString();
-            LoadedBasicData = true;
-
-            //try to read file from moddata. if empty, check mail
-            //read here. 
-            ReadModData(player);
-
-            //now get user data
-            var boatFix = player?.mailReceived?.Contains("willyBoatFixed");
-            BoatFixed = boatFix ?? false;
-            this.Monitor.Log($"BoatFixed = {BoatFixed};", LogLevel.Debug);
-
-            IslandHouse = player?.mailReceived?.Contains("Island_UpgradeHouse") ?? false;
-
-            var married = Values.GetAllSpouses(player);
-            foreach (var name in married)
-            {
-                this.Monitor.Log($"Checking NPC {name}...", IsDebug ? LogLevel.Debug : LogLevel.Trace); //log to debug or trace depending on config
-
-                if (Values.IntegratedAndEnabled(name, Config))
-                {
-                    MarriedAndAllowed.Add(name);
-                    this.Monitor.Log($"{name} is married to player.", LogLevel.Debug);
-                }
-            }
-        }
         private void ReadModData(Farmer player)
         {
-            DevanExists = Config.NPCDevan;
+            DevanExists = Config.NPCDevan || InstalledMods["Devan"];
 
-            var userID = player.UniqueMultiplayerID.ToString(); //userID causes a NRE, use MP id. 
-            var file = Helper.Data.ReadJsonFile<Dictionary<string, ModStatus>>("moddata.json");
+            var file = Helper.Data.ReadJsonFile<ModStatus>(Datapath);
             if(file == null)
             {
-                Status.Add(userID, new ModStatus(player, IslandToday)); 
+                Status = new ModStatus(player, IslandToday); 
             }
-            else if (file.Keys.Any(id => id == userID))
+            else
             {
-                if (file[userID].DayVisit)
+                if (file.DayVisit)
                 {
                     //set to true n remove
                     IsFromTicket = true;
                     IslandToday = true;
                     RandomizedInt = 0;
-                    file[userID].DayVisit = false;
+                    file.DayVisit = false;
                 }
-                if (file[userID].WeekVisit.Item1)
+                if (file.WeekVisit.Item1)
                 {
-                    var wv = file[userID].WeekVisit;
+                    var wv = file.WeekVisit;
                     //check value
                     if (wv.Item2 == 7)
                     {
-                        file[userID].WeekVisit = (false, 0);
+                        file.WeekVisit = (false, 0);
                     }
                     else
                     {
                         IsFromTicket = true;
                         IslandToday = true;
                         RandomizedInt = 0;
-                        file[userID].WeekVisit = (true, wv.Item2 + 1);
+                        file.WeekVisit = (true, wv.Item2 + 1);
                     }
                 }
                 else
                 {
                     Status = file;
                 }
-            }
-            else
-            {
-                Status.Add(userID, new ModStatus(player, IslandToday));
             }
         }
 
@@ -842,18 +786,20 @@ namespace SpousesIsland
         internal static bool BoatFixed;
         internal static bool IslandHouse = false;
         
-        internal static Dictionary<string,bool> InstalledMods = new{
+        internal static Dictionary<string,bool> InstalledMods = new(){
             {"SVE",false},
             {"C2N",false},
             {"LPNCs",false},
             {"ExGIM",false},
             {"Devan",false}
         };
-        
+
+        private static string Datapath => Context.IsWorldReady ? $"{Constants.CurrentSavePath}/SGI/data.json" : null;
+
         internal static bool notfurniture;
         internal static bool DevanExists;
         internal static List<string> MustPatchPF { get; set; } = new();
 
-        internal static Dictionary<string, ModStatus> Status { get; private set; } = new();
+        internal static ModStatus Status { get; private set; }
     }
 }
