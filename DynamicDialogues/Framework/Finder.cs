@@ -32,11 +32,11 @@ namespace DynamicDialogues.Framework
                 {
                     var directions = obj.Split(' ');
 
-                    var itemId = directions[2]; //int.Parse deprecated
+                    var itemId = int.Parse(directions[2]); //int.Parse deprecated
                     var x = int.Parse(directions[0]);
                     var y = int.Parse(directions[1]);
 
-                    var item = new StardewValley.Object(itemId,1);
+                    var item = new StardewValley.Object(new Vector2(x,y),itemId);
                     
                     //add directions[2] at x,y = directions[0],directions[1] in location
                     //it seems lightTexture holds the Texture2D.

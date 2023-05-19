@@ -1,5 +1,4 @@
-﻿
-namespace DynamicDialogues
+﻿namespace DynamicDialogues
 {
     internal class ModConfig
     {

@@ -14,6 +14,26 @@ namespace DynamicDialogues.Framework
         {
             if (e.NewTime % 30 == 0)
             {
+                foreach (var group in ModEntry.MissionData)
+                {
+                    var who = Game1.getCharacterFromName(group.Key);
+                    if (!(who.currentLocation.Name.Equals(Game1.player.currentLocation.Name)))
+                    {
+                        continue;
+                    }
+
+                    if (who.CurrentDialogue.Count == 0 && Game1.random.Next(100) <= ModEntry.Config.MissionChance && ModEntry.CurrentQuests.Contains(who.Name) == false)
+                    {
+                        var mission = RandomMission(group.Value);
+
+                        if (mission is null)
+                        {
+                            continue;
+                        }
+
+                        Game1.player.currentLocation.createQuestionDialogue(mission.Dialogue, GetResponses(mission), new GameLocation.afterQuestionBehavior(AddMission), who);
+                    }
+                }
                 foreach (var name in ModEntry.RandomPool?.Keys)
                 {
                     var who = Game1.getCharacterFromName(name);
@@ -62,13 +82,14 @@ namespace DynamicDialogues.Framework
 
                     var inLocation = InRequiredLocation(chara, d.Location);
                     var timeMatch = InTimeRange(e.NewTime, d.Time, d.From, d.To, chara);
-
+                    var playerConditionsMatch = HasItems(d.PlayerItems);
+                    
                     if (ModEntry.Config.Debug)
                     {
                         ModEntry.Mon.Log($" inLocation = {inLocation}; timeMatch = {timeMatch}");
                     }
 
-                    if (timeMatch && inLocation)
+                    if (timeMatch && inLocation && playerConditionsMatch)
                     {
                         if (ModEntry.Config.Verbose)
                         {
@@ -207,19 +228,16 @@ namespace DynamicDialogues.Framework
             }
             foreach (var NaQ in ModEntry.Questions)
             {
-                NPC chara = Game1.getCharacterFromName(NaQ.Key);
-                if (!chara.CurrentDialogue.Any())
+                var chara = Game1.getCharacterFromName(NaQ.Key);
+                if (chara.CurrentDialogue.Any()) continue;
+                var qna = QuestionDialogue(NaQ.Value, chara);
+                if (qna is "$y '...'")
                 {
-                    var qna = QuestionDialogue(NaQ.Value, chara);
-                    if (qna is "$qna#")//old: "$y '...'")
-                    {
-                        continue;
-                    }
-
-                    //use a method in "getter" that returns the proper string by giving it NaQ.Value - 
-                    //old: chara.setNewDialogue(qna, true, true);
-                    chara.setNewDialogue(new QuestionData(chara, qna));
+                    continue;
                 }
+
+                //use a method in "getter" that returns the proper string by giving it NaQ.Value - 
+                chara.setNewDialogue(qna, true, true);
             }
         }
 
@@ -236,7 +254,7 @@ namespace DynamicDialogues.Framework
             }*/
 
             //each NPC file
-            foreach (var name in ModEntry.NPCDispositions) //NPCsToPatch
+            foreach (var name in ModEntry.PatchableNPCs) //NPCsToPatch
             {
                 //dialogue
                 if (e.NameWithoutLocale.IsEquivalentTo($"mistyspring.dynamicdialogues/Dialogues/{name}", true))
@@ -256,14 +274,14 @@ namespace DynamicDialogues.Framework
                 );
                 }
 
-                /*//mission/quests - deprecated (can be used from Questions)
+                
                 if (e.NameWithoutLocale.IsEquivalentTo($"mistyspring.dynamicdialogues/Quests/{name}"))
                 {
                     e.LoadFrom(
                     () => new Dictionary<string, RawMission>(),
                     AssetLoadPriority.Low
                     );
-                }*/
+                }
             }
 
             //greetings

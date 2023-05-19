@@ -76,7 +76,6 @@ namespace DynamicDialogues.Framework
             var result = "$qna#";
             var questions = "";
             var answers = "";
-            var missions = "";
 
             foreach(var extra in QAs)
             {
@@ -105,7 +104,6 @@ namespace DynamicDialogues.Framework
                     {
                         questions += $"{extra.Question}_";
                         answers += $"{extra.Answer}_";
-                        missions += $"{extra.QuestToStart ?? "none"}_";
                         ModEntry.QuestionCounter[extra.Question]++;
                     }
                 }
@@ -113,7 +111,6 @@ namespace DynamicDialogues.Framework
                 {
                     questions += $"{extra.Question}_";
                     answers += $"{extra.Answer}_";
-                    missions += $"{extra.QuestToStart ?? "none"}_";
                 }
             }
             
@@ -122,18 +119,14 @@ namespace DynamicDialogues.Framework
             {
                 var q = new StringBuilder(questions);
                 var a = new StringBuilder(answers);
-                var m = new StringBuilder(missions);
-                //q.Remove(q.Length, 0);
                 q[questions.Length - 1] = Convert.ToChar(""); //will this work?
                 a[questions.Length - 1] = Convert.ToChar("");
-                m[questions.Length - 1] = Convert.ToChar("");
 
                 questions = q.ToString();
                 answers = a.ToString();
-                missions = m.ToString();
             }
 
-            result += $"{questions}#{answers}#{missions}"; //changed ¬ to #
+            result += $"{questions}#{answers}";
 
             return result;
         }
@@ -184,8 +177,6 @@ namespace DynamicDialogues.Framework
             return data[index];
         }
         
-        /*
-         * deprecated in uhh check later
         /// <summary>
         /// Return a formatted question, which uses a random RawMission from a list.
         /// </summary>
@@ -281,7 +272,7 @@ namespace DynamicDialogues.Framework
                 //if parsed correctly, add quest to player
                 who.addQuest(numOnly);
             }
-        }*/
+        }
         
         /// <summary>
         /// Return the index in a dictionary.

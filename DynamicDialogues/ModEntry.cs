@@ -9,6 +9,7 @@ using static DynamicDialogues.Framework.Getter;
 using DynamicDialogues.Framework;
 using System.Linq;
 using System.Reflection;
+
 // ReSharper disable All
 
 namespace DynamicDialogues
@@ -43,10 +44,16 @@ namespace DynamicDialogues
                 prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.SayHiTo_Prefix))
                 );
             
-            this.Monitor.Log($"Applying Harmony patch \"{nameof(Patches)}\": prefixing SDV method \"NPC.tryToReceiveActiveObject(Farmer who)\".");
+            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"NPC.tryToReceiveActiveObject(Farmer who)\".");
             harmony.Patch(
                 original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.tryToReceiveActiveObject)),
-                prefix: new HarmonyMethod(typeof(Patches), nameof(ModPatches.TryToReceiveItem))
+                prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.TryToReceiveItem))
+            );
+            
+            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"Dialogue.prepareDialogueForDisplay()\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.prepareDialogueForDisplay)),
+                prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.PrefixCurrentDialogueForDisplay))
             );
         }
 
@@ -69,11 +76,11 @@ namespace DynamicDialogues
                 this.Monitor.Log("SpaceCore not detected, adding event command manually.", LogLevel.Info);
 
                 var harmony = new Harmony(this.ModManifest.UniqueID);
-                this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"Event.tryEventCommand(GameLocation location, GameTime time, string[] split)\".");
+                this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"Event.tryEventCommand(GameLocation location, GameTime time, string[] args)\".");
 
                 harmony.Patch(
                     original: AccessTools.Method(typeof(StardewValley.Event), nameof(StardewValley.Event.tryEventCommand)),
-                    prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.PrefixTryGetCommand))
+                    prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.PrefixTryGetCommandH))
                     );
             }
 
@@ -81,12 +88,12 @@ namespace DynamicDialogues
 
         private void SaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            var allNPCs = this.Helper.GameContent.Load<Dictionary<string, string>>("Data\\NPCDispositions");
-            NPCDispositions = allNPCs.Keys.ToList();
+            var allNPCs = this.Helper.GameContent.Load<Dictionary<string, string>>("Data\\Characters");
+            var NPCDispositions = allNPCs.Keys.ToList().Count;
 
             // For each string: Check if npc has been met, to not cause errors with locked/unmet NPCs.
             GetFriendedNPCs();
-            this.Monitor.Log($"Found {NPCDispositions?.Count ?? 0} characters in NPC dispositions.");
+            this.Monitor.Log($"Found {NPCDispositions} characters in Data\\Characters.");
             this.Monitor.Log($"Found {PatchableNPCs?.Count ?? 0} characters in friendship data.");
         }
 
@@ -114,6 +121,12 @@ namespace DynamicDialogues
                 //get questions
                 var QRaw = Game1.content.Load<Dictionary<string, RawQuestions>>($"mistyspring.dynamicdialogues/Questions/{name}");
                 GetQuestions(QRaw, name);
+                
+                //get missions
+                var missionRaw = Game1.content.Load<Dictionary<string, RawMission>>($"mistyspring.dynamicdialogues/Quests/{name}");
+                GetMissions(missionRaw, name);
+
+                HasCustomDialogue(name);
             }
 
             var dc = Dialogues?.Count ?? 0;
@@ -145,10 +158,9 @@ namespace DynamicDialogues
         private void OnTitleReturn(object sender, ReturnedToTitleEventArgs e)
         {
             ClearTemp();
-            NPCDispositions?.Clear();
         }
 
-        #region get data
+        #region methods to get data
         /* Methods used to get dialogues 
          * do NOT change unless bug-fixing is required
          */
@@ -232,6 +244,8 @@ namespace DynamicDialogues
         }
         private void GetQuestions(Dictionary<string, RawQuestions> QRaw, string nameof)
         {
+            Questions?.Clear();
+            
             foreach (var extra in QRaw)
             {
                 var title = extra.Key;
@@ -256,73 +270,138 @@ namespace DynamicDialogues
                 }
             }
         }
-        private void GetDialoguePool()
+        private void GetMissions(Dictionary<string, RawMission> data, string who)
         {
-            foreach(var name in NPCDispositions)
+            this.Monitor.Log($"Checking {who} quests...");
+            foreach(var group in data)
             {
-                if(Game1.player.friendshipData.ContainsKey(name))
+                var mission = group.Value;
+
+                //if any of the values aren't valid, give error and continue
+                if (string.IsNullOrWhiteSpace(mission.Dialogue))
                 {
-                    if(Config.Verbose)
-                    {
-                        this.Monitor.Log($"Character {name} found.");
-                    }
-
-                    var dialogues = Helper.GameContent.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
-
-                    if (dialogues == null || dialogues.Count == 0)
-                        continue;
-
-                    List<string> texts = new();
-
-                    foreach (var pair in dialogues)
-                    {
-                        if(pair.Key.StartsWith("Random"))
-                        {
-                            texts.Add(pair.Value);
-                        }
-                    }
-
-                    //dont add npcs with no dialogue
-                    if (texts == null || texts.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    RandomPool.Add(name, texts);
+                    this.Monitor.Log($"Quest dialogue for {group.Key} is empty! It won't be added.",LogLevel.Error);
+                    continue;
                 }
+                if (mission.From < 600 || mission.To > 2600 || mission.From > mission.To)
+                {
+                    this.Monitor.Log($"Time in quest '{group.Key}' has a faulty hour! Make sure it's between 600 and 2600", LogLevel.Error);
+                    continue;
+                }
+                if (mission.Location is not "any")
+                {
+                    if (Game1.getLocationFromName(mission.Location) == null)
+                    {
+                        this.Monitor.Log($"Location for quest '{group.Key}' could not be found. Mission won't be added.", LogLevel.Error);
+                        continue;
+                    }
+                }
+                if (StardewValley.Quests.Quest.getQuestFromId(mission.ID) == null)
+                {
+                    this.Monitor.Log($"ID for '{group.Key}' doesn't exist!", LogLevel.Error);
+                    continue;
+                }
+
+                var ParsedMission = mission;
+
+                //if using the default answers and not playing in english
+                if(mission.AcceptQuest.Equals("Yes") && mission.RejectQuest.Equals("No") && LocalizedContentManager.CurrentLanguageCode is not LocalizedContentManager.LanguageCode.en)
+                {
+                    try
+                    {
+                        //get the yes/no for native language and use them here
+                        var yes = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_Yes");
+                        var no = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_No");
+
+                        ParsedMission.AcceptQuest = yes;
+                        ParsedMission.RejectQuest = no;
+
+                    }
+                    catch(Exception ex)
+                    {
+                        this.Monitor.Log($"Error: {ex}",LogLevel.Error);
+                    }
+                }    
+
+                //if a list for npc already exists, just add value
+                if(MissionData.ContainsKey(who))
+                {
+                    MissionData[who].Add(ParsedMission);
+                }
+                //else, create it
                 else
                 {
-                    if (name == "Marlon")
-                        continue; //we dont warn bc hes not interactable
-
-                    this.Monitor.Log($"Character {name} hasn't been met yet. Their random dialogue will not be added.", LogLevel.Info);
+                    var list = new List<RawMission>();
+                    list.Add(ParsedMission);
+                    MissionData.Add(who, list);
                 }
             }
         }
+        private void GetDialoguePool()
+        {
+            foreach(var name in PatchableNPCs)
+            {
+                var dialogues = Helper.GameContent.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
 
+                if (dialogues == null || dialogues.Count == 0)
+                    continue;
+
+                List<string> texts = new();
+
+                foreach (var pair in dialogues)
+                {
+                    if(pair.Key.StartsWith("Random"))
+                    {
+                        texts.Add(pair.Value);
+                    }
+                }
+
+                //dont add npcs with no dialogue
+                if (texts == null || texts.Count == 0)
+                {
+                    continue;
+                }
+
+                RandomPool.Add(name, texts);
+            }
+        }
+
+        private static void HasCustomDialogue(string name)
+        {
+            var temp = new List<string>();
+            var lines = Game1.content.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
+            
+            foreach (var pair in lines)
+            {
+                if (pair.Value.StartsWith("Gift."))
+                {
+                    temp.Add(pair.Value);
+                }
+            }
+            
+            HasCustomGifting.Add(name,temp.ToArray());
+        }
         private void GetFriendedNPCs()
         {
-            /* we could use: 
-             * PatchableNPCs = Game1.player.friendshipData.Keys;
-             * However using netfields might cause more bugs. so we get it manually.
-             */
+            PatchableNPCs?.Clear();
 
-            foreach (var name in NPCDispositions)
+            foreach (var friend in Game1.player?.friendshipData.Pairs)
             {
+                var name = friend.Key;
                 if(Config.Debug)
                 {
                     this.Monitor.Log($"Checking {name}...");
                 }
+                PatchableNPCs.Add(name);
 
-                NPC npc = Game1.getCharacterFromName(name);
+            /*  NPC npc = Game1.getCharacterFromName(name);
                 if (npc is not null)
                 {
-                    PatchableNPCs.Add(name);
                 }
                 else if (Config.Verbose)
                 {
                     this.Monitor.Log($"NPC {name} doesn't exist in save yet.");
-                }
+                }*/
             }
         }
         private static void ClearTemp()
@@ -335,7 +414,8 @@ namespace DynamicDialogues
             PatchableNPCs?.Clear();
             QuestionCounter?.Clear();
             RandomPool?.Clear();
-            //CurrentQuests?.Clear();
+            HasCustomGifting?.Clear();
+            CurrentQuests?.Clear();
         }
 #endregion
         /* Required by mod to work */
@@ -345,13 +425,15 @@ namespace DynamicDialogues
         internal static Dictionary<(string, string), string> Greetings { get; private set; } = new();
         internal static List<RawNotifs> Notifs { get; private set; } = new();
         internal static Dictionary<string, List<string>> RandomPool { get; private set; } = new();
-        #endregion
         internal static Dictionary<string, int> QuestionCounter { get; set; } = new();
+        internal static Dictionary<string, List<RawMission>> MissionData { get; set; } = new();
+        internal static List<string> CurrentQuests { get; set; } = new();
+        #endregion
+        
         #region variable data
         internal static List<string> PatchableNPCs { get; private set; } = new();
-        internal static List<string> NPCDispositions { get; private set; } = new();
         internal static List<(string, string, string)> AlreadyPatched { get; set; } = new();
-        internal static Dictionary<string,string> CustomDialogues { get; set; } = new();
+        internal static Dictionary<string,string[]> HasCustomGifting { get; set; } = new();
         #endregion
 
         #region constants

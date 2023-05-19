@@ -1,8 +1,4 @@
-﻿using StardewModdingAPI;
-using StardewValley;
-using System;
-
-namespace DynamicDialogues.Framework
+﻿namespace DynamicDialogues.Framework
 {
 
     /// <summary>
@@ -124,7 +120,36 @@ namespace DynamicDialogues.Framework
             CanRepeatEvent = q.CanRepeatEvent;
         }
     }
+    internal class RawMission
+    {
+        public int From { get; set; } = 600; //from this hour
+        public int To { get; set; } = 2600; //until this hour
+        public string Location { get; set; } = "any";  //location npc has to be in
 
+        public string Dialogue { get; set; } = null;  //the dialogue
+        public string AcceptQuest { get; set; } = ModEntry.Yes;
+        public string RejectQuest { get; set; } = ModEntry.No;
+
+        public int ID { get; set; } = 0;
+
+        public RawMission()
+        {
+
+        }
+
+        public RawMission(RawMission rm)
+        {
+            From = rm.From;
+            To = rm.To;
+            Location = rm.Location;
+
+            Dialogue = rm.Dialogue;
+            AcceptQuest = rm.AcceptQuest;
+            RejectQuest = rm.RejectQuest;
+
+            ID = rm.ID;
+        }
+    }
     ///<summary>Class which holds animation information (if used for dialogues).</summary>
     internal class RawAnimation
     {
@@ -147,14 +172,14 @@ namespace DynamicDialogues.Framework
     ///<summary>Conditions for a dialogue to be added.</summary>
     internal class PlayerConditions
     {
-        public string Hat { get; set; } = null; // null means 'any'
-        public string Shirt { get; set; } = null; 
-        public string Pants { get; set; } = null; 
-        public string Rings { get; set; } = null; //Valid formats: "id", "id1 AND id2", "id1 OR id2"
+        public int Hat { get; set; } // null means 'any'
+        public int Shirt { get; set; }
+        public int Pants { get; set; } 
+        public string Rings { get; set; } //Valid formats: "id", "id1 AND id2", "id1 OR id2"
 
-        public string Inventory { get; set; } = null; // "↑"
+        public string Inventory { get; set; } // "↑"
 
-        public string GameQuery { get; set; } = null; //must be a game query. see https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Game_state_queries 
+        //public string GameQuery { get; set; } = null; //must be a game query. see https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Game_state_queries 
         
         public PlayerConditions()
         {
@@ -168,7 +193,6 @@ namespace DynamicDialogues.Framework
             Pants = p.Pants;
             Rings = p.Rings;
             Inventory = p.Inventory;
-            GameQuery = p.GameQuery;
         }
     }
 }
