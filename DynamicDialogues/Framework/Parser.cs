@@ -3,11 +3,138 @@ using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Object = StardewValley.Object;
 
 namespace DynamicDialogues.Framework
 {
     internal static class Parser
     {
+        /// <summary>
+        /// Checks if the conditions match to add a dialogue.
+        /// </summary>
+        /// <param name="which">The items the player must have.</param>
+        /// <returns></returns>
+        internal static bool HasItems(PlayerConditions which)
+        {
+            var hat = true;
+            var shirt = true;
+            var pants = true;
+            var rings = true;
+            var inv = true;
+            
+            if (!string.IsNullOrWhiteSpace(which.Hat))
+            {
+                hat = Game1.player.hat.Value.ItemId == which.Hat;
+            }
+            if (!string.IsNullOrWhiteSpace(which.Shirt))
+            {
+                shirt = Game1.player.shirtItem.Value.ItemId == which.Shirt;
+            }
+            if (!string.IsNullOrWhiteSpace(which.Pants))
+            {
+                pants = Game1.player.pantsItem.Value.ItemId == which.Pants;
+            }
+            if (!string.IsNullOrWhiteSpace(which.Rings))
+            {
+                rings = HasRings(which.Rings);
+            }
+            if (!string.IsNullOrWhiteSpace(which.Inventory))
+            {
+                inv = InInventory(which.Inventory);
+            }
+
+            return hat && shirt && pants && rings && inv;
+        }
+
+        /// <summary>
+        /// Returns if item(s) are in user's inventory.
+        /// </summary>
+        /// <param name="which">The item(s) to check.</param>
+        /// <returns></returns>
+        private static bool InInventory(string which)
+        {
+            //Game1.player.Items.Any(i => i.ItemId == which.Inventory)
+            //this assumes a format of "id AND id"
+            if (which.Contains("AND", StringComparison.Ordinal))
+            {
+                var items = which.Split(' ');
+                foreach (var id in items)
+                {
+                    if (id == "AND")
+                        continue;
+
+                    var has = Game1.player.Items.Any(i => i.ItemId == id);
+                    
+                    if (!has)
+                        return false;
+                }
+
+                return true;
+            }
+            //assumes format of "id OR id (...)"
+            else if(which.Contains("OR",StringComparison.Ordinal))
+            {
+                var items = which.Split(' ');
+                foreach (var id in items)
+                {
+                    if (id == "OR")
+                        continue;
+
+                    var has = Game1.player.Items.Any(i => i.ItemId == id);
+                    
+                    if (has)
+                        return true;
+                }
+
+                return false;
+            }
+            //assumes single ID
+            else
+            {
+                return Game1.player.Items.Any(i => i.ItemId == which);
+            }
+        }
+        
+        /// <summary>
+        /// Returns whether player is wearing a ring.
+        /// </summary>
+        /// <param name="which">Ring(s) to check for.</param>
+        /// <returns></returns>
+        private static bool HasRings(string which)
+        {
+            //this assumes a format of "id AND id"
+            if (which.Contains("AND", StringComparison.Ordinal))
+            {
+                var rings = which.Split(' ');
+                var ring1 = Game1.player.isWearingRing(rings[0]);
+                var ring2 = Game1.player.isWearingRing(rings[2]);
+
+                return ring1 && ring2;
+            }
+            //assumes format of "id OR id (...)"
+            else if(which.Contains("OR",StringComparison.Ordinal))
+            {
+                var rings = which.Split(' ');
+                foreach (var id in rings)
+                {
+                    if (id == "OR")
+                        continue;
+
+                    var isWearing = Game1.player.isWearingRing(id);
+                    
+                    if (isWearing)
+                        return true;
+                }
+
+                return false;
+            }
+            //assumes single ID
+            else
+            {
+                return Game1.player.isWearingRing(which);
+            }
+        }
+        
         /// <summary>
         /// If the NPC is in the required location, return true. Defaults to true if location is any/null.
         /// </summary>
@@ -32,13 +159,6 @@ namespace DynamicDialogues.Framework
             }
         }
 
-        internal static bool InRequiredLocation(string who, GameLocation place)
-        {
-            var npc = Game1.getCharacterFromName(who);
-            
-            return InRequiredLocation(npc,place.Name);
-        }
-        
         /// <summary>
         /// For validating user additions. Passes the values to another bool, then returns that result.
         /// </summary>
@@ -249,6 +369,11 @@ namespace DynamicDialogues.Framework
             return true;
         }
 
+        /// <summary>
+        /// Checks question's validity.
+        /// </summary>
+        /// <param name="q"></param>
+        /// <returns></returns>
         internal static bool IsValidQuestion(RawQuestions q)
         {
             if(String.IsNullOrWhiteSpace(q.Question))
