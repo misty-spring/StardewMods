@@ -60,7 +60,7 @@ namespace DynamicDialogues.Framework
                 var items = which.Split(' ');
                 foreach (var id in items)
                 {
-                    if (id == "AND")
+                    if (id == "AND" || string.IsNullOrWhiteSpace(id))
                         continue;
 
                     var has = Game1.player.Items.Any(i => i.ItemId == id);
@@ -77,7 +77,7 @@ namespace DynamicDialogues.Framework
                 var items = which.Split(' ');
                 foreach (var id in items)
                 {
-                    if (id == "OR")
+                    if (id == "OR" || string.IsNullOrWhiteSpace(id))
                         continue;
 
                     var has = Game1.player.Items.Any(i => i.ItemId == id);
@@ -117,7 +117,7 @@ namespace DynamicDialogues.Framework
                 var rings = which.Split(' ');
                 foreach (var id in rings)
                 {
-                    if (id == "OR")
+                    if (id == "OR" || string.IsNullOrWhiteSpace(id))
                         continue;
 
                     var isWearing = Game1.player.isWearingRing(id);
