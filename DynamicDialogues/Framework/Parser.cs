@@ -1,12 +1,12 @@
 ﻿using StardewValley;
 using StardewModdingAPI;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Object = StardewValley.Object;
 
 namespace DynamicDialogues.Framework
 {
+    [SuppressMessage("ReSharper", "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator")]
     internal static class Parser
     {
         /// <summary>
@@ -163,6 +163,7 @@ namespace DynamicDialogues.Framework
         /// For validating user additions. Passes the values to another bool, then returns that result.
         /// </summary>
         /// <param name="data">The raw dialogue data to check.</param>
+        /// <param name="who">The NPC to check for.</param>
         /// <returns></returns>
         internal static bool IsValid(RawDialogues data, string who) //rename to += dialogue
         {
@@ -171,7 +172,7 @@ namespace DynamicDialogues.Framework
                 var time = data.Time;
 
                 //check if text is bubble and if emotes are allowed. if so return false
-                if (data.IsBubble == true && data.Emote is not -1) //removed: "data.MakeEmote == true && "
+                if (data.IsBubble && data.Emote is not -1) //removed: "data.MakeEmote == true && "
                 {
                     ModEntry.Mon.Log("Configs \"IsBubble\" and \"Emote\" are mutually exclusive (the two can't be applied at the same time). Patch will not be loaded.", LogLevel.Error);
                     return false;
@@ -179,7 +180,7 @@ namespace DynamicDialogues.Framework
 
                 if (time > 0)
                 {
-                    if (time <= 600 || time >= 2600)
+                    if (time is <= 600 or >= 2600)
                     {
                         ModEntry.Mon.Log($"Addition has a faulty hour!", LogLevel.Warn);
                         return false;
@@ -198,26 +199,22 @@ namespace DynamicDialogues.Framework
                 }
 
                 //if set to change facing, check value. if less than 0 and bigger than 3 return false
-                if (!String.IsNullOrWhiteSpace(data.FaceDirection))
+                if (!string.IsNullOrWhiteSpace(data.FaceDirection))
                 {
                     var dir = Getter.ReturnFacing(data.FaceDirection);
-                    if (dir < 0 || dir > 3)
+                    if (dir is < 0 or > 3)
                     {
                         ModEntry.Mon.Log($"Addition has a faulty facedirection! Value must be between 0 and 3.", LogLevel.Warn);
                         return false;
                     }
                 }
 
-                if (ModEntry.Dialogues.TryGetValue(who, out var dialogue))
+                if (!ModEntry.Dialogues.TryGetValue(who, out var dialogue)) return true;
+                foreach(var addition in dialogue)
                 {
-                    foreach(var addition in dialogue)
-                    {
-                        if(addition.Time == data.Time && addition.Location.ToString() == data.Location)
-                        {
-                            ModEntry.Mon.Log($"An entry with the values Time={data.Time} and Location={data.Location} already exists. Skipping.", LogLevel.Warn);
-                            return false;
-                        }
-                    }
+                    if (addition.Time != data.Time || addition.Location != data.Location) continue;
+                    ModEntry.Mon.Log($"An entry with the values Time={data.Time} and Location={data.Location} already exists. Skipping.", LogLevel.Warn);
+                    return false;
                 }
 
                 return true;
@@ -279,13 +276,19 @@ namespace DynamicDialogues.Framework
         /// <returns></returns>
         internal static bool Exists(string who) //rename to CharacterExists
         {
-            return Exists(Game1.getCharacterFromName(who));
+            foreach (var name in Game1.player.friendshipData.Keys)
+            {
+                if (name.Equals(who))
+                    return true;
+            }
+
+            return false;
         }
         
         internal static bool Exists(NPC who)
         {
             var monitor = ModEntry.Mon;
-            var admitted = ModEntry.NPCDispositions;
+            var admitted = ModEntry.PatchableNPCs;
 
             if (who is null)
             {
@@ -294,14 +297,12 @@ namespace DynamicDialogues.Framework
                 return false;
             }
 
-            if (!admitted.Contains(who.Name))
-            {
-                monitor.Log($"NPC {who} is not in characters! Did you type their name correctly?", LogLevel.Warn);
-                monitor.Log($"NPC {who} seems to exist, but wasn't found in the list of admitted NPCs. This may occur if you haven't met them yet, or if they haven't been unlocked.");
-                return false;
-            }
+            if (admitted.Contains(who.Name)) return true;
+            
+            monitor.Log($"NPC {who} is not in characters! Did you type their name correctly?", LogLevel.Warn);
+            monitor.Log($"NPC {who} seems to exist, but wasn't found in the list of admitted NPCs. This may occur if you haven't met them yet, or if they haven't been unlocked.");
+            return false;
 
-            return true;
         }
        
         /// <summary>

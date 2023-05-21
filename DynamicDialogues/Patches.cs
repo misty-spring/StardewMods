@@ -2,16 +2,20 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
 using System;
-
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using StardewModdingAPI;
 
 namespace DynamicDialogues
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     internal class ModPatches
     {
         //for custom greetings
-        public static bool SayHiTo_Prefix(ref NPC instance, Character c)
+        [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
+        public static bool SayHiTo_Prefix(ref NPC __instance, Character c)
         {
-            var instancename = instance.Name;
+            var instancename = __instance.Name;
             var cname = (c as NPC).Name;
             var mainAndRef = (instancename, cname);
             var refAndMain = (cname, instancename);
@@ -22,58 +26,60 @@ namespace DynamicDialogues
                 if (ModEntry.Greetings.TryGetValue(mainAndRef, out var greeting))
                 {
                     //log, then use previous key to find value
-                    ModEntry.Mon.Log($"Found greeting patch for {instance.Name}");
-                    instance.showTextAboveHead(greeting);
+                    ModEntry.Mon.Log($"Found greeting patch for {__instance.Name}");
+                    __instance.showTextAboveHead(greeting);
 
                     //if that other npc has a key for thisnpc
-                    if (ModEntry.Greetings.TryGetValue(refAndMain, out var greeting1))
-                    {
-                        //same as before
-                        ModEntry.Mon.Log($"Found greeting patch for {(c as NPC).Name}");
-                        (c as NPC).showTextAboveHead(greeting1, Color.Black, 2, 3000, 1000 + Game1.random.Next(500));
-                    }
+                    if (!ModEntry.Greetings.TryGetValue(refAndMain, out var greeting1)) return false;
+                    //same as before
+                    ModEntry.Mon.Log($"Found greeting patch for {(c as NPC).Name}");
+                    (c as NPC).showTextAboveHead(greeting1, Color.Black, 2, 3000, 1000 + Game1.random.Next(500));
 
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                ModEntry.Mon.Log($"Error while applying patch: {ex}", StardewModdingAPI.LogLevel.Error);
+                ModEntry.Mon.Log($"Error while applying patch: {ex}", LogLevel.Error);
             }
 
             return true;
         }
 
         //for AddScene
-        internal static bool PrefixTryGetCommand(Event instance, GameLocation location, GameTime time, string[] split)
+        internal static bool PrefixTryGetCommandH(Event __instance, GameLocation location, GameTime time, string[] args) =>
+            PrefixTryGetCommand(__instance, location, time, args);
+
+        private static bool PrefixTryGetCommand(Event __instance, GameLocation location, GameTime time, string[] split)
         {
-            if (split.Length < 2) //scene has optional parameters, so its 2 OR more
+            if (split.Length <= 1) //scene has optional parameters, so its 2 OR more
             {
                 return true;
             }
             else if (split[0].Equals(ModEntry.AddScene, StringComparison.Ordinal))
             {
-                EventScene.Add(instance, location, time, split);
+                EventScene.Add(__instance, location, time, split);
                 return false;
             }
             else if (split[0].Equals(ModEntry.RemoveScene, StringComparison.Ordinal))
             {
-                EventScene.Remove(instance, location, time, split);
+                EventScene.Remove(__instance, location, time, split);
                 return false;
             }
             else if(split[0].Equals(ModEntry.PlayerFind, StringComparison.Ordinal))
             {
-                Finder.ObjectHunt(instance, location, time, split);
+                Finder.ObjectHunt(__instance, location, time, split);
                 return false;
             }
             return true;
         }
         
-        internal static bool TryToReceiveItem(ref NPC instance, Farmer who)
+        //for custom gifting dialogue
+        internal static bool TryToReceiveItem(ref NPC __instance, Farmer who)
         {
             var item = who.ActiveObject;
 
-            bool hasCustomDialogue = HasCustomDialogue(instance,item.QualifiedItemId);
+            var hasCustomDialogue = HasCustomDialogue(__instance,item.QualifiedItemId);
 
             if (!hasCustomDialogue)
             {
@@ -81,14 +87,15 @@ namespace DynamicDialogues
             }
             else
             {
-                instance.idk;
+                __instance.CurrentDialogue.Push(new Dialogue(__instance, $"Characters\\Dialogue\\{__instance.Name}:Gift.{item.QualifiedItemId}"));
+                
                 return false;
             }
         }
 
-        private static bool HasCustomDialogue(Character instance, string itemId)
+        private static bool HasCustomDialogue(Character __instance, string itemId)
         {
-            return ModEntry.CustomDialogues?[instance.Name].Contains(itemId);
+            return ModEntry.HasCustomGifting.ContainsKey(__instance.Name) && ModEntry.HasCustomGifting[__instance.Name].Contains(itemId);
         }
     }
 }

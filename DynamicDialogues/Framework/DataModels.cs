@@ -1,8 +1,4 @@
-﻿using StardewModdingAPI;
-using StardewValley;
-using System;
-
-namespace DynamicDialogues.Framework
+﻿namespace DynamicDialogues.Framework
 {
 
     /// <summary>
@@ -15,17 +11,17 @@ namespace DynamicDialogues.Framework
         public int To { get; set; } = 2600; //until this hour
         public string Location { get; set; } = "any";  //location npc has to be in
 
-        public string Dialogue { get; set; } = null;  //the dialogue
-        public bool ClearOnMove { get; set; } = false;  //if to clear dialogue on move
-        public bool Override { get; set; } = false;  //if to delete previous dialogues
+        public string Dialogue { get; set; } //the dialogue
+        public bool ClearOnMove { get; set; } //if to clear dialogue on move
+        public bool Override { get; set; } //if to delete previous dialogues
         public bool Immediate { get; set; } = false;  // will print dialogue right away if NPC is in location
         public bool Force { get; set; } = false;  // if Immediate, prints dialogue regardless of location
         //public bool ApplyWhenMoving { get; set; } = false;
 
-        public bool IsBubble { get; set; } = false; //show text overhead instead
+        public bool IsBubble { get; set; } //show text overhead instead
         
         public string FaceDirection { get; set; } //string to change facing to
-        public bool Jump { get; set; } = false; //makes npc jump when addition is placed
+        public bool Jump { get; set; } //makes npc jump when addition is placed
         public int Shake { get; set; } = -1; //shake for x milliseconds
         public int Emote { get; set; } = -1; //emote int (if allowed)
 
@@ -70,7 +66,7 @@ namespace DynamicDialogues.Framework
         //(Maybe?) string Icon { get; set; } = "; //icon
         //public int FadeOut { get; set; } = -1; //fadeout is auto set by game
         
-        public bool IsBox { get; set; } = false; //if box instead
+        public bool IsBox { get; set; } //if box instead
         public PlayerConditions PlayerItems { get; set; } = new PlayerConditions();
 
         public RawNotifs()
@@ -95,13 +91,13 @@ namespace DynamicDialogues.Framework
     {
         public string Question { get; set; }
         public string Answer { get; set; }
-        public int MaxTimesAsked { get; set; } = 0; //0 meaning forever avaiable
+        public int MaxTimesAsked { get; set; } //0 meaning forever avaiable
         public string Location { get; set; } = "any"; //if avaiable only in a specific location
         public int From { get; set; } = 610; //from this hour
         public int To { get; set; } = 2550; //until this hour
         //public string EventToStart { get; set; } = "none"; 1.6 allows events
         public string QuestToStart { get; set; } = "none";
-        public bool CanRepeatEvent { get; set; } = false;
+        public bool CanRepeatEvent { get; set; }
         public PlayerConditions PlayerItems{ get; set; } = new PlayerConditions();
 
         public RawQuestions()
@@ -128,7 +124,7 @@ namespace DynamicDialogues.Framework
     ///<summary>Class which holds animation information (if used for dialogues).</summary>
     internal class RawAnimation
     {
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
         public string Frames { get; set; }
         public int Interval { get; set; } // milliseconds for each frame
 
@@ -147,14 +143,14 @@ namespace DynamicDialogues.Framework
     ///<summary>Conditions for a dialogue to be added.</summary>
     internal class PlayerConditions
     {
-        public string Hat { get; set; } = null; // null means 'any'
-        public string Shirt { get; set; } = null; 
-        public string Pants { get; set; } = null; 
-        public string Rings { get; set; } = null; //Valid formats: "id", "id1 AND id2", "id1 OR id2"
+        public string Hat { get; set; } // null means 'any'
+        public string Shirt { get; set; } 
+        public string Pants { get; set; } 
+        public string Rings { get; set; } //Valid formats: "id", "id1 AND id2", "id1 OR id2"
 
-        public string Inventory { get; set; } = null; // "↑"
+        public string Inventory { get; set; } // "↑"
 
-        public string GameQuery { get; set; } = null; //must be a game query. see https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Game_state_queries 
+        public string GameQuery { get; set; } //must be a game query. see https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Game_state_queries 
         
         public PlayerConditions()
         {

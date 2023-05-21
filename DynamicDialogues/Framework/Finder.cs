@@ -45,7 +45,7 @@ namespace DynamicDialogues.Framework
 
        			instance.festivalTimer = 52000;
 
-                instance.playerControlSequenceID = instance.id.ToString(); //placeholder, i don't remember what went here.
+                instance.playerControlSequenceID = instance.id; //placeholder, i don't remember what went here.
 		        instance.playerControlSequence = true;
 		        Game1.player.CanMove = true;
 		        Game1.viewportFreeze = false;
@@ -65,8 +65,10 @@ namespace DynamicDialogues.Framework
 					    Game1.player.forceCanMove();
 			    	}
 
-                    if(lastTime != Game1.currentGameTime.ElapsedGameTime.Milliseconds)
-                        instance.festivalTimer--;
+				    if (lastTime == Game1.currentGameTime.ElapsedGameTime.Milliseconds) continue;
+				    
+				    instance.festivalTimer--;
+				    lastTime = Game1.currentGameTime.ElapsedGameTime.Milliseconds;
                 }
 
                 Game1.player.Halt();

@@ -30,10 +30,10 @@ public class QuestionData : Dialogue
             this.parseDialogueString(dialogueText);
             //checkForSpecialDialogueAttributes();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //IGameLogger log = Game1.log;
-            DefaultInterpolatedStringHandler interpolatedStringHandler = new DefaultInterpolatedStringHandler(56, 3);
+            var interpolatedStringHandler = new DefaultInterpolatedStringHandler(56, 3);
             interpolatedStringHandler.AppendLiteral("Failed parsing dialogue string for NPC ");
             interpolatedStringHandler.AppendFormatted(speaker?.Name);
             interpolatedStringHandler.AppendLiteral(" (key: ");
@@ -41,59 +41,56 @@ public class QuestionData : Dialogue
             interpolatedStringHandler.AppendLiteral(", text: ");
             interpolatedStringHandler.AppendFormatted(dialogueText);
             interpolatedStringHandler.AppendLiteral(").");
-            string stringAndClear = interpolatedStringHandler.ToStringAndClear();
-            Exception exception = ex;
+            var stringAndClear = interpolatedStringHandler.ToStringAndClear();
             ModEntry.Mon.Log(stringAndClear,LogLevel.Error);
             this.parseDialogueString("...");
         }
     }
 
-  protected override void parseDialogueString(string masterString)
+  protected sealed override void parseDialogueString(string masterString)
     {
       var source = masterString.Split('#');
-      if (source[0] == "$qna")
-      {
-        var questions = source[1].Split('_');
-        var answers = source[2].Split('_');
-        var missions = source[3].Split('_');
+      if (source[0] != "$qna") return;
+      
+      var questions = source[1].Split('_');
+      var answers = source[2].Split('_');
+      var missions = source[3].Split('_');
 
-        //this._isLastDialogueInteractive = true;
+      //this._isLastDialogueInteractive = true;
         
-        this._quickResponses ??= new List<string>();
-        this._playerResponses ??= new List<NPCDialogueResponse>();
-        this._missionList ??= new List<string>();
+      this._quickResponses ??= new List<string>();
+      this._playerResponses ??= new List<NPCDialogueResponse>();
+      this._missionList ??= new List<string>();
         
-        foreach (var count in questions)
-        {
-          var index = GetIndex(questions,count);
+      foreach (var count in questions)
+      {
+        var index = GetIndex(questions,count);
           
-          this._playerResponses.Add(new NPCDialogueResponse(null, -1, "quickResponse" + index.ToString(), Game1.parseText(count)));
-          this._quickResponses.Add(answers[index]);
-          this._missionList.Add(missions[index]);
-        }
+        this._playerResponses.Add(new NPCDialogueResponse(null, -1, "quickResponse" + index.ToString(), Game1.parseText(count)));
+        this._quickResponses.Add(answers[index]);
+        this._missionList.Add(missions[index]);
       }
     }
   public override bool chooseResponse(Response response)
   {
       for (var index = 0; index < this._playerResponses.Count; ++index)
       {
-        if (this._playerResponses[index].responseKey != null && response.responseKey != null && this._playerResponses[index].responseKey.Equals(response.responseKey))
+        if (this._playerResponses[index].responseKey == null || response.responseKey == null ||
+            !this._playerResponses[index].responseKey.Equals(response.responseKey)) continue;
+        //get dialogue
+        this.speaker.setNewDialogue(new Dialogue(this.speaker, null, this._quickResponses[index]));
+        Game1.drawDialogue(speaker);
+          
+        //face farmer
+        speaker.faceTowardFarmerForPeriod(4000, 3, false, this.farmer);
+          
+        //if mission, add
+        if (_missionList[index] != "none")
         {
-          //get dialogue
-          this.speaker.setNewDialogue(new Dialogue(this.speaker, (string) null, this._quickResponses[index]));
-          Game1.drawDialogue(this.speaker);
-          
-          //face farmer
-          this.speaker.faceTowardFarmerForPeriod(4000, 3, false, this.farmer);
-          
-          //if mission, add
-          if (_missionList[index] != "none")
-          {
-            Game1.player.addQuest(_missionList[index]);
-          }
-          
-          return true;
+          Game1.player.addQuest(_missionList[index]);
         }
+          
+        return true;
       }
       return false;
     }
