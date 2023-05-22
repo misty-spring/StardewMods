@@ -377,13 +377,13 @@ namespace DynamicDialogues.Framework
         /// <returns></returns>
         internal static bool IsValidQuestion(RawQuestions q)
         {
-            if(String.IsNullOrWhiteSpace(q.Question))
+            if(string.IsNullOrWhiteSpace(q.Question))
             {
                 ModEntry.Mon.Log("Question must have text!",LogLevel.Error);
                 return false;
             }
 
-            if(String.IsNullOrWhiteSpace(q.Answer))
+            if(string.IsNullOrWhiteSpace(q.Answer))
             {
                 ModEntry.Mon.Log("Answer must have text!",LogLevel.Error);
                 return false;

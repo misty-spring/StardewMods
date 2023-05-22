@@ -27,7 +27,7 @@ public class QuestionData : Dialogue
         
         try
         {
-            this.parseDialogueString(dialogueText);
+            parseDialogueString(dialogueText);
             //checkForSpecialDialogueAttributes();
         }
         catch (Exception)
@@ -43,7 +43,7 @@ public class QuestionData : Dialogue
             interpolatedStringHandler.AppendLiteral(").");
             var stringAndClear = interpolatedStringHandler.ToStringAndClear();
             ModEntry.Mon.Log(stringAndClear,LogLevel.Error);
-            this.parseDialogueString("...");
+            parseDialogueString("...");
         }
     }
 
@@ -58,31 +58,31 @@ public class QuestionData : Dialogue
 
       //this._isLastDialogueInteractive = true;
         
-      this._quickResponses ??= new List<string>();
-      this._playerResponses ??= new List<NPCDialogueResponse>();
-      this._missionList ??= new List<string>();
+      _quickResponses ??= new List<string>();
+      _playerResponses ??= new List<NPCDialogueResponse>();
+      _missionList ??= new List<string>();
         
       foreach (var count in questions)
       {
         var index = GetIndex(questions,count);
           
-        this._playerResponses.Add(new NPCDialogueResponse(null, -1, "quickResponse" + index.ToString(), Game1.parseText(count)));
-        this._quickResponses.Add(answers[index]);
-        this._missionList.Add(missions[index]);
+        _playerResponses.Add(new NPCDialogueResponse(null, -1, "quickResponse" + index.ToString(), Game1.parseText(count)));
+        _quickResponses.Add(answers[index]);
+        _missionList.Add(missions[index]);
       }
     }
   public override bool chooseResponse(Response response)
   {
-      for (var index = 0; index < this._playerResponses.Count; ++index)
+      for (var index = 0; index < _playerResponses.Count; ++index)
       {
-        if (this._playerResponses[index].responseKey == null || response.responseKey == null ||
-            !this._playerResponses[index].responseKey.Equals(response.responseKey)) continue;
+        if (_playerResponses[index].responseKey == null || response.responseKey == null ||
+            !_playerResponses[index].responseKey.Equals(response.responseKey)) continue;
         //get dialogue
-        this.speaker.setNewDialogue(new Dialogue(this.speaker, null, this._quickResponses[index]));
+        speaker.setNewDialogue(new Dialogue(speaker, null, _quickResponses[index]));
         Game1.drawDialogue(speaker);
           
         //face farmer
-        speaker.faceTowardFarmerForPeriod(4000, 3, false, this.farmer);
+        speaker.faceTowardFarmerForPeriod(4000, 3, false, farmer);
           
         //if mission, add
         if (_missionList[index] != "none")

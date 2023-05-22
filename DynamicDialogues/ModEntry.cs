@@ -4,10 +4,12 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static DynamicDialogues.Framework.Parser;
 using static DynamicDialogues.Framework.Getter;
 using DynamicDialogues.Framework;
 using System.Reflection;
+using DynamicDialogues.Patches;
 
 // ReSharper disable All
 
@@ -20,6 +22,7 @@ namespace DynamicDialogues
             //get status and information
             helper.Events.GameLoop.SaveLoaded += SaveLoaded;
             helper.Events.GameLoop.DayStarted += OnDayStart;
+            helper.Events.GameLoop.DayEnding += Setter.DayEnd;
             helper.Events.Content.LocaleChanged += GetYesNo;
 
             helper.Events.GameLoop.ReturnedToTitle += OnTitleReturn;
@@ -35,26 +38,13 @@ namespace DynamicDialogues
 
             helper.ConsoleCommands.Add("ddprint", "Prints dialogue type", Debug.Print);
             helper.ConsoleCommands.Add("sayHiTo", "Test sayHiTo command", Debug.SayHiTo);
-
+            helper.ConsoleCommands.Add("getQs", "Get NPC questions", Debug.GetQuestionsFor);
+            
             var harmony = new Harmony(this.ModManifest.UniqueID);
-
-            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"NPC.sayHiTo(Character)\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.sayHiTo)),
-                prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.SayHiTo_Prefix))
-                );
-            
-            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"NPC.tryToReceiveActiveObject(Farmer who)\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(StardewValley.NPC), nameof(StardewValley.NPC.tryToReceiveActiveObject)),
-                prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.TryToReceiveItem))
-            );
-            
-            this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"Dialogue.prepareDialogueForDisplay()\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(StardewValley.Dialogue), nameof(StardewValley.Dialogue.prepareDialogueForDisplay)),
-                prefix: new HarmonyMethod(typeof(DialoguePatches), nameof(DialoguePatches.PrefixCurrentDialogueForDisplay))
-            );
+            //harmony.PatchAll(typeof(DialoguePatches).Assembly);
+            //harmony.PatchAll(typeof(NPCPatches).Assembly);
+            DialoguePatches.Apply(harmony);
+            NPCPatches.Apply(harmony);
         }
 
         internal void OnGameLaunched(object sender, GameLaunchedEventArgs e)
@@ -76,11 +66,11 @@ namespace DynamicDialogues
                 this.Monitor.Log("SpaceCore not detected, adding event command manually.", LogLevel.Info);
 
                 var harmony = new Harmony(this.ModManifest.UniqueID);
-                this.Monitor.Log($"Applying Harmony patch \"{nameof(ModPatches)}\": prefixing SDV method \"Event.tryEventCommand(GameLocation location, GameTime time, string[] args)\".");
+                this.Monitor.Log($"Applying Harmony patch \"{nameof(Patches.EventPatches)}\": prefixing SDV method \"Event.tryEventCommand(GameLocation location, GameTime time, string[] args)\".");
 
                 harmony.Patch(
                     original: AccessTools.Method(typeof(StardewValley.Event), nameof(StardewValley.Event.tryEventCommand)),
-                    prefix: new HarmonyMethod(typeof(ModPatches), nameof(ModPatches.PrefixTryGetCommandH))
+                    prefix: new HarmonyMethod(typeof(Patches.EventPatches), nameof(Patches.EventPatches.PrefixTryGetCommandH))
                     );
             }
 
@@ -96,55 +86,7 @@ namespace DynamicDialogues
 
         private void OnDayStart(object sender, DayStartedEventArgs e)
         {
-            //clear temp data
-            ClearTemp();
-
-            //get dialogue for NPCs
-            foreach (var name in PatchableNPCs)
-            {
-                if (!Exists(name)) //if NPC doesnt exist in savedata
-                {
-                    this.Monitor.Log($"{name} data won't be added. Check log for more details.", LogLevel.Warn);
-                    continue;
-                }
-                if(Config.Verbose)
-                {
-                    this.Monitor.Log($"Checking patch data for NPC {name}...");
-                }
-                var CompatRaw = Game1.content.Load<Dictionary<string, RawDialogues>>($"mistyspring.dynamicdialogues/Dialogues/{name}");
-                GetNPCDialogues(CompatRaw, name);
-
-                //get questions
-                var QRaw = Game1.content.Load<Dictionary<string, RawQuestions>>($"mistyspring.dynamicdialogues/Questions/{name}");
-                GetQuestions(QRaw, name);
-
-                HasCustomDialogue(name);
-            }
-
-            var dc = Dialogues?.Count ?? 0;
-            this.Monitor.Log($"Loaded {dc} user patches. (Dialogues)", LogLevel.Debug);
-
-            var qc = Questions?.Count ?? 0;
-            this.Monitor.Log($"Loaded {qc} user patches. (Questions)", LogLevel.Debug);
-
-            //get greetings
-            var greetRaw = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("mistyspring.dynamicdialogues/Greetings");
-            GetGreetings(greetRaw);
-            var gc = Greetings?.Count ?? 0;
-            this.Monitor.Log($"Loaded {gc} user patches. (Greetings)", LogLevel.Debug);
             
-            //get notifs
-            var notifRaw = Game1.content.Load<Dictionary<string, RawNotifs>>("mistyspring.dynamicdialogues/Notifs");
-            GetNotifs(notifRaw);
-            var nc = Notifs?.Count ?? 0;
-            this.Monitor.Log($"Loaded {nc} user patches. (Notifs)", LogLevel.Debug);
-
-            //get random dialogue
-            GetDialoguePool();
-            var rr = RandomPool?.Count ?? 0;
-            this.Monitor.Log($"Loaded {rr} user patches. (Dialogue pool)", LogLevel.Debug);
-
-            this.Monitor.Log($"{dc + gc + nc + qc + rr} total user patches loaded.",LogLevel.Debug);
         }
 
         private void OnTitleReturn(object sender, ReturnedToTitleEventArgs e)
@@ -235,22 +177,21 @@ namespace DynamicDialogues
         }
         private void GetQuestions(Dictionary<string, RawQuestions> QRaw, string nameof)
         {
+            Questions.Remove(nameof);
+            
+            var dict = new List<RawQuestions>();
+            Questions.Add(nameof, dict);
+            
             foreach (var extra in QRaw)
             {
+                if (ModEntry.Config.Debug)
+                    this.Monitor.Log($"checking question data: {nameof}, answer: {extra.Value.Answer}",LogLevel.Debug);
+
                 var title = extra.Key;
                 var QnA = extra.Value;
                 if(IsValidQuestion(QnA) && !String.IsNullOrWhiteSpace(title))
                 {
-                    if((bool)(Questions?.ContainsKey(nameof)))
-                    {
-                        Questions[nameof].Add(QnA);
-                    }
-                    else
-                    {
-                        var dict = new List<RawQuestions>();
-                        dict.Add(QnA);
-                        Questions.Add(nameof, dict);
-                    }
+                    Questions[nameof].Add(QnA);
                 }
                 else
                 {
@@ -270,7 +211,7 @@ namespace DynamicDialogues
                         this.Monitor.Log($"Character {name} found.");
                     }
 
-                    var dialogues = Helper.GameContent.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
+                    var dialogues = ModEntry.Help.GameContent.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
 
                     if (dialogues == null || dialogues.Count == 0)
                         continue;
@@ -298,12 +239,16 @@ namespace DynamicDialogues
                     if (name == "Marlon")
                         continue; //we dont warn bc hes not interactable
 
-                    this.Monitor.Log($"Character {name} hasn't been met yet. Their random dialogue will not be added.", LogLevel.Info);
+                    this.Monitor.Log($"Character {name} hasn't been met yet. Any of their custom dialogue won't be added.", LogLevel.Debug);
                 }
             }
         }
-        private static void GetInteractableNPCs()
+
+        internal static void GetInteractableNPCs()
         {
+            if(ModEntry.Config.Debug)
+                ModEntry.Mon.Log("GOT CALLED (interactableNPCs)",LogLevel.Warn);
+            
             PatchableNPCs = new();
             
             foreach (var charData in Game1.characterData)
@@ -339,8 +284,11 @@ namespace DynamicDialogues
             
             HasCustomGifting.Add(name,temp.ToArray());
         }
-        private static void ClearTemp()
+
+        internal static void ClearTemp()
         {
+            ModEntry.Mon.Log("GOT CALLED (ClearTemp)",LogLevel.Alert);
+            
             AlreadyPatched?.Clear();
             Dialogues?.Clear();
             Greetings?.Clear();
@@ -350,7 +298,22 @@ namespace DynamicDialogues
             RandomPool?.Clear();
             HasCustomGifting?.Clear();
         }
-#endregion
+        internal static void RemoveAnyEmpty()
+        {
+            List<string> toremove = new();
+            
+            foreach (var pair in Questions)
+            {
+                if (!pair.Value.Any())
+                    toremove.Add(pair.Key);
+            }
+            
+            foreach (var name in toremove)
+            {
+                Questions.Remove(name);
+            }
+        }
+        #endregion
         /* Required by mod to work */
         #region own data
         internal static Dictionary<string, List<RawQuestions>> Questions { get; private set; } = new();

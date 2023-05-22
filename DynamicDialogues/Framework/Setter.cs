@@ -289,5 +289,13 @@ namespace DynamicDialogues.Framework
                     AssetLoadPriority.Low);
             }
         }
+
+        public static void DayEnd(object sender, DayEndingEventArgs e)
+        {
+            if(ModEntry.Config.Debug)
+                ModEntry.Mon.Log("GOT CALLED (ondayending)",StardewModdingAPI.LogLevel.Warn);
+            
+            ModEntry.ClearTemp();
+            ModE
     }
 }

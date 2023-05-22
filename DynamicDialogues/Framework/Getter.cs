@@ -125,10 +125,9 @@ namespace DynamicDialogues.Framework
                 var q = new StringBuilder(questions);
                 var a = new StringBuilder(answers);
                 var m = new StringBuilder(missions);
-                //q.Remove(q.Length, 0);
-                q[questions.Length - 1] = Convert.ToChar(""); //will this work?
-                a[questions.Length - 1] = Convert.ToChar("");
-                m[questions.Length - 1] = Convert.ToChar("");
+                q.Remove(q.Length - 1, 0);
+                a.Remove(a.Length - 1, 0);
+                m.Remove(m.Length - 1, 0);
 
                 questions = q.ToString();
                 answers = a.ToString();

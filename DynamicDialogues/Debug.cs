@@ -135,7 +135,41 @@ namespace DynamicDialogues
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                ModEntry.Mon.Log($"Error: {e}", lv.Error);
+                throw;
+            }
+        }
+
+        public static void GetQuestionsFor(string arg1, string[] arg2)
+        {
+            if (arg2 == null || !arg2.Any())
+                return;
+
+            try
+            {
+                var who = arg2[0];
+                if (string.IsNullOrWhiteSpace(who)) 
+                    return;
+
+                if (!ModEntry.Questions.ContainsKey(who))
+                    return;
+
+                var data = ModEntry.Questions[who];
+
+                var position = 0;
+                string result = null;
+                foreach (var rq in data)
+                {
+                    position++;
+                    var addition = $"\n[{position}]\nQuestion:{rq.Question}\nAnswer:{rq.Answer}\n";
+                    result += addition;
+                }
+                
+                ModEntry.Mon.Log(result ?? "No data was found.",lv.Info);
+            }
+            catch (Exception e)
+            {
+                ModEntry.Mon.Log($"Error: {e}", lv.Error);
                 throw;
             }
         }
