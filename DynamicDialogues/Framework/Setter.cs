@@ -1,4 +1,5 @@
-﻿using StardewModdingAPI.Events;
+﻿using System;
+using StardewModdingAPI.Events;
 using StardewValley;
 using static DynamicDialogues.Framework.Parser;
 using static DynamicDialogues.Framework.Getter;
@@ -290,12 +291,98 @@ namespace DynamicDialogues.Framework
             }
         }
 
-        public static void DayEnd(object sender, DayEndingEventArgs e)
+
+        public static void ReloadAssets(object sender, AssetsInvalidatedEventArgs e)
         {
-            if(ModEntry.Config.Debug)
-                ModEntry.Mon.Log("GOT CALLED (ondayending)",StardewModdingAPI.LogLevel.Warn);
+            //get dialogue for NPCs
+            foreach (var name in ModEntry.PatchableNPCs)
+            {
+                if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"mistyspring.dynamicdialogues/Dialogues/{name}")))
+                {
+                    var compatRaw = ModEntry.Help.GameContent.Load<Dictionary<string, RawDialogues>>(
+                        $"mistyspring.dynamicdialogues/Dialogues/{name}");
+                    ModEntry.GetNPCDialogues(compatRaw, name);
+                }
+
+                if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"mistyspring.dynamicdialogues/Questions/{name}")))
+                {
+                    var questionsRaw = ModEntry.Help.GameContent.Load<Dictionary<string, RawQuestions>>(
+                        $"mistyspring.dynamicdialogues/Questions/{name}");
+                    ModEntry.GetQuestions(questionsRaw, name);
+                }
+
+                if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Characters/Dialogue/{name}")))
+                {
+                    try
+                    {
+                        GetDialogues(name);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModEntry.Mon.Log($"Error while reloading \"Characters/Dialogue/{name}\": {ex}");
+                    }
+                }
+            }
+
+            ModEntry.RemoveAnyEmpty();
+
+            if(e.NamesWithoutLocale.Any(a => a.Name.Equals($"mistyspring.dynamicdialogues/Greetings")))
+            {
+                //get greetings
+                var greetRaw =
+                    ModEntry.Help.GameContent.Load<Dictionary<string, Dictionary<string, string>>>(
+                        "mistyspring.dynamicdialogues/Greetings");
+                ModEntry.GetGreetings(greetRaw);
+            }
+
+            if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"mistyspring.dynamicdialogues/Greetings")))
+            {
+                //get notifs
+                var notifRaw =
+                    ModEntry.Help.GameContent.Load<Dictionary<string, RawNotifs>>(
+                        "mistyspring.dynamicdialogues/Notifs");
+                ModEntry.GetNotifs(notifRaw);
+            }
+        }
+
+        private static void GetDialogues(string name)
+        {
+            ModEntry.RandomPool.Remove(name);
             
-            ModEntry.ClearTemp();
-            ModE
+            var dialogues = ModEntry.Help.GameContent.Load<Dictionary<string, string>>($"Characters/Dialogue/{name}");
+
+            if (dialogues == null || dialogues.Count == 0)
+                return;
+
+            List<string> texts = new();
+            foreach (var pair in dialogues)
+            {
+                if(pair.Key.StartsWith("Random"))
+                {
+                    texts.Add(pair.Value);
+                }
+            }
+
+            //dont add npcs with no dialogue
+            if (texts.Count != 0)
+            {
+                ModEntry.RandomPool.Add(name, texts);
+            }
+
+            var temp = new List<string>();
+            
+            foreach (var pair in dialogues)
+            {
+                if (pair.Value.StartsWith("Gift."))
+                {
+                    temp.Add(pair.Value);
+                }
+            }
+            
+            if (temp.Count != 0)
+            {
+                ModEntry.HasCustomGifting.Add(name,temp.ToArray());
+            }
+        }
     }
 }

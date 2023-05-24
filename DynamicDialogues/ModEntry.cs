@@ -20,17 +20,16 @@ namespace DynamicDialogues
         public override void Entry(IModHelper helper)
         {
             //get status and information
+            //helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.SaveLoaded += SaveLoaded;
-            helper.Events.GameLoop.DayStarted += OnDayStart;
-            helper.Events.GameLoop.DayEnding += Setter.DayEnd;
             helper.Events.Content.LocaleChanged += GetYesNo;
 
             helper.Events.GameLoop.ReturnedToTitle += OnTitleReturn;
 
             //set file type, npc dialogues, etc
-            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.TimeChanged += Setter.OnTimeChange;
             helper.Events.Content.AssetRequested += Setter.OnAssetRequest;
+            helper.Events.Content.AssetsInvalidated += Setter.ReloadAssets;
 
             ModEntry.Config = this.Helper.ReadConfig<ModConfig>();
             Mon = this.Monitor;
@@ -41,12 +40,11 @@ namespace DynamicDialogues
             helper.ConsoleCommands.Add("getQs", "Get NPC questions", Debug.GetQuestionsFor);
             
             var harmony = new Harmony(this.ModManifest.UniqueID);
-            //harmony.PatchAll(typeof(DialoguePatches).Assembly);
-            //harmony.PatchAll(typeof(NPCPatches).Assembly);
             DialoguePatches.Apply(harmony);
             NPCPatches.Apply(harmony);
+            EventPatches.Apply(harmony);
         }
-
+/*
         internal void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             spaceCoreAPI = this.Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
@@ -75,18 +73,67 @@ namespace DynamicDialogues
             }
 
         }
-
+*/
         private void SaveLoaded(object sender, SaveLoadedEventArgs e)
         {
             GetInteractableNPCs();
 
             this.Monitor.Log($"Found {PatchableNPCs?.Count ?? 0} patchable characters.");
             this.Monitor.Log($"Found {Game1.player.friendshipData?.Length ?? 0} characters in friendship data.");
+
+            GetFilesFirstTime();
         }
 
-        private void OnDayStart(object sender, DayStartedEventArgs e)
+        private void GetFilesFirstTime()
         {
+            //get dialogue for NPCs
+            foreach (var name in PatchableNPCs)
+            {
+                if (!Exists(name)) //if NPC doesnt exist in savedata
+                {
+                    this.Monitor.Log($"{name} data won't be added. Check log for more details.", LogLevel.Warn);
+                    continue;
+                }
+                if(Config.Verbose)
+                {
+                    this.Monitor.Log($"Checking patch data for NPC {name}...");
+                }
+                var CompatRaw = Game1.content.Load<Dictionary<string, RawDialogues>>($"mistyspring.dynamicdialogues/Dialogues/{name}");
+                GetNPCDialogues(CompatRaw, name);
+
+                //get questions
+                var QRaw = Game1.content.Load<Dictionary<string, RawQuestions>>($"mistyspring.dynamicdialogues/Questions/{name}");
+                GetQuestions(QRaw, name);
+
+                HasCustomDialogue(name);
+            }
+
+            RemoveAnyEmpty();
             
+            var dc = Dialogues?.Count ?? 0;
+            this.Monitor.Log($"Loaded {dc} user patches. (Dialogues)", LogLevel.Debug);
+
+            var qc = Questions?.Count ?? 0;
+            this.Monitor.Log($"Loaded {qc} user patches. (Questions)", LogLevel.Debug);
+
+            //get greetings
+            var greetRaw = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("mistyspring.dynamicdialogues/Greetings");
+            GetGreetings(greetRaw);
+            var gc = Greetings?.Count ?? 0;
+            this.Monitor.Log($"Loaded {gc} user patches. (Greetings)", LogLevel.Debug);
+
+            //get notifs
+            var notifRaw = Game1.content.Load<Dictionary<string, RawNotifs>>("mistyspring.dynamicdialogues/Notifs");
+            GetNotifs(notifRaw);
+            var nc = Notifs?.Count ?? 0;
+            this.Monitor.Log($"Loaded {nc} user patches. (Notifs)", LogLevel.Debug);
+
+            //get random dialogue
+            GetDialoguePool();
+            var rr = RandomPool?.Count ?? 0;
+            this.Monitor.Log($"Loaded {rr} user patches. (Dialogue pool)", LogLevel.Debug);
+
+            this.Monitor.Log($"{dc + gc + nc + qc + rr} total user patches loaded.",LogLevel.Debug);
         }
 
         private void OnTitleReturn(object sender, ReturnedToTitleEventArgs e)
@@ -102,18 +149,19 @@ namespace DynamicDialogues
             Yes = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_Yes");
             No = Game1.content.LoadString("Strings\\Lexicon:QuestionDialogue_No");
         }
-        private void GetNPCDialogues(Dictionary<string, RawDialogues> raw, string nameof)
+
+        internal static void GetNPCDialogues(Dictionary<string, RawDialogues> raw, string nameof)
         {
             foreach (var singular in raw)
             {
                 var dialogueInfo = singular.Value;
                 if (dialogueInfo is null)
                 {
-                    this.Monitor.Log($"The dialogue data for {nameof} is empty!", LogLevel.Warn);
+                    ModEntry.Mon.Log($"The dialogue data for {nameof} is empty!", LogLevel.Warn);
                 }
                 else if (IsValid(dialogueInfo, nameof))
                 {
-                    this.Monitor.Log($"Dialogue key \"{singular.Key}\" ({nameof}) parsed successfully. Adding to dictionary");
+                    ModEntry.Mon.Log($"Dialogue key \"{singular.Key}\" ({nameof}) parsed successfully. Adding to dictionary");
                     var data = dialogueInfo;
 
                     if ((bool)(Dialogues?.ContainsKey(nameof)))
@@ -129,11 +177,12 @@ namespace DynamicDialogues
                 }
                 else
                 {
-                    this.Monitor.Log($"Patch '{singular.Key}' won't be added.", LogLevel.Warn);
+                    ModEntry.Mon.Log($"Patch '{singular.Key}' won't be added.", LogLevel.Warn);
                 }
             }
         }
-        private void GetGreetings(Dictionary<string, Dictionary<string, string>> greetRaw)
+
+        internal static void GetGreetings(Dictionary<string, Dictionary<string, string>> greetRaw)
         {
             foreach (var edit in greetRaw)
             {
@@ -143,23 +192,24 @@ namespace DynamicDialogues
                     continue;
                 }
 
-                this.Monitor.Log($"Loading greetings for {edit.Key}...");
+                ModEntry.Mon.Log($"Loading greetings for {edit.Key}...");
                 Dictionary<NPC, string> ValueOf = new();
 
                 foreach (var npcgreet in edit.Value)
                 {
-                    this.Monitor.Log($"Checking greet data for {npcgreet.Key}...");
+                    ModEntry.Mon.Log($"Checking greet data for {npcgreet.Key}...");
                     var chara = Game1.getCharacterFromName(npcgreet.Key);
 
                     if (IsValidGreeting(chara, npcgreet.Value))
                     {
                         Greetings.Add((edit.Key, npcgreet.Key), npcgreet.Value);
-                        this.Monitor.Log("Greeting added.");
+                        ModEntry.Mon.Log("Greeting added.");
                     }
                 }
             }
         }
-        private static void GetNotifs(Dictionary<string, RawNotifs> notifRaw)
+
+        internal static void GetNotifs(Dictionary<string, RawNotifs> notifRaw)
         {
             foreach (var pair in notifRaw)
             {
@@ -175,7 +225,8 @@ namespace DynamicDialogues
                 }
             }
         }
-        private void GetQuestions(Dictionary<string, RawQuestions> QRaw, string nameof)
+
+        internal static void GetQuestions(Dictionary<string, RawQuestions> QRaw, string nameof)
         {
             Questions.Remove(nameof);
             
@@ -185,7 +236,7 @@ namespace DynamicDialogues
             foreach (var extra in QRaw)
             {
                 if (ModEntry.Config.Debug)
-                    this.Monitor.Log($"checking question data: {nameof}, answer: {extra.Value.Answer}",LogLevel.Debug);
+                    ModEntry.Mon.Log($"checking question data: {nameof}, answer: {extra.Value.Answer}",LogLevel.Debug);
 
                 var title = extra.Key;
                 var QnA = extra.Value;
@@ -196,7 +247,7 @@ namespace DynamicDialogues
                 else
                 {
                     var pos = GetIndex(QRaw, extra.Key);
-                    this.Monitor.Log($"Entry {pos} for {extra.Key} is faulty! It won't be added.", LogLevel.Warn);
+                    ModEntry.Mon.Log($"Entry {pos} for {extra.Key} is faulty! It won't be added.", LogLevel.Warn);
                 }
             }
         }
@@ -287,7 +338,8 @@ namespace DynamicDialogues
 
         internal static void ClearTemp()
         {
-            ModEntry.Mon.Log("GOT CALLED (ClearTemp)",LogLevel.Alert);
+            if(ModEntry.Config.Debug)
+                ModEntry.Mon.Log("GOT CALLED (ClearTemp)",LogLevel.Alert);
             
             AlreadyPatched?.Clear();
             Dialogues?.Clear();
@@ -342,9 +394,9 @@ namespace DynamicDialogues
         internal static IModHelper Help { get; private set; }
         internal static ModConfig Config;
 
-#pragma warning disable CS8632
+/*#pragma warning disable CS8632
         private ISpaceCoreAPI? spaceCoreAPI;
 #pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
-
+*/
     }
 }

@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewValley;
-// ReSharper disable InconsistentNaming
 
 namespace DynamicDialogues.Patches;
 
 [HarmonyPatch(typeof(GameLocation))]
 public static class DialoguePatches
 {
-  private const string _npcSwap = "$npc";
+  private const string NpcSwap = "$npc";
   
   internal static void Apply(Harmony harmony)
   {
@@ -42,7 +41,7 @@ public static class DialoguePatches
     foreach (var dialogue in __instance.dialogues)
     {
       var replace = dialogue;
-      if (dialogue.Contains(_npcSwap))
+      if (dialogue.Contains(NpcSwap))
       {
         //add 'next dialogue' to previous one
         fixeds[^1] += "{";
@@ -84,13 +83,13 @@ public static class DialoguePatches
                 
       var str1 = Utility.ParseGiftReveals(__instance.dialogues[__instance.currentDialogueIndex]);
 
-      if (str1.StartsWith(_npcSwap))
+      if (str1.StartsWith(NpcSwap))
       {
         __instance.showPortrait = true;
                     
         //get npc
-        str1 = str1.Replace(_npcSwap, null);
-        var who = str1.Replace(_npcSwap, null);
+        str1 = str1.Replace(NpcSwap, null);
+        var who = str1.Replace(NpcSwap, null);
         if (ModEntry.Config.Debug)
           ModEntry.Mon.Log("new speaker for current dialogue: " + who, LogLevel.Info);
         __instance.speaker = Utility.fuzzyCharacterSearch(who);
@@ -115,7 +114,7 @@ public static class DialoguePatches
   
   internal static bool PrefixDialogueAttributes(ref Dialogue __instance)
   {
-    if (__instance.dialogues.Count <= 0 || !__instance.dialogues[__instance.currentDialogueIndex].Contains(_npcSwap)) return true;
+    if (__instance.dialogues.Count <= 0 || !__instance.dialogues[__instance.currentDialogueIndex].Contains(NpcSwap)) return true;
 
     var text = __instance.dialogues[__instance.currentDialogueIndex];
     var split = text.Split(' ');

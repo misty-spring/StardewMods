@@ -8,7 +8,7 @@ using StardewModdingAPI;
 
 namespace DynamicDialogues.Patches
 {
-    [SuppressMessage("ReSharper", "InconsistentNaming")] 
+    // ReSharper disable once InconsistentNaming
     internal class NPCPatches
     {
         internal static void Apply(Harmony harmony)

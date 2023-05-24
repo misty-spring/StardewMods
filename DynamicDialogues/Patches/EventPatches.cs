@@ -1,5 +1,6 @@
 using System;
 using DynamicDialogues.Framework;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using StardewValley;
 
@@ -7,6 +8,16 @@ namespace DynamicDialogues.Patches;
 
 internal class EventPatches
 {
+    internal static void Apply(Harmony harmony)
+    {
+        ModEntry.Mon.Log($"Applying Harmony patch \"{nameof(EventPatches)}\": prefixing SDV method \"Event.tryEventCommand(GameLocation location, GameTime time, string[] args)\".");
+
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Event), nameof(Event.tryEventCommand)),
+            prefix: new HarmonyMethod(typeof(EventPatches), nameof(PrefixTryGetCommandH))
+        );
+    }
+    
     //for AddScene
     internal static bool PrefixTryGetCommandH(Event __instance, GameLocation location, GameTime time, string[] args) =>
         PrefixTryGetCommand(__instance, location, time, args);
