@@ -1,24 +1,21 @@
-﻿using Microsoft.Xna.Framework;
-using StardewModdingAPI;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI.Events;
 using StardewValley;
-using StardewValley.Network;
-using StardewValley.TerrainFeatures;
-using System;
-using System.Linq;
 using lv = StardewModdingAPI.LogLevel;
 
 namespace FarmVisitors
 {
-    internal class FarmOutside
+    internal static class FarmOutside
     {
         internal static bool NPCinScreen()
         {
-            var who = Game1.getCharacterFromName(ModEntry.VisitorName);
             var farm = Game1.getLocationFromName("Farm");
 
-            var x = ((int)(who.Position.X / 64));
-            var y = ((int)(who.Position.Y / 64));
+            var x = ((int)(ModEntry.Visitor.Position.X / 64));
+            var y = ((int)(ModEntry.Visitor.Position.Y / 64));
 
             if (ModEntry.Config.Debug)
             {
@@ -43,62 +40,74 @@ namespace FarmVisitors
             }
 
             var isFarm = e.NewLocation.IsFarm;
-            var isFarmHouse = e.NewLocation.Name.StartsWith("FarmHouse");
+            var isFarmHouse = e.NewLocation.Equals(Utility.getHomeOfFarmer(Game1.player));
+            var isShed = e.NewLocation.NameOrUniqueName.Contains("Shed");
 
-            if (!isFarm && !isFarmHouse) //if its neither the farm nor the farmhouse
+            if (!isFarm && !isFarmHouse && !isShed) //if its neither the farm nor the farmhouse
                 return;
 
-            if (!ModEntry.Config.WalkOnFarm || string.IsNullOrWhiteSpace(ModEntry.VisitorName))
+            if(ModEntry.Config.Debug)
+               ModEntry.Log($"The new warp location is {e.NewLocation.NameOrUniqueName}",lv.Trace);
+            
+            if (!ModEntry.Config.WalkOnFarm || string.IsNullOrWhiteSpace(ModEntry.Visitor?.Name))
                 return; //if npcs can't follow or there's no visit
 
             if (ModEntry.Config.Debug)
             {
-                ModEntry.Log($"Leaving {e.OldLocation.Name}...Warped to {e.NewLocation.Name}. isFarm = {e.NewLocation.IsFarm} , CanFollow = {ModEntry.Config.WalkOnFarm}, VisitorName = {ModEntry.VisitorName}", lv.Info);
+                ModEntry.Log($"Leaving {e.OldLocation.Name}...Warped to {e.NewLocation.Name}. isFarm = {e.NewLocation.IsFarm} , CanFollow = {ModEntry.Config.WalkOnFarm}, VisitorName = {ModEntry.Visitor.Name}", lv.Info);
             }
 
-            string name = null;
-            Point door = new();
+            Point door;
 
-            if (isFarm)
+            if (isShed) //if new location is shed
             {
-                ModEntry.IsOutside = true;
+                ModEntry.Visitor.IsOutside = false;
+                door = Game1.player.Position.ToPoint();
+            }
+            else if (isFarm) //if new location is farm
+            {
+                ModEntry.Visitor.IsOutside = true;
 
-                door = Game1.getFarm().GetMainFarmHouseEntry();
+                door = Utility.getHomeOfFarmer(Game1.player).getEntryLocation();
                 //door.X--; //-1, moves npc one tile to the left
                 door.Y += 2; //two more tiles down
 
-                name = e.NewLocation.Name;
             }
-
-            if (isFarmHouse)
+            else
             {
-                ModEntry.IsOutside = false;
+                ModEntry.Visitor.IsOutside = false;
 
                 var home = Utility.getHomeOfFarmer(Game1.player);
                 door = home.getEntryLocation();
-                name = home.Name;
             }
 
-            var visit = Game1.getCharacterFromName(ModEntry.VisitorName);
+            var visit = Game1.getCharacterFromName(ModEntry.Visitor.Name);
 
             if (visit.controller is not null)
                 visit.Halt();
 
-            Game1.warpCharacter(visit, name, door);
+            Game1.warpCharacter(visit,e.NewLocation,door.ToVector2());
 
-            visit.faceDirection(2);
-
-            door.X--;
-            visit.controller = new PathFindController(visit, Game1.getFarm(), door, 2); //(this was made as test, but will stay commented-out just in case.) */
+            if (isFarm) //if new location is farm
+            {
+                visit.faceDirection(2);
+                door.X--;
+                visit.controller = new PathFindController(visit, Game1.getFarm(), door, 2);
+            }
+            else //if it's the farmhouse
+            {
+                visit.faceDirection(0);
+                door.Y -= 2;
+                door.X++;
+                visit.controller = new PathFindController(visit, e.NewLocation, door, 0);
+            }
         }
 
-        internal static void WalkAroundFarm(string who)
+        internal static void WalkAroundFarm(NPC c)
         {
-            var c = Game1.getCharacterFromName(who);
-
             var gameLocation = Game1.getFarm();
             //var newspot = getRandomOpenPointInFarm(gameLocation, Game1.random);
-            var newspot = getRandomOpenPointInFarm(gameLocation, Game1.random);
+            var newspot = Actions.GetRandomTile(gameLocation);
 
             try
             {
@@ -124,8 +133,7 @@ namespace FarmVisitors
                         Values.GetDialogueType(
                             c,
                             DialogueType.Winter),
-                        true,
-                        false);
+                        true);
                 }
                 else if ((Game1.random.Next(0, 2) <= 0 || !anyCrops) && ModEntry.Animals.Any())
                 {
@@ -136,8 +144,7 @@ namespace FarmVisitors
                                 DialogueType.Animal),
                             Values.GetRandomObj(
                                 ItemType.Animal)),
-                        true,
-                        false);
+                        true);
                 }
                 else if (anyCrops)
                 {
@@ -148,8 +155,7 @@ namespace FarmVisitors
                                 DialogueType.Crop), 
                             Values.GetRandomObj(
                                 ItemType.Crop)), 
-                        true, 
-                        false);
+                        true);
                 }
                 else
                 {
@@ -157,41 +163,40 @@ namespace FarmVisitors
                         Values.GetDialogueType(
                             c,
                             DialogueType.NoneYet),
-                        true,
-                        false);
+                        true);
                 }
             }
         }
-
-        internal static Point getRandomOpenPointInFarm(GameLocation location,Random r, int tries = 30, int maxDistance = 10)
+/*
+        internal static Point GetRandomOpenPointInFarm(GameLocation location,Random r, int tries = 30, int maxDistance = 10)
         {
-            NPC who = Game1.getCharacterFromName(ModEntry.VisitorName);
+            var who = Game1.getCharacterFromName(ModEntry.Visitor.Name);
 
             var map = location.map;
 
-            Point zero = Point.Zero;
-            bool CanGetHere = false;
+            var zero = Point.Zero;
+            var canGetHere = false;
 
-            for (int i = 0; i < tries; i++)
+            for (var i = 0; i < tries; i++)
             {
                 //we get random position using width and height of map
                 zero = new Point(r.Next(map.Layers[0].LayerWidth), r.Next(map.Layers[0].LayerHeight));
 
-                bool isFloorValid = location.isTileOnMap(zero.ToVector2()) && location.isTilePassable(new xTile.Dimensions.Location(zero.X, zero.Y), Game1.viewport) && !location.isWaterTile(zero.X, zero.Y);
-                bool IsBehindTree = location.isBehindTree(zero.ToVector2());
-                Warp WarpOrDoor = location.isCollidingWithWarpOrDoor(new Rectangle(zero, new Point(1, 1)));
+                var isFloorValid = location.isTileOnMap(zero.ToVector2()) && location.isTilePassable(new Location(zero.X, zero.Y), Game1.viewport) && !location.isWaterTile(zero.X, zero.Y);
+                var isBehindTree = location.isBehindTree(zero.ToVector2());
+                var warpOrDoor = location.isCollidingWithWarpOrDoor(new Rectangle(zero, new Point(1, 1)));
 
                 //check that location is clear + not water tile + not behind tree + not a warp
-                CanGetHere = location.isTileLocationTotallyClearAndPlaceable(zero.X, zero.Y) && isFloorValid && !IsBehindTree && WarpOrDoor == null;
+                canGetHere = location.isTileLocationTotallyClearAndPlaceable(zero.X, zero.Y) && isFloorValid && !isBehindTree && warpOrDoor == null;
 
                 //if the new point is too far away
                 Point difference = new (Math.Abs(zero.X - (int)who.Position.X),Math.Abs(zero.Y - (int)who.Position.Y));
                 if(difference.X > maxDistance && difference.Y > maxDistance)
                 {
-                    CanGetHere = false;
+                    canGetHere = false;
                 }
 
-                if (CanGetHere)
+                if (canGetHere)
                 {
                     break;
                 }
@@ -199,10 +204,64 @@ namespace FarmVisitors
 
             if (ModEntry.Config.Debug)
             {
-                ModEntry.Log($"New position for {ModEntry.VisitorName}: {zero.X},{zero.Y}", lv.Debug);
+                ModEntry.Log($"New position for {ModEntry.Visitor.Name}: {zero.X},{zero.Y}", lv.Debug);
             }
            
             return zero;
         }
+*/
+        internal static void DoFloodFill(GameLocation location, Point start)
+        {
+            /*
+            If node is not Inside return.
+            2. Set the node
+            3. Perform Flood-fill one step to the south of node.
+            4. Perform Flood-fill one step to the north of node
+            5. Perform Flood-fill one step to the west of node
+            6. Perform Flood-fill one step to the east of node
+            7. Return.*/
+            var tile = location.map.GetLayer("Buildings").Tiles[start.X, start.Y];
+            if (tile != null) return;
+            
+            //if it doesn't exist, add
+            if(!ModEntry.Locations.ContainsKey(location.NameOrUniqueName))
+                ModEntry.Locations.Add(location.NameOrUniqueName, new List<Point>());
+            
+            if(!ModEntry.Locations[location.NameOrUniqueName].Contains(start))
+                ModEntry.Locations[location.NameOrUniqueName].Add(start);
+            
+            DoFloodFill(location, new Point(start.X++, start.Y)); //1 step to right
+            DoFloodFill(location, new Point(start.X--, start.Y)); //1 step to left
+            DoFloodFill(location, new Point(start.X, start.Y++)); //1 step down
+            DoFloodFill(location, new Point(start.X, start.Y--)); //1 step up
+        }
+        /*
+         * later on try this?:
+    fn fill(x, y):
+    if not Inside(x, y) then return
+    let s = new empty queue or stack
+    Add (x, x, y, 1) to s
+    Add (x, x, y - 1, -1) to s
+    while s is not empty:
+        Remove an (x1, x2, y, dy) from s
+        let x = x1
+        if Inside(x, y):
+            while Inside(x - 1, y):
+                Set(x - 1, y)
+                x = x - 1
+        if x < x1:
+            Add (x, x1-1, y-dy, -dy) to s
+        while x1 <= x2:
+            while Inside(x1, y):
+                Set(x1, y)
+                x1 = x1 + 1
+            Add (x, x1 - 1, y+dy, dy) to s
+            if x1 - 1 > x2:
+                Add (x2 + 1, x1 - 1, y-dy, -dy) to s
+            x1 = x1 + 1
+            while x1 < x2 and not Inside(x1, y):
+                x1 = x1 + 1
+            x = x1
+         */
     }
 }

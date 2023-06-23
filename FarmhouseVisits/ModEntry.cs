@@ -2,288 +2,329 @@
 using System.Collections.Generic;
 using System.Linq;
 using GenericModConfigMenu;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Locations;
 
+// ReSharper disable InconsistentNaming
+
 namespace FarmVisitors
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class ModEntry : Mod
     {
         public override void Entry(IModHelper helper)
         {
-            helper.Events.GameLoop.GameLaunched += this.GameLaunched;
-            helper.Events.GameLoop.SaveLoaded += this.SaveLoaded;
+            helper.Events.GameLoop.GameLaunched += GameLaunched;
+            helper.Events.GameLoop.SaveLoaded += SaveLoaded;
 
-            helper.Events.GameLoop.DayStarted += this.DayStarted;
-            helper.Events.GameLoop.TimeChanged += this.OnTimeChange;
-            helper.Events.GameLoop.DayEnding += this.DayEnding;
+            helper.Events.GameLoop.DayStarted += DayStarted;
+            helper.Events.GameLoop.TimeChanged += OnTimeChange;
+            helper.Events.GameLoop.DayEnding += DayEnding;
 
             helper.Events.Player.Warped += FarmOutside.PlayerWarp;
 
-            helper.Events.GameLoop.ReturnedToTitle += this.TitleReturn;
+            helper.Events.GameLoop.ReturnedToTitle += TitleReturn;
             helper.Events.Content.AssetRequested += Extras.AssetRequest;
 
-            ModEntry.Config = this.Helper.ReadConfig<ModConfig>();
+            Config = Helper.ReadConfig<ModConfig>();
 
-            Log = this.Monitor.Log;
-            TL = this.Helper.Translation;
+            Log = Monitor.Log;
+            TL = Helper.Translation;
 
-            if (ModEntry.Config.Debug)
+            if (Config.Debug)
             {
                 helper.ConsoleCommands.Add("print", "List the values requested.", Debugging.Print);
-                helper.ConsoleCommands.Add("vi_reload", "Reload visitor info.", this.Reload);
+                helper.ConsoleCommands.Add("vi_reload", "Reload visitor info.", Reload);
                 helper.ConsoleCommands.Add("vi_force", "Force a visit to happen.", Debugging.ForceVisit);
             }
         }
 
         #region hooks
+        
         private void GameLaunched(object sender, GameLaunchedEventArgs e)
         {
-            if (ModEntry.Config.Debug)
+            if (Config.Debug)
             {
-                this.Monitor.Log("Debug has been turned on. This will change configuration for testing purposes.", LogLevel.Warn);
+                Monitor.Log("Debug has been turned on. This will change configuration for testing purposes.", LogLevel.Warn);
 
-                this.Monitor.Log("Chance set to 100 (% every 10 min)");
-                ModEntry.Config.CustomChance = 100;
-                this.Monitor.Log("Starting hour will be 600.");
-                ModEntry.Config.StartingHours = 600;
+                Monitor.Log("Chance set to 100 (% every 10 min)");
+                Config.CustomChance = 100;
+                Monitor.Log("Starting hour will be 600.");
+                Config.StartingHours = 600;
             }
 
-            var AllowedStringVals = new string[3]
+            var allowedStringVals = new[]
             {
                 "VanillaOnly",
                 "VanillaAndMod",
                 "None"
             };
 
-            //add actions
-            ActionList.Add(new Action(Proceed));
-            ActionList.Add(new Action(CancelVisit));
-
             //clear values. better safe than sorry
             ClearValues();
 
             // get Generic Mod Config Menu's API (if it's installed)
-            var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
             if (configMenu is null)
                 return;
             // register mod
             configMenu.Register(
-                mod: this.ModManifest,
-                reset: () => ModEntry.Config = new ModConfig(),
-                save: () => this.Helper.WriteConfig(ModEntry.Config)
+                mod: ModManifest,
+                reset: () => Config = new ModConfig(),
+                save: () => Helper.WriteConfig(Config)
             );
 
             // basic config options
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.CustomChance.name"),
-                tooltip: () => this.Helper.Translation.Get("config.CustomChance.description"),
-                getValue: () => ModEntry.Config.CustomChance,
-                setValue: value => ModEntry.Config.CustomChance = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.CustomChance.name"),
+                tooltip: () => Helper.Translation.Get("config.CustomChance.description"),
+                getValue: () => Config.CustomChance,
+                setValue: value => Config.CustomChance = value,
                 min: 0,
                 max: 100,
                 interval: 1
             );
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.GiftChance.name"),
-                tooltip: () => this.Helper.Translation.Get("config.GiftChance.description"),
-                getValue: () => ModEntry.Config.GiftChance,
-                setValue: value => ModEntry.Config.GiftChance = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.GiftChance.name"),
+                tooltip: () => Helper.Translation.Get("config.GiftChance.description"),
+                getValue: () => Config.GiftChance,
+                setValue: value => Config.GiftChance = value,
                 min: 0,
                 max: 100,
                 interval: 1
             );
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.MaxVisitsPerDay.name"),
-                tooltip: () => this.Helper.Translation.Get("config.MaxVisitsPerDay.description"),
-                getValue: () => ModEntry.Config.MaxVisitsPerDay,
-                setValue: value => ModEntry.Config.MaxVisitsPerDay = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.MaxVisitsPerDay.name"),
+                tooltip: () => Helper.Translation.Get("config.MaxVisitsPerDay.description"),
+                getValue: () => Config.MaxVisitsPerDay,
+                setValue: value => Config.MaxVisitsPerDay = value,
                 min: 0,
                 max: 24,
                 interval: 1
             );
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: true
             );
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.VisitDuration.name"),
-                tooltip: () => this.Helper.Translation.Get("config.VisitDuration.description"),
-                getValue: () => ModEntry.Config.Duration,
-                setValue: value => ModEntry.Config.Duration = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.VisitDuration.name"),
+                tooltip: () => Helper.Translation.Get("config.VisitDuration.description"),
+                getValue: () => Config.Duration,
+                setValue: value => Config.Duration = value,
                 min: 1,
                 max: 20,
                 interval: 1
             );
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: false
             );
             //extra customization
             configMenu.AddPageLink(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 pageId: "Extras",
-                text: Extras.ExtrasTL
+                text: () => TL.Get("config.Extras")
+            );
+            
+            //extra customization
+            configMenu.AddPageLink(
+                mod: ModManifest,
+                pageId: "Sleepovers",
+                text: () => TL.Get("config.Sleepovers")
+            );
+            
+            //developer config
+            configMenu.AddPageLink(
+                mod: ModManifest,
+                pageId: "Debug",
+                text: () => TL.Get("config.Debug.name")
             );
 
             configMenu.AddPage(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 pageId: "Extras"
             );
 
             configMenu.AddSectionTitle(
-                mod: this.ModManifest,
-                text: Extras.VisitConfiguration,
+                mod: ModManifest,
+                text: () => TL.Get("config.VisitConfiguration"),
                 tooltip: null);
 
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: true
             );
             configMenu.AddTextOption(
-                mod: this.ModManifest,
-                getValue: () => ModEntry.Config.Blacklist,
-                setValue: value => ModEntry.Config.Blacklist = value,
-                name: Extras.BlacklistTL,
-                tooltip: Extras.BlacklistTTP
+                mod: ModManifest,
+                getValue: () => Config.Blacklist,
+                setValue: value => Config.Blacklist = value,
+                name: () => TL.Get("config.Blacklist.name"),
+                tooltip: () => TL.Get("config.Blacklist.description")
             );
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: false
                 );
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.StartingHours.name"),
-                tooltip: () => this.Helper.Translation.Get("config.StartingHours.description"),
-                getValue: () => ModEntry.Config.StartingHours,
-                setValue: value => ModEntry.Config.StartingHours = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.StartingHours.name"),
+                tooltip: () => Helper.Translation.Get("config.StartingHours.description"),
+                getValue: () => Config.StartingHours,
+                setValue: value => Config.StartingHours = value,
                 min: 600,
                 max: 2400,
                 interval: 100
             );
             configMenu.AddNumberOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.EndingHours.name"),
-                tooltip: () => this.Helper.Translation.Get("config.EndingHours.description"),
-                getValue: () => ModEntry.Config.EndingHours,
-                setValue: value => ModEntry.Config.EndingHours = value,
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.EndingHours.name"),
+                tooltip: () => Helper.Translation.Get("config.EndingHours.description"),
+                getValue: () => Config.EndingHours,
+                setValue: value => Config.EndingHours = value,
                 min: 600,
                 max: 2400,
                 interval: 100
             );
 
             configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.WalkOnFarm.name"),
-                tooltip: () => this.Helper.Translation.Get("config.WalkOnFarm.description"),
-                getValue: () => ModEntry.Config.WalkOnFarm,
-                setValue: value => ModEntry.Config.WalkOnFarm = value
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.WalkOnFarm.name"),
+                tooltip: () => Helper.Translation.Get("config.WalkOnFarm.description"),
+                getValue: () => Config.WalkOnFarm,
+                setValue: value => Config.WalkOnFarm = value
             );
 
             //from here on, ALL config is title-only
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: true
                 );
             
             configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.UniqueDialogue.name"),
-                tooltip: () => this.Helper.Translation.Get("config.UniqueDialogue.description"),
-                getValue: () => ModEntry.Config.UniqueDialogue,
-                setValue: value => ModEntry.Config.UniqueDialogue = value
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.UniqueDialogue.name"),
+                tooltip: () => Helper.Translation.Get("config.UniqueDialogue.description"),
+                getValue: () => Config.UniqueDialogue,
+                setValue: value => Config.UniqueDialogue = value
             );
 
             configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.AskForConfirmation.name"),
-                tooltip: () => this.Helper.Translation.Get("config.AskForConfirmation.description"),
-                getValue: () => ModEntry.Config.NeedsConfirmation,
-                setValue: value => ModEntry.Config.NeedsConfirmation = value
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.AskForConfirmation.name"),
+                tooltip: () => Helper.Translation.Get("config.AskForConfirmation.description"),
+                getValue: () => Config.NeedsConfirmation,
+                setValue: value => Config.NeedsConfirmation = value
             );
             configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.RejectionDialogues.name"),
-                tooltip: () => this.Helper.Translation.Get("config.RejectionDialogues.description"),
-                getValue: () => ModEntry.Config.RejectionDialogue,
-                setValue: value => ModEntry.Config.RejectionDialogue = value
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.RejectionDialogues.name"),
+                tooltip: () => Helper.Translation.Get("config.RejectionDialogues.description"),
+                getValue: () => Config.RejectionDialogue,
+                setValue: value => Config.RejectionDialogue = value
             );
             configMenu.AddTextOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.InLawComments.name"),
-                tooltip: () => this.Helper.Translation.Get("config.InLawComments.description"),
-                getValue: () => ModEntry.Config.InLawComments,
-                setValue: value => ModEntry.Config.InLawComments = value,
-                allowedValues: AllowedStringVals,
-                formatAllowedValue: value => this.Helper.Translation.Get($"config.InLawComments.values.{value}")
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.InLawComments.name"),
+                tooltip: () => Helper.Translation.Get("config.InLawComments.description"),
+                getValue: () => Config.InLawComments,
+                setValue: value => Config.InLawComments = value,
+                allowedValues: allowedStringVals,
+                formatAllowedValue: value => Helper.Translation.Get($"config.InLawComments.values.{value}")
             );
             configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.ReplacerCompat.name"),
-                tooltip: () => this.Helper.Translation.Get("config.ReplacerCompat.description"),
-                getValue: () => ModEntry.Config.ReplacerCompat,
-                setValue: value => ModEntry.Config.ReplacerCompat = value
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.ReplacerCompat.name"),
+                tooltip: () => Helper.Translation.Get("config.ReplacerCompat.description"),
+                getValue: () => Config.ReplacerCompat,
+                setValue: value => Config.ReplacerCompat = value
             );
 
-            //developer config
-            configMenu.AddSectionTitle(
-                mod: this.ModManifest,
-                text: Extras.DebugTL,
-                tooltip: null
-            );
-            configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.Verbose.name"),
-                tooltip: () => this.Helper.Translation.Get("config.Verbose.description"),
-                getValue: () => ModEntry.Config.Verbose,
-                setValue: value => ModEntry.Config.Verbose = value
-            );
-            configMenu.AddBoolOption(
-                mod: this.ModManifest,
-                name: () => this.Helper.Translation.Get("config.Debug.name"),
-                tooltip: () => this.Helper.Translation.Get("config.Debug.Explanation"),
-                getValue: () => ModEntry.Config.Debug,
-                setValue: value => ModEntry.Config.Debug = value
-            );
 
+            configMenu.AddPage(
+                mod: ModManifest,
+                pageId: "Debug",
+                pageTitle: () => TL.Get("config.Debug.name")
+            );
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.Debug.name"),
+                tooltip: () => Helper.Translation.Get("config.Debug.Explanation"),
+                getValue: () => Config.Debug,
+                setValue: value => Config.Debug = value
+            );
             configMenu.SetTitleScreenOnlyForNextOptions(
-                mod: this.ModManifest,
+                mod: ModManifest,
                 titleScreenOnly: false
                 );
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.Verbose.name"),
+                tooltip: () => Helper.Translation.Get("config.Verbose.description"),
+                getValue: () => Config.Verbose,
+                setValue: value => Config.Verbose = value
+            );
+            
+            configMenu.AddPage(
+                mod: ModManifest,
+                pageId: "Sleepovers",
+                pageTitle: () => TL.Get("config.Sleepovers")
+                );
+            
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.SleepoverEnabled.name"),
+                tooltip: () => Helper.Translation.Get("config.SleepoverEnabled.description"),
+                getValue: () => Config.Sleepover,
+                setValue: value => Config.Sleepover = value
+            );
+            configMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.SleepoverChance.name"),
+                tooltip: () => Helper.Translation.Get("config.SleepoverChance.Explanation"),
+                getValue: () => Config.SleepoverChance,
+                setValue: value => Config.SleepoverChance = value,
+                min: 0,
+                max: 100,
+                interval: 1
+            );
+            
+            configMenu.AddNumberOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.SleepoverMinHearts.name"),
+                tooltip: () => Helper.Translation.Get("config.SleepoverMinHearts.Explanation"),
+                getValue: () => Config.SleepoverMinHearts,
+                setValue: value => Config.SleepoverMinHearts = value,
+                min: 0,
+                max: 12,
+                interval: 1
+            );
         }
+        
         private void SaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            //get translations
-            if (ResponseList?.Count is not 2)
-            {
-                ResponseList.Add(new Response("AllowedEntry", this.Helper.Translation.Get("Visit.Yes")));
-                ResponseList.Add(new Response("RejectedEntry", this.Helper.Translation.Get("Visit.No")));
-            }
-
-            FirstLoadedDay = true;
+            _firstLoadedDay = true;
 
             //clear ALL values and temp data on load. this makes sure there's no conflicts with savedata cache (e.g if player had returned to title)
             ClearValues();
             CleanTempData();
 
             //check config
-            if (ModEntry.Config.StartingHours >= ModEntry.Config.EndingHours)
+            if (Config.StartingHours >= Config.EndingHours)
             {
-                this.Monitor.Log("Starting hours can't happen after ending hours! To use the mod, fix this and reload savefile.", LogLevel.Error);
+                Monitor.Log("Starting hours can't happen after ending hours! To use the mod, fix this and reload savefile.", LogLevel.Warn);
                 IsConfigValid = false;
                 return;
             }
-            else
-            {
-                this.Monitor.Log("User config is valid.");
-                IsConfigValid = true;
-            }
+
+            Monitor.Log("User config is valid.");
+            IsConfigValid = true;
 
             //get all possible visitors- which also checks blacklist and married NPCs, etc.
             GetAllVisitors();
@@ -291,11 +332,11 @@ namespace FarmVisitors
             /* if allowed, get all inlaws. 
              * this doesn't need daily reloading. NPC dispositions don't vary 
              * (WON'T add compat for the very small % of mods with conditional disp., its an expensive action)*/
-            if (ModEntry.Config.InLawComments is "VanillaAndMod")
+            if (Config.InLawComments is "VanillaAndMod")
             {
-                this.Monitor.Log("Getting all in-laws...");
+                Monitor.Log("Getting all in-laws...");
                 var tempdict = Game1.content.Load<Dictionary<string, string>>("Data\\NPCDispositions");
-                foreach (string name in NameAndLevel.Keys)
+                foreach (var name in NameAndLevel.Keys)
                 {
                     var temp = Moddeds.GetInlawOf(tempdict, name);
                     if (temp is not null)
@@ -305,36 +346,37 @@ namespace FarmVisitors
                 }
             }
         }
+        
         private void DayStarted(object sender, DayStartedEventArgs e)
         {
             //if faulty config, don't do anything + mark as unvisitable
             if (IsConfigValid == false)
             {
-                this.Monitor.Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
+                Monitor.Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
                 CanBeVisited = false;
                 return;
             }
 
             //every sunday, friendship data is reloaded.
-            if (Game1.dayOfMonth % 7 == 0 && FirstLoadedDay == false)
+            if (Game1.dayOfMonth % 7 == 0 && _firstLoadedDay == false)
             {
-                this.Monitor.Log("Day is sunday and not first loaded day. Reloading data...");
+                Monitor.Log("Day is sunday and not first loaded day. Reloading data...");
                 NameAndLevel?.Clear();
                 RepeatedByLV?.Clear();
 
                 GetAllVisitors();
             }
-
+            
             /* if no friendship with anyone OR festival day:
              * make unvisitable
              * return (= dont check custom schedule)
              */
             isFestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.currentSeason);
-            var anyInLV = RepeatedByLV.Any();
+            var anyInLv = RepeatedByLV != null && RepeatedByLV.Any();
             //log info
-            this.Monitor.Log($"isFestivalToday = {isFestivalToday}; anyInLV = {anyInLV}");
+            Monitor.Log($"isFestivalToday = {isFestivalToday}; anyInLV = {anyInLv}");
 
-            if (anyInLV == false || isFestivalToday)
+            if (anyInLv == false || isFestivalToday)
             {
                 CanBeVisited = false;
                 return;
@@ -354,300 +396,324 @@ namespace FarmVisitors
                 Animals = Values.GetAnimals();
             }
         }
+        
         private void OnTimeChange(object sender, TimeChangedEventArgs e)
         {
             if (!CanBeVisited)
             {
                 return;
             }
-
-            if (e.NewTime > ModEntry.Config.StartingHours && e.NewTime < ModEntry.Config.EndingHours && CounterToday < ModEntry.Config.MaxVisitsPerDay)
+            
+            //if first day playing or sunday
+            if ((e.OldTime == 600 || e.NewTime == 610) && (_firstLoadedDay || Game1.dayOfMonth % 7 == 0))
+            {
+                FixChildrenInfo();
+                return;
+            }
+            
+            //if avaiable visit time and hasn't reached MAX visitors yet
+            if (e.NewTime > Config.StartingHours && e.NewTime < Config.EndingHours && CounterToday < Config.MaxVisitsPerDay)
             {
                 if (!HasAnyVisitors && HasAnySchedules) //custom
                 {
-                    foreach (KeyValuePair<string, ScheduleData> pair in SchedulesParsed)
+                    foreach (var pair in SchedulesParsed)
                     {
-                        NPC visit = Game1.getCharacterFromName(pair.Key);
-                        if (e.NewTime.Equals(pair.Value.From) && Values.IsFree(visit, false))
+                        var visit = Game1.getCharacterFromName(pair.Key);
+                        
+                        if (!e.NewTime.Equals(pair.Value.From) || !Values.IsFree(visit, false)) continue;
+                        
+                        visit.IsInvisible = true;
+                        Visitor = new DupeNPC(visit)
                         {
-                            VisitorData = new TempNPC(visit);
+                        DurationSoFar = 0,
+                        TimeOfArrival = e.NewTime,
+                        ControllerTime = 0,
+                        CustomVisiting = true,
+                        CustomData = pair.Value
+                        };
+                        
+                        HasAnyVisitors = true;
 
-                            currentCustom.Add(pair.Key, pair.Value);
-
-                            VisitorName = visit.Name;
-
-                            DurationSoFar = 0;
-
-                            HasAnyVisitors = true;
-                            TimeOfArrival = e.NewTime;
-                            ControllerTime = 0;
-                            CustomVisiting = true;
-
-                            if(pair.Value.Force.Enable)
-                            {
-                                this.Monitor.Log($"Adding NPC {VisitorName} by force (scheduled, Force.Enable = {pair.Value.Force.Enable})...");
-
-                                Actions.AddWhileOutside(Game1.getCharacterFromName(VisitorName));
-
-                                ForcedSchedule = true; //set forced to true. (avoids certain behavior)
-
-                                var mail = pair.Value.Force.Mail;
-                                if(!(string.IsNullOrWhiteSpace(mail))) //if there's a mail string, add for tomorrow
-                                {
-                                    Game1.player.mailForTomorrow.Add(mail);
-                                }
-
-                                return;
-
-                            }
-
-                            if (ModEntry.Config.NeedsConfirmation)
-                            {
-                                AskToEnter();
-                            }
-                            else
-                            {
-                                //add them to farmhouse (last to avoid issues)
-                                Actions.AddCustom(Game1.getCharacterFromName(VisitorName), farmHouse, currentCustom[VisitorName], false);
-
-                                if (ModEntry.Config.Verbose)
-                                {
-                                    this.Monitor.Log($"\nHasAnyVisitors set to true.\n{VisitorName} will begin visiting player.\nTimeOfArrival = {TimeOfArrival};\nControllerTime = {ControllerTime};", LogLevel.Debug);
-                                }
-                            }
-
-                            break;
-                        }
-                    }
-                } //custom
-                if (!HasAnyVisitors) //random
-                {
-                    if (Random.Next(1, 101) <= ModEntry.Config.CustomChance && Game1.currentLocation == farmHouseAsLocation)
-                    {
-                        ChooseRandom();
-                    }
-                } //random
-            }
-
-            if (HasAnyVisitors)
-            {
-                NPC c = Game1.getCharacterFromName(VisitorName);
-
-                /*if (!(Game1.player.currentLocation.getCharacters().Contains(c))) //this was causing a bug if player left farm
-                {
-                    if (ModEntry.Config.Debug)
-                    {
-                        this.Monitor.Log($"Character \"{c.Name}\" ({c.displayName}) is currently not in the map. This time change will not be considered for MaxTimeStay count. (Skipping...)", LogLevel.Debug);
-                    }
-                    return;
-                }*/
-
-                //in the future, add unique dialogue for when characters fall asleep in your house.
-                var isVisitSleeping = c.isSleeping.Value;
-                if (DurationSoFar >= MaxTimeStay || (CustomVisiting && (bool)(e.NewTime.Equals(currentCustom[VisitorName]?.To))) || isVisitSleeping)
-                {
-                    this.Monitor.Log($"{c.Name} is retiring for the day.");
-
-                    //if custom AND has custom dialogue: exit with custom. else normal
-                    if (CustomVisiting)
-                    {
-                        var exitd = currentCustom[VisitorName].ExitDialogue;
-                        if (!string.IsNullOrWhiteSpace(exitd))
-                            Actions.RetireCustom(c, e.NewTime, farmHouse, exitd);
-                        else
-                            Actions.Retire(c, e.NewTime, farmHouse);
-
-                        CustomVisiting = false;
-                        currentCustom.Clear();
-                    }
-                    else
-                    {
-                        Actions.Retire(c, e.NewTime, farmHouse);
-                    }
-
-                    HasAnyVisitors = false;
-                    CounterToday++;
-                    TodaysVisitors.Add(VisitorName);
-                    DurationSoFar = 0;
-                    ControllerTime = 0;
-                    VisitorName = null;
-
-                    VisitorData = null;
-                    ForcedSchedule = false;
-
-                    if (ModEntry.Config.Verbose)
-                    {
-                        this.Monitor.Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Actions.TurnToString(TodaysVisitors)}, DurationSoFar = {DurationSoFar}, ControllerTime = {ControllerTime}, VisitorName = {VisitorName}", LogLevel.Debug);
-                    }
-                    return;
-                }
-                else
-                {
-                    if (ModEntry.Config.Verbose)
-                    {
-                        this.Monitor.Log($"{c.Name} will move around.", LogLevel.Debug);
-                    }
-
-                    if (e.NewTime.Equals(TimeOfArrival))
-                    {
-                        this.Monitor.Log($"Time of arrival equals current time. NPC won't move around", LogLevel.Debug);
-                    }
-                    else if (ControllerTime >= 1)
-                    {
-                        c.Halt();
-                        c.controller = null;
-                        ControllerTime = 0;
-                        if (ModEntry.Config.Verbose)
+                        if(pair.Value.Force.Enable)
                         {
-                            this.Monitor.Log($"ControllerTime = {ControllerTime}", LogLevel.Debug);
-                        }
-                    }
-                    else
-                    {
-                        if (IsOutside)
-                        {
-                            FarmOutside.WalkAroundFarm(c.Name);
-                            ControllerTime++;
-                            DurationSoFar++;
-                            this.Monitor.Log($"ControllerTime = {ControllerTime}, DurationSoFar = {DurationSoFar} ({DurationSoFar * 10} minutes).", LogLevel.Debug);
+                            Monitor.Log($"Adding NPC {Visitor.Name} by force (scheduled, Force.Enable = {pair.Value.Force.Enable})...");
 
+                            Actions.AddWhileOutside(Visitor);
+
+                            ForcedSchedule = true; //set forced to true. (avoids certain behavior)
+
+                            var mail = pair.Value.Force.Mail;
+                            if(!string.IsNullOrWhiteSpace(mail)) //if there's a mail string, add for tomorrow
+                            {
+                                Game1.player.mailForTomorrow.Add(mail);
+                            }
                             return;
                         }
 
-                        //old: c.controller = new PathFindController(c, farmHouse, farmHouse.getRandomOpenPointInHouse(Game1.random), Random.Next(0, 4));
-                        var FarmhouseRandomPoint = Actions.RandomPoint_Farmhouse(farmHouse, Game1.random);
-
-                        c.controller = new PathFindController(c, farmHouse, FarmhouseRandomPoint, Random.Next(0, 4));
-                        
-                        if (CustomVisiting)
+                        if (Config.NeedsConfirmation)
                         {
-                            if(ModEntry.Config.Verbose)
-                            this.Monitor.Log("Checking if NPC has any custom dialogue...");
-                        
-                            bool hasCustomDialogue = false;
-                            try
-                            {
-                                var AnyDialogue = currentCustom?[VisitorName]?.Dialogues.Any<string>();
-                                hasCustomDialogue = (bool)AnyDialogue;
-                            }
-                            catch (System.Exception)
-                            {
-                            }
-
-                            if(hasCustomDialogue)
-                            {
-                                c.setNewDialogue(currentCustom[VisitorName].Dialogues[0], true, false);
-
-                                this.Monitor.Log($"Adding custom dialogue for {c.Name}...");
-                                
-                                if (ModEntry.Config.Verbose)
-                                    this.Monitor.Log($"C. Dialogue: {currentCustom[VisitorName].Dialogues[0]}", LogLevel.Debug);
-
-                                //remove this dialogue from the queue
-                                currentCustom[VisitorName].Dialogues.RemoveAt(0);
-                            }
+                            AskToEnter();
                         }
-                        
-                        else if (Random.Next(0, 11) <= 5 && FurnitureList.Any())
+                        else
                         {
-                            c.setNewDialogue(
-                                string.Format(
-                                    Values.GetDialogueType(
-                                        c,
-                                        DialogueType.Furniture),
-                                    Values.GetRandomObj
-                                        (ItemType.Furniture)),
-                                true,
-                                false);
+                            //add them to farmhouse (last to avoid issues)
+                            Actions.AddCustom(Visitor, farmHouse, Visitor.CustomData,false);
 
-                            if (ModEntry.Config.Verbose)
+                            if (Config.Verbose)
                             {
-                                this.Monitor.Log($"Adding dialogue for {c.Name}...", LogLevel.Debug);
+                                Monitor.Log($"\nHasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {Visitor.TimeOfArrival};\nControllerTime = {Visitor.ControllerTime};", LogLevel.Debug);
                             }
                         }
 
-                        ControllerTime++;
-                        if (ModEntry.Config.Verbose)
-                        {
-                            this.Monitor.Log($"ControllerTime = {ControllerTime}", LogLevel.Debug);
-                        }
+                        break;
                     }
-
-                    DurationSoFar++;
-                    if (ModEntry.Config.Verbose)
+                }
+                if (!HasAnyVisitors) //random
+                {
+                    if (Random.Next(1, 101) <= Config.CustomChance && Game1.currentLocation.Equals(farmHouse))
                     {
-                        this.Monitor.Log($"DurationSoFar = {DurationSoFar} ({DurationSoFar * 10} minutes).", LogLevel.Debug);
+                        ChooseRandom();
                     }
                 }
             }
+
+            //if there's no current visitors, do nothing
+            if (!HasAnyVisitors) return;
+
+            //in the future, add unique dialogue for when characters fall asleep in your house.
+            var soonToSleep = Values.IsCloseToSleepTime(Visitor);
+            //if custom visit and reached max time
+            var maxCustomTime = Visitor.CustomVisiting && e.NewTime >= Visitor.CustomData?.To;
+            
+            //if npc has stayed too long, check how to retire
+            if (Visitor.DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
+            {
+                var shouldSleepOver = soonToSleep && Config.Sleepover && Random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= NameAndLevel[Visitor.Name];
+                
+                Monitor.Log($"{Visitor.Name} is retiring for the day.");
+
+                //if custom AND has custom dialogue: exit with custom. else normal
+                if (Visitor.CustomVisiting)
+                {
+                    var exitd = Visitor.CustomData?.ExitDialogue;
+                    if (!string.IsNullOrWhiteSpace(exitd))
+                        Actions.RetireCustom(Visitor, farmHouse, exitd);
+                    else
+                        Actions.Retire(Visitor, farmHouse);
+                }
+                else if (shouldSleepOver)
+                {
+                    Actions.GoToSleep(Visitor);
+                }
+                else
+                {
+                    Actions.Retire(Visitor, farmHouse);
+                }
+
+                HasAnyVisitors = false;
+                CounterToday++;
+                TodaysVisitors.Add(Visitor.Name);
+                var durationSoFar = Visitor.DurationSoFar;
+                var controllerTime = Visitor.ControllerTime;
+                ForcedSchedule = false;
+
+                if (Config.Verbose)
+                {
+                    Monitor.Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Actions.TurnToString(TodaysVisitors)}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {Visitor?.Name}", LogLevel.Debug);
+                }
+                return;
+            }
+            //otherwise, they'll try to move around.
+            if (Config.Verbose)
+            {
+                Monitor.Log($"{Visitor.Name} will move around.", LogLevel.Debug);
+            }
+
+            //if they just arrived they won't move.
+            if (e.NewTime.Equals(Visitor.TimeOfArrival))
+            {
+                Monitor.Log("Time of arrival equals current time. NPC won't move around", LogLevel.Debug);
+            }
+            //if they've been moving too long, they'll stop
+            else if (Visitor.ControllerTime != 0)
+            {
+                Visitor.Halt();
+                Visitor.temporaryController = null;
+                Visitor.controller = null;
+                Visitor.ControllerTime = 0;
+                if (Config.Verbose)
+                {
+                    Monitor.Log($"ControllerTime = {Visitor.ControllerTime}", LogLevel.Debug);
+                }
+            }
+            //otherwise, will try moving.
+            else
+            {
+                Visitor.DurationSoFar++;
+                Visitor.ControllerTime++;
+                
+
+                //walk on farm
+                if (Visitor.IsOutside)
+                {
+                    FarmOutside.WalkAroundFarm(Visitor);
+                    Monitor.Log($"ControllerTime = {Visitor.ControllerTime}, DurationSoFar = {Visitor.DurationSoFar} ({Visitor.DurationSoFar * 10} minutes).", LogLevel.Debug);
+                }
+                else
+                {
+                    Visitor.controller = new PathFindController(
+                        Visitor,
+                        Visitor.currentLocation,
+                        Actions.GetRandomTile(Visitor.currentLocation),
+                        Random.Next(0, 4)
+                    );
+                }
+
+                if (Visitor.CustomVisiting)
+                {
+                    if(Config.Verbose)
+                        Monitor.Log("Checking if NPC has any custom dialogue...");
+                        
+                    var hasCustomDialogue = false;
+                    try
+                    {
+                        var AnyDialogue = Visitor.CustomData?.Dialogues.Any();
+                        if (AnyDialogue != null) hasCustomDialogue = (bool)AnyDialogue;
+                    }
+                    // ReSharper disable once EmptyGeneralCatchClause
+                    catch (Exception)
+                    {
+                    }
+
+                    if(hasCustomDialogue)
+                    {
+                        Visitor.setNewDialogue(Visitor.CustomData.Dialogues[0], true);
+
+                        Monitor.Log($"Adding custom dialogue for {Visitor.Name}...");
+                                
+                        if (Config.Verbose)
+                            Monitor.Log($"C. Dialogue: {Visitor.CustomData.Dialogues[0]}", LogLevel.Debug);
+
+                        //remove this dialogue from the queue
+                        Visitor.CustomData.Dialogues.RemoveAt(0);
+                    }
+                }
+                        
+                else if (Random.Next(0, 11) <= 5 && FurnitureList.Any())
+                {
+                    Visitor.setNewDialogue(
+                        string.Format(
+                            Values.GetDialogueType(
+                                Visitor,
+                                DialogueType.Furniture),
+                            Values.GetRandomObj
+                                (ItemType.Furniture)),
+                        true);
+
+                    if (Config.Verbose)
+                    {
+                        Monitor.Log($"Adding dialogue for {Visitor.Name}...", LogLevel.Debug);
+                    }
+                }
+                if (Config.Verbose)
+                {
+                    Monitor.Log($"ControllerTime = {Visitor.ControllerTime}", LogLevel.Debug);
+                }
+            }
+
+            Visitor.DurationSoFar++;
+            if (Config.Verbose)
+            {
+                Monitor.Log($"DurationSoFar = {Visitor.DurationSoFar} ({Visitor.DurationSoFar * 10} minutes).", LogLevel.Debug);
+            }
         }
+      
         private void DayEnding(object sender, DayEndingEventArgs e)
         {
-            FirstLoadedDay = false;
+            _firstLoadedDay = false;
 
             CleanTempData();
 
             SchedulesParsed?.Clear();
 
-            if (ModEntry.Config.Verbose)
+            if (Config.Verbose)
             {
-                this.Monitor.Log("Clearing today's visitor list, visitor count, and all other temp info...", LogLevel.Debug);
+                Monitor.Log("Clearing today's visitor list, visitor count, and all other temp info...", LogLevel.Debug);
             }
         }
+        
         private void TitleReturn(object sender, ReturnedToTitleEventArgs e)
         {
             ClearValues();
 
-            this.Monitor.Log($"Removing cached information: HasAnyVisitors= {HasAnyVisitors}, TimeOfArrival={TimeOfArrival}, CounterToday={CounterToday}, VisitorName={VisitorName}. TodaysVisitors, NameAndLevel, FurnitureList, and RepeatedByLV cleared.");
+            Monitor.Log($"Removing cached information: HasAnyVisitors= {HasAnyVisitors}, TimeOfArrival={Visitor.TimeOfArrival}, CounterToday={CounterToday}, VisitorName={Visitor.Name}. TodaysVisitors, NameAndLevel, FurnitureList, and RepeatedByLV cleared.");
         }
 #endregion
         
         #region mod methods
+        
+        private void FixChildrenInfo()
+        {
+            var hasC2N = Helper.ModRegistry.Get("Loe2run.ChildToNPC") != null;
+            var hasLNPCs = Helper.ModRegistry.Get("Candidus42.LittleNPCs") != null;
+
+            if (!hasC2N && !hasLNPCs) return;
+            
+            //check all npcs in farmhouse, since C2N and LNPCs add them at first timechange (iirc)
+            foreach (var chara in Utility.getHomeOfFarmer(Game1.player).characters)
+            {
+                //if npc isnt married to farmer, assuming it's a child.
+                if (chara.isMarried() || chara.isRoommate()) continue;
+                try
+                {
+                    NameAndLevel.Remove(chara.Name);
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+            }
+        }
+        
         private void ParseBlacklist()
         {
-            this.Monitor.Log("Getting raw blacklist.");
-            BlacklistRaw = ModEntry.Config.Blacklist;
+            Monitor.Log("Getting raw blacklist.");
+            BlacklistRaw = Config.Blacklist;
             if (BlacklistRaw is null)
             {
-                this.Monitor.Log("No characters in blacklist.");
+                Monitor.Log("No characters in blacklist.");
             }
 
-            var charsToRemove = new string[] { "-", ",", ".", ";", "\"", "\'", "/" };
+            var charsToRemove = new[] { "-", ",", ".", ";", "\"", "\'", "/" };
             foreach (var c in charsToRemove)
             {
-                BlacklistRaw = BlacklistRaw.Replace(c, string.Empty);
+                BlacklistRaw = BlacklistRaw?.Replace(c, string.Empty);
             }
-            if (ModEntry.Config.Verbose)
+            if (Config.Verbose)
             {
                 Monitor.Log($"Raw blacklist: \n {BlacklistRaw} \nWill be parsed to list now.", LogLevel.Debug);
             }
-            BlacklistParsed = BlacklistRaw.Split(' ').ToList();
+            BlacklistParsed = BlacklistRaw?.Split(' ').ToList();
         }
         private void CleanTempData()
         {
             CounterToday = 0;
-
-            VisitorData = null;
-            VisitorName = null;
-
-            CustomVisiting = false;
+            Visitor = null;
             HasAnyVisitors = false;
-
-            currentCustom?.Clear();
             TodaysVisitors?.Clear();
 
-            if (MaxTimeStay != (ModEntry.Config.Duration - 1))
+            if (MaxTimeStay != (Config.Duration - 1))
             {
-                MaxTimeStay = (ModEntry.Config.Duration - 1);
+                MaxTimeStay = (Config.Duration - 1);
                 Monitor.Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};");
             }
 
             Animals?.Clear();
             Crops?.Clear();
             FurnitureList?.Clear();
-            FurnitureList = Values.UpdateFurniture(Utility.getHomeOfFarmer(Game1.MasterPlayer));
+            FurnitureList = Values.UpdateFurniture(Utility.getHomeOfFarmer(Game1.player));
 
-            if (ModEntry.Config.Verbose)
+            if (Config.Verbose)
             {
                 Monitor.Log($"Furniture list updated. Count: {FurnitureList?.Count ?? 0}", LogLevel.Debug);
             }
@@ -659,30 +725,23 @@ namespace FarmVisitors
             RepeatedByLV?.Clear();
             TodaysVisitors?.Clear();
             FurnitureList?.Clear();
-            currentCustom?.Clear();
             SchedulesParsed?.Clear();
             BlacklistRaw = null;
             BlacklistParsed?.Clear();
+            Locations?.Clear();
             
-            if (!string.IsNullOrWhiteSpace(ModEntry.Config.Blacklist))
+            if (!string.IsNullOrWhiteSpace(Config.Blacklist))
             {
                 ParseBlacklist();
             }
 
-            TimeOfArrival = 0;
             CounterToday = 0;
-            DurationSoFar = 0;
-            ControllerTime = 0;
-
             HasAnyVisitors = false;
-            CustomVisiting = false;
-
-            VisitorName = null;
-            VisitorData = null;
+            Visitor = null;
         }
         private void ReloadCustomschedules()
         {
-            this.Monitor.Log("Began reloading custom schedules.");
+            Monitor.Log("Began reloading custom schedules.");
 
             SchedulesParsed?.Clear();
 
@@ -690,70 +749,66 @@ namespace FarmVisitors
 
             if (schedules.Any())
             {
-                foreach (KeyValuePair<string, ScheduleData> pair in schedules)
+                foreach (var pair in schedules)
                 {
-                    this.Monitor.Log($"Checking {pair.Key}'s schedule...");
-                    bool isPatchValid = Extras.IsScheduleValid(pair);
+                    Monitor.Log($"Checking {pair.Key}'s schedule...");
+                    var isPatchValid = Extras.IsScheduleValid(pair);
 
                     if (!isPatchValid)
                     {
-                        this.Monitor.Log($"{pair.Key} schedule won't be added.", LogLevel.Error);
+                        Monitor.Log($"{pair.Key} schedule won't be added.", LogLevel.Error);
                     }
                     else
                     {
-                        SchedulesParsed.Add(pair.Key, pair.Value); //NRE
+                        SchedulesParsed?.Add(pair.Key, pair.Value); //NRE
                     }
                 }
             }
 
             HasAnySchedules = SchedulesParsed?.Any() ?? false;
 
-            this.Monitor.Log("Finished reloading custom schedules.");
+            Monitor.Log("Finished reloading custom schedules.");
         }
 
         //below methods: REQUIRED, dont touch UNLESS it's for bug-fixing
         internal static void ChooseRandom()
         {
-            ModEntry.Log("Getting random...",LogLevel.Trace);
+            Log("Getting random...",LogLevel.Trace);
             var RChoice = Random.Next(0, (RepeatedByLV.Count));
 
-            VisitorName = RepeatedByLV[RChoice];
-            ModEntry.Log($"Random: {RChoice}; VisitorName= {VisitorName}",LogLevel.Trace);
+            var visitorName = RepeatedByLV[RChoice];
+            Log($"Random: {RChoice}; VisitorName= {visitorName}",LogLevel.Trace);
 
-            NPC visit = Game1.getCharacterFromName(VisitorName);
+            var visit = Game1.getCharacterFromName(visitorName);
 
-            if (Values.IsFree(visit, true))
+            if (!Values.IsFree(visit, true)) return;
+            
+            visit.IsInvisible = true;
+            //save values
+            Visitor = new DupeNPC(visit)
             {
-                //save values
-                VisitorData = new TempNPC(visit);
+                CustomVisiting = false,
+                DurationSoFar = 0,
+                TimeOfArrival = Game1.timeOfDay,
+                ControllerTime = 0
+            };
 
-                CustomVisiting = false;
-
-                DurationSoFar = 0;
-
-                HasAnyVisitors = true;
-                TimeOfArrival = Game1.timeOfDay;
-                ControllerTime = 0;
+            HasAnyVisitors = true;
 
 
-                if (ModEntry.Config.NeedsConfirmation)
-                {
-                    AskToEnter();
-                }
-                else
-                {
-                    //add them to farmhouse (last to avoid issues)
-                    Actions.AddToFarmHouse(Game1.getCharacterFromName(VisitorName), farmHouse, false);
-
-                    if (ModEntry.Config.Verbose)
-                    {
-                        ModEntry.Log($"\nHasAnyVisitors set to true.\n{VisitorName} will begin visiting player.\nTimeOfArrival = {TimeOfArrival};\nControllerTime = {ControllerTime};", LogLevel.Debug);
-                    }
-                }
+            if (Config.NeedsConfirmation)
+            {
+                AskToEnter();
             }
             else
             {
-                VisitorName = null;
+                //add them to farmhouse (last to avoid issues)
+                Actions.AddToFarmHouse(Visitor, farmHouse, false);
+
+                if (Config.Verbose)
+                {
+                    Log($"\nHasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {Visitor.TimeOfArrival};\nControllerTime = {Visitor.ControllerTime};", LogLevel.Debug);
+                }
             }
         }
         private void GetAllVisitors()
@@ -763,171 +818,190 @@ namespace FarmVisitors
                 return;
             }
 
-            this.Monitor.Log("Began obtaining all visitors.");
-            if (!string.IsNullOrWhiteSpace(ModEntry.Config.Blacklist))
+            SearchAllPossible();
+            
+            Monitor.Log("Began obtaining all visitors.");
+            if (!string.IsNullOrWhiteSpace(Config.Blacklist))
             {
                 ParseBlacklist();
             }
-            NPCNames = Game1.content.Load<Dictionary<string, string>>("Data\\NPCDispositions").Keys.ToList<string>();
+            NpcNames = Game1.content.Load<Dictionary<string, string>>("Data\\NPCDispositions").Keys.ToList();
 
-            MaxTimeStay = (ModEntry.Config.Duration - 1);
-            this.Monitor.Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};");
+            MaxTimeStay = (Config.Duration - 1);
+            Monitor.Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};");
 
-            farmHouseAsLocation = Utility.getHomeOfFarmer(Game1.MasterPlayer);
-            farmHouse = Utility.getHomeOfFarmer(Game1.MasterPlayer);
+            farmHouse = Utility.getHomeOfFarmer(Game1.player);
 
-            foreach (string name in Game1.NPCGiftTastes.Keys)
+            //get all friended excluding children and spouses/divorced
+            foreach (var pair in Game1.player.friendshipData.Pairs)
             {
-                if (ModEntry.Config.Debug)
+                if (!NpcNames.Contains(pair.Key)) continue;
+                
+                if (Config.Debug)
                 {
-                    this.Monitor.Log($"Name: {name}", LogLevel.Trace);
+                    Monitor.Log($"Name: {pair.Key}");
                 }
-                if (!name.StartsWith("Universal_") && name is not null)
+
+                var hearts = pair.Value.Points / 250;
+
+                var isDivorced = pair.Value.IsDivorced();
+                var isMarried = pair.Value.IsMarried() || pair.Value.IsRoommate();
+
+                if (isMarried == false && hearts is not 0)
                 {
-                    int hearts = Game1.MasterPlayer.getFriendshipHeartLevelForNPC(name);
-                    NPC npcn = Game1.getCharacterFromName(name);
-
-                    if (npcn is not null)
+                    if (BlacklistParsed is not null)
                     {
-                        var _IsDivorced = Values.IsDivorced(npcn);
-                        var _IsMarried = Values.IsMarriedToPlayer(npcn);
-
-                        if (_IsMarried == false && hearts is not 0)
+                        if (BlacklistParsed.Contains(pair.Key))
                         {
-                            if (BlacklistParsed is not null)
-                            {
-                                if (BlacklistParsed.Contains(npcn.Name))
-                                {
-                                    this.Monitor.Log($"{npcn.displayName} is in the blacklist.", LogLevel.Info);
-                                }
-                                else
-                                {
-                                    NameAndLevel.Add(name, hearts);
-                                }
-                            }
-                            else if (_IsDivorced)
-                            {
-                                this.Monitor.Log($"{name} is Divorced.");
-                            }
-                            else
-                            {
-                                if (npcn.Name.Equals("Dwarf"))
-                                {
-                                    if (!Game1.MasterPlayer.canUnderstandDwarves)
-                                        this.Monitor.Log("Player can't understand dwarves yet!");
-
-                                    else
-                                        NameAndLevel.Add(name, hearts);
-                                }
-                                else
-                                    NameAndLevel.Add(name, hearts);
-                            }
+                            Monitor.Log($"{pair.Key} is in the blacklist.", LogLevel.Info);
                         }
                         else
                         {
-                            if (_IsMarried)
-                            {
-                                MarriedNPCs.Add(npcn.Name);
-                                this.Monitor.Log($"Adding {npcn.displayName} (internal name {npcn.Name}) to married list...");
-                            }
-
-                            if (_IsDivorced)
-                            {
-                                this.Monitor.Log($"{name} is Divorced. They won't visit player");
-                            }
-                            else if (ModEntry.Config.Verbose)
-                            {
-                                this.Monitor.Log($"{name} won't be added to the visitor list.", LogLevel.Debug);
-                            }
+                            NameAndLevel.Add(pair.Key, hearts);
                         }
+                    }
+                    else if (isDivorced)
+                    {
+                        Monitor.Log($"{pair} is Divorced.");
                     }
                     else
                     {
-                        this.Monitor.Log($"{name} is not an existing NPC!");
+                        if (pair.Key.Equals("Dwarf"))
+                        {
+                            if (!Game1.player.canUnderstandDwarves)
+                                Monitor.Log("Player can't understand dwarves yet!");
+
+                            else
+                                NameAndLevel.Add(pair.Key, hearts);
+                        }
+                        else
+                            NameAndLevel.Add(pair.Key, hearts);
+                    }
+                }
+                else
+                {
+                    if (isMarried)
+                    {
+                        MarriedNPCs.Add(pair.Key);
+                        Monitor.Log($"Adding {pair.Key} to married list...");
                     }
 
+                    if (isDivorced)
+                    {
+                        Monitor.Log($"{pair.Key} is Divorced. They won't visit player");
+                    }
+                    else if (Config.Verbose)
+                    {
+                        Monitor.Log($"{pair.Key} won't be added to the visitor list.", LogLevel.Debug);
+                    }
                 }
             }
-            string call = "\n Name   | Hearts\n--------------------";
-            foreach (KeyValuePair<string, int> pair in NameAndLevel)
+            
+            //log all npcs friended
+            var call = "\n Name   | Hearts\n--------------------";
+            foreach (var pair in NameAndLevel)
             {
-                call += $"\n   {pair.Key}   {pair.Value}";
+                var fixedstr = pair.Key + "               ".Remove(0, pair.Key.Length);
+                
+                call += $"\n   {fixedstr} {pair.Value}";
 
-                List<string> tempdict = Enumerable.Repeat(pair.Key, pair.Value).ToList();
+                var tempdict = Enumerable.Repeat(pair.Key, pair.Value).ToList();
                 RepeatedByLV.AddRange(tempdict);
             }
-            this.Monitor.Log(call);
+            
+            Monitor.Log(call);
 
             FurnitureList?.Clear();
             FurnitureList = Values.UpdateFurniture(farmHouse);
-            this.Monitor.Log($"Furniture count: {FurnitureList.Count}");
+            Monitor.Log($"Furniture count: {FurnitureList.Count}");
 
-            this.Monitor.Log("Finished obtaining all visitors.");
+            Monitor.Log("Finished obtaining all visitors.");
 
             ReloadCustomschedules();
         }
 
+        private static void SearchAllPossible()
+        {
+            Locations?.Clear();
+            
+            //get farmhouse valid tiles
+            var home = Utility.getHomeOfFarmer(Game1.player);
+            FarmOutside.DoFloodFill(home,home.getEntryLocation());
+            
+            //get farm valid tiles
+            if (!Config.WalkOnFarm) return;
+            var farmEntry = Game1.getFarm().GetMainFarmHouseEntry();
+            FarmOutside.DoFloodFill(Game1.getFarm(),new Point(farmEntry.X,farmEntry.Y++));
+/*
+            //get all sheds
+            foreach (var building in Game1.getFarm().buildings)
+            {
+                if (building.indoors.Value is not Shed) return;
+                
+                FarmOutside.DoFloodFill(Utility.fuzzyLocationSearch(building.nameOfIndoors),building.getPointForHumanDoor());
+            }*/
+        }
+
         //if user wants confirmation for NPC to come in
-        internal static void AskToEnter()
+        private static void AskToEnter()
         {
             //knock on door
-            /*
-            Game1.currentLocation.playSound("stoneStep", SoundContext.Default);
-            System.Threading.Thread.Sleep(300);
-            Game1.currentLocation.playSound("stoneStep", SoundContext.Default);
-            System.Threading.Thread.Sleep(300);*/
+            DelayedAction.playSoundAfterDelay("stoneStep",300,Game1.player.currentLocation);
+            DelayedAction.playSoundAfterDelay("stoneStep",600,Game1.player.currentLocation);
+            DelayedAction.playSoundAfterDelay("stoneStep",900,Game1.player.currentLocation);
 
             //get name, place in question string
-            var displayName = Game1.getCharacterFromName(VisitorName).displayName;
-            var formattedQuestion = string.Format(ModEntry.TL.Get("Visit.AllowOrNot"), displayName);
+            var displayName = Visitor.displayName;
+            var formattedQuestion = string.Format(TL.Get("Visit.AllowOrNot"), displayName);
 
-            var EntryQuestion = new EntryQuestion(formattedQuestion, ResponseList, ActionList);
-
-            //put it on the game
-            Game1.activeClickableMenu = EntryQuestion;
+            var res = Game1.player.currentLocation.createYesNoResponses();
+            Game1.player.currentLocation.createQuestionDialogue(formattedQuestion, res, _entryAfterQuestion);
         }
-        internal void CancelVisit()
+        private static void CancelVisit()
         {
-            VisitorData = null;
-            HasAnyVisitors = false;
-            CustomVisiting = false;
-
-            var visit = Game1.getCharacterFromName(VisitorName);
-
-            if (ModEntry.Config.RejectionDialogue)
+            var name = Visitor.Name;
+            TodaysVisitors.Add(name);
+            if (Config.RejectionDialogue)
             {
-                //Game1.drawDialogue(visit, Values.GetRejectionResponse(visit));
-                Game1.drawDialogue(visit, Values.GetDialogueType(visit, DialogueType.Rejected));
+                Game1.drawDialogue(Visitor, Values.GetDialogueType(Visitor,DialogueType.Rejected));
             }
 
-            TodaysVisitors.Add(VisitorName);
-            VisitorName = null;
+            HasAnyVisitors = false;
+            Visitor = null;
+            
+            Game1.getCharacterFromName(name).IsInvisible = false;
         }
-        internal void Proceed()
+        private static void Proceed()
         {
-            if (CustomVisiting)
+            if (Visitor.CustomVisiting)
             {
-                Actions.AddCustom(Game1.getCharacterFromName(VisitorName), farmHouse, currentCustom[VisitorName], true);
+                Actions.AddCustom(Visitor, farmHouse, Visitor.CustomData, true);
             }
             else
             {
-                Actions.AddToFarmHouse(Game1.getCharacterFromName(VisitorName), farmHouse, true);
+                Actions.AddToFarmHouse(Visitor, farmHouse, true);
             }
         }
+        private static void _entryAfterQuestion(Farmer who, string whichAnswer)
+        {
+            if (whichAnswer == "Yes") Proceed();
+            else CancelVisit();
+        }
+
         /*  console commands  */
         private void Reload(string command, string[] arg2) => GetAllVisitors();
         public static void SetFromCommand(NPC visit)
         {
+            Visitor = new DupeNPC(visit)
+            {
+                DurationSoFar = 0,
+                TimeOfArrival = Game1.timeOfDay,
+                ControllerTime = 0
+            };
 
-            VisitorData = new TempNPC(visit);
+            HasAnyVisitors = true;
 
-            ModEntry.DurationSoFar = 0;
-
-            ModEntry.HasAnyVisitors = true;
-            ModEntry.TimeOfArrival = Game1.timeOfDay;
-            ModEntry.ControllerTime = 0;
-
-            ModEntry.Log($"\nHasAnyVisitors set to true.\n{VisitorName} will begin visiting player.\nTimeOfArrival = {TimeOfArrival};\nControllerTime = {ControllerTime};", LogLevel.Info);
+            Log($"\nHasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {Visitor.TimeOfArrival};\nControllerTime = {Visitor.ControllerTime};", LogLevel.Info);
         }
 #endregion
 
@@ -938,9 +1012,9 @@ namespace FarmVisitors
 
         internal static Action<string, LogLevel> Log { get; private set; }
         internal static ITranslationHelper TL { get; private set; }
-        internal static TempNPC VisitorData { get; set; }
+        internal static DupeNPC Visitor { get; set; }
 
-        internal static Random Random
+        private static Random Random
         {
             get
             {
@@ -949,16 +1023,14 @@ namespace FarmVisitors
             }
         }
 
-        internal GameLocation farmHouseAsLocation;
-        private bool FirstLoadedDay;
-        internal static FarmHouse farmHouse { get; private set; }
+        private bool _firstLoadedDay;
+        private static FarmHouse farmHouse { get; set; }
 
-        internal static List<Response> ResponseList { get; private set; } = new();
-        internal static List<Action> ActionList { get; private set; } = new();
         #endregion
         
         #region player data
         internal static ModConfig Config;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
         private static List<string> RepeatedByLV = new();
         private static Random random;
         private static bool isFestivalToday;
@@ -966,34 +1038,27 @@ namespace FarmVisitors
         internal static List<string> BlacklistParsed { get; private set; } = new();
         #endregion
         #region configurable
-        internal static string BlacklistRaw { get; private set; }
-        internal static bool CustomVisiting { get; private set; }
-        internal bool IsConfigValid { get; private set; }
-        internal static bool HasAnyVisitors { get; private set; }
-        internal static bool HasAnySchedules { get; private set; }
+
+        private static string BlacklistRaw { get; set; }
+        private bool IsConfigValid { get; set; }
+        private static bool HasAnyVisitors { get; set; }
+        private static bool HasAnySchedules { get; set; }
 #endregion
         
         #region visitdata
-        internal static int TimeOfArrival { get; private set; }
-        internal int CounterToday { get; private set; }
-        internal static int DurationSoFar { get; private set; }
-        internal int MaxTimeStay { get; private set; }
-        internal static int ControllerTime { get; private set; }
-        public static bool ForcedSchedule { get; private set; } = false;
+        private int CounterToday { get; set; }
+        private int MaxTimeStay { get; set; }
+        public static bool ForcedSchedule { get; private set; }
 #endregion
         #region game information
+        internal static Dictionary<string,List<Point>> Locations { get; set; } = new ();
         internal static Dictionary<string, int> NameAndLevel { get; private set; } = new();
-        internal static List<string> NPCNames { get; private set; } = new();
-        internal static Dictionary<string, ScheduleData> SchedulesParsed { get; private set; } = new();
-        internal static Dictionary<string, ScheduleData> currentCustom { get; private set; } = new();
-#endregion
-        #region public data
-        public static Dictionary<string, List<string>> InLaws { get; private set; } = new();
-        public static List<string> MarriedNPCs { get; private set; } = new();
-        public static List<string> TodaysVisitors { get; internal set; } = new();
-        public static readonly char[] slash = new char['/'];
-        public static string VisitorName { get; internal set; }
-        public static bool IsOutside { get; internal set; }
+        internal static List<string> NpcNames { get; private set; } = new();
+        private static Dictionary<string, ScheduleData> SchedulesParsed { get; set; } = new();
+        internal static Dictionary<string, List<string>> InLaws { get; private set; } = new();
+        internal static List<string> MarriedNPCs { get; private set; } = new();
+        internal static List<string> TodaysVisitors { get; set; } = new();
+        //internal static readonly char[] Slash = new char['/'];
 #endregion
     }
 }

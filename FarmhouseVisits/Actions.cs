@@ -1,17 +1,13 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
-using StardewValley.Network;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using StardewValley.Audio;
 
 namespace FarmVisitors
 {
-    internal class Actions
+    internal static class Actions
     {
         #region normal visit
         //regular visit: the one used by non-scheduled NPCs
@@ -24,23 +20,9 @@ namespace FarmVisitors
                     ModEntry.Log($"{visitor.displayName} is not a visitor!", LogLevel.Trace);
                     return;
                 }
-
-                bool isanimating = visitor.doingEndOfRouteAnimation.Value;
-
-                if(isanimating == true || (visitor.doingEndOfRouteAnimation is not null && visitor.doingEndOfRouteAnimation.Value is true))
-                {
-                    RemoveAnimation(visitor);
-                }
-                /* not needed anymore since we exclude hospital days. however i like it and i restore the dialogues afterwards so it's fine*/
                 
-                if(visitor.CurrentDialogue.Any())
-                {
-                    visitor.CurrentDialogue.Clear();
-                }
+                Game1.getCharacterFromName(visitor.Name).IsInvisible = true;
                 
-                visitor.ignoreScheduleToday = true;
-                visitor.temporaryController = null;
-
                 if(hadConfirmation == false)
                 {
                     DrawDialogue(visitor,Values.GetDialogueType(visitor,DialogueType.Introduce));
@@ -49,23 +31,19 @@ namespace FarmVisitors
                 var position = farmHouse.getEntryLocation();
                 position.Y--;
                 visitor.faceDirection(0);
-                Game1.warpCharacter(visitor, "FarmHouse", position);
+                Game1.warpCharacter(visitor, farmHouse, position.ToVector2());
 
-                //npcv.showTextAboveHead(string.Format(Values.GetTextOverHead(npcv),Game1.MasterPlayer.Name));
-                visitor.showTextAboveHead(string.Format(Values.GetDialogueType(visitor, DialogueType.WalkIn),Game1.MasterPlayer.Name));
+                visitor.showTextAboveHead(string.Format(Values.GetDialogueType(visitor, DialogueType.WalkIn),Game1.player.Name));
 
                 //set before greeting because "Push" leaves dialogues at the top
-                if (Game1.MasterPlayer.isMarried())
+                if (Game1.player.isMarried())
                 {
                     if (ModEntry.Config.InLawComments is not "None")
                         InLawActions(visitor);
                 }
 
-                //npcv.CurrentDialogue.Push(new Dialogue(string.Format(Values.StringByPersonality(npcv), Values.GetSeasonalGifts()), npcv)); <- doesnt work
-
                 var enterDialogue = Values.GetDialogueType(visitor, DialogueType.Greet);
                 var randomInt = Game1.random.Next(101);
-                //string.Format(Values.StringByPersonality(npcv), Values.GetSeasonalGifts());
                 if (ModEntry.Config.GiftChance >= randomInt)
                 {
                     var withGift = $"{enterDialogue}#$b#{Values.GetGiftDialogue(visitor)}";
@@ -76,20 +54,12 @@ namespace FarmVisitors
                     enterDialogue = string.Format(withGift, Values.GetSeasonalGifts());
                 }
 
-                /*if (ModEntry.Debug)
-                {
-                    ModEntry.Log($"enterDialogue: {enterDialogue}", LogLevel.Trace);
-                    visitor.setNewDialogue("testing if dialogue works via setNewDialogue.", true, true);
-                    visitor.CurrentDialogue.Push(new Dialogue("This is a new Dialogue being pushed to CurrentDialogue.", visitor));
-                    visitor.CurrentDialogue.Push(new Dialogue($"TESTING, {enterDialogue}", visitor));
-                }*/
-
                 visitor.setNewDialogue($"{enterDialogue}", true, true);
-                visitor.CurrentDialogue.Push(new Dialogue(visitor,null,Values.GetDialogueType(visitor, DialogueType.Thanking)));
+                visitor.CurrentDialogue.Push(new Dialogue(Values.GetDialogueType(visitor, DialogueType.Thanking),visitor));
 
-                if (Game1.currentLocation == farmHouse)
+                if (Game1.currentLocation.Equals(farmHouse))
                 {
-                    Game1.currentLocation.playSound("doorClose", visitor.Position,null,SoundContext.NPC);
+                    Game1.currentLocation.playSound("doorClose");
                 }
 
                 position.Y--;
@@ -101,20 +71,12 @@ namespace FarmVisitors
             }
 
         }
-        internal static void Retire(NPC c, int currentTime, FarmHouse farmHouse)
+        internal static void Retire(NPC c, FarmHouse farmHouse)
         {
-            /*!Game1.player.currentLocation.name.Value.StartsWith("Cellar")
-            
-            string currentloc = Game1.currentLocation.Name;
-            string cellar = farmHouse.GetCellarName();
-            !currentloc.Equals(cellar)*/
-
             var currentLocation = Game1.currentLocation;
+            var inFarm = FarmOutside.NPCinScreen();
 
-            var inFarm = FarmOutside.NPCinScreen(); //currentLocation.Name == Game1.getFarm().Name <- redundant, inScreen checks by map
-
-
-            if (currentLocation == farmHouse || inFarm)
+            if (currentLocation.Equals(farmHouse) || inFarm)
             {
                 try
                 {
@@ -132,10 +94,10 @@ namespace FarmVisitors
                 finally
                 {
                     DrawDialogue(c, Values.GetDialogueType(c, DialogueType.Retiring));
-                    ReturnToNormal(c, currentTime);
+                    ReturnToNormal(c);
                     if (!inFarm)
                     {
-                        Game1.currentLocation.playSound("doorClose",c.Position ,null,SoundContext.NPC);
+                        Game1.currentLocation.playSound("doorClose");
                     }
                 }
             }
@@ -143,7 +105,7 @@ namespace FarmVisitors
             {
                 try
                 {
-                    Leave(c, currentTime);
+                    Leave(c);
                 }
                 catch (Exception ex)
                 {
@@ -153,14 +115,14 @@ namespace FarmVisitors
         }
         private static void InLawActions(NPC visitor)
         {
-            bool addedAlready = false;
+            var addedAlready = false;
             var name = visitor.Name;
 
             if (!ModEntry.Config.ReplacerCompat && Moddeds.IsVanillaInLaw(name))
             {
-                if (Vanillas.InLawOfSpouse(name) is true)
+                if (Vanillas.InLawOfSpouse(name))
                 {
-                    visitor.setNewDialogue(Vanillas.GetInLawDialogue(name), true, false);
+                    visitor.setNewDialogue(Vanillas.GetInLawDialogue(name), true);
                     addedAlready = true;
                 }
             }
@@ -170,22 +132,22 @@ namespace FarmVisitors
                 var spouse = Moddeds.GetRelativeName(name);
                 if (spouse is not null && !addedAlready)
                 {
-                    string formatted = string.Format(Moddeds.GetDialogueRaw(), spouse);
-                    visitor.setNewDialogue(formatted, true, false);
+                    var formatted = string.Format(Moddeds.GetDialogueRaw(), spouse);
+                    visitor.setNewDialogue(formatted, true);
                     addedAlready = true;
                 }
             }
 
-            if (Game1.MasterPlayer.getChildrenCount() > 0 && addedAlready)
+            if (Game1.player.getChildrenCount() > 0 && addedAlready)
             {
-                visitor.setNewDialogue(Vanillas.AskAboutKids(Game1.MasterPlayer), true, false);
+                visitor.setNewDialogue(Vanillas.AskAboutKids(Game1.player), true);
             }
         }
         #endregion
 
         #region custom
         // customized visits: ones set by user via ContentPatcher
-        internal static void AddCustom(NPC c, FarmHouse farmHouse, ScheduleData data, bool HadConfirmation)
+        internal static void AddCustom(NPC c, FarmHouse farmHouse, ScheduleData data, bool hadConfirmation)
         {
             try
             {
@@ -195,50 +157,28 @@ namespace FarmVisitors
                     return;
                 }
 
-                NPC npcv = c;
+                var npcv = new DupeNPC(c);
 
-                bool isanimating = npcv.doingEndOfRouteAnimation.Value; // || npcv.goingToDoEndOfRouteAnimation.Value;
-                if(isanimating == true || (npcv.doingEndOfRouteAnimation is not null && npcv.doingEndOfRouteAnimation.Value is true))
+                if(hadConfirmation == false)
                 {
-                    RemoveAnimation(npcv);
-                }
-                if (npcv.CurrentDialogue.Any())
-                {
-                    npcv.CurrentDialogue.Clear();
-                }
-
-                npcv.ignoreScheduleToday = true;
-                npcv.temporaryController = null;
-
-                if(HadConfirmation == false)
-                {
-                    if (!string.IsNullOrWhiteSpace(data.EntryQuestion))
-                    {
-                        DrawDialogue(npcv, data.EntryQuestion);
-                    }
-                    else
-                    {
-                        //Game1.drawDialogue(npcv, Values.GetIntroDialogue(npcv));
-                        DrawDialogue(npcv, Values.GetDialogueType(npcv, DialogueType.Introduce));
-                    }
+                    DrawDialogue(npcv,
+                        !string.IsNullOrWhiteSpace(data.EntryQuestion)
+                            ? data.EntryQuestion
+                            //Game1.drawDialogue(npcv, Values.GetIntroDialogue(npcv));
+                            : Values.GetDialogueType(npcv, DialogueType.Introduce));
                 }
                 var position = farmHouse.getEntryLocation();
                 position.Y--;
                 npcv.faceDirection(0);
-                Game1.warpCharacter(npcv, "FarmHouse", position);
+                Game1.warpCharacter(npcv, farmHouse, position.ToVector2());
 
-                if (!string.IsNullOrWhiteSpace(data.EntryBubble))
-                {
-                    npcv.showTextAboveHead(string.Format(data.EntryBubble, Game1.MasterPlayer.Name));
-                }
-                else
-                {
-                    npcv.showTextAboveHead(string.Format(Values.GetDialogueType(npcv, DialogueType.WalkIn), Game1.MasterPlayer.Name));
-                }
+                npcv.showTextAboveHead(!string.IsNullOrWhiteSpace(data.EntryBubble)
+                    ? string.Format(data.EntryBubble, Game1.player.Name)
+                    : string.Format(Values.GetDialogueType(npcv, DialogueType.WalkIn), Game1.player.Name));
 
                 if (!string.IsNullOrWhiteSpace(data.EntryDialogue))
                 {
-                    npcv.setNewDialogue(data.EntryDialogue, true, false);
+                    npcv.setNewDialogue(data.EntryDialogue, true);
                 }
                 else
                 {
@@ -246,14 +186,15 @@ namespace FarmVisitors
                     var randomInt = Game1.random.Next(101);
                     if (ModEntry.Config.GiftChance >= randomInt)
                     {
-                        enterDialogue += $"#$b#" + Values.GetGiftDialogue(npcv);
-                        enterDialogue = String.Format(enterDialogue, Values.GetSeasonalGifts());
+                        enterDialogue += "#$b#" + Values.GetGiftDialogue(npcv);
+                        enterDialogue = string.Format(enterDialogue, Values.GetSeasonalGifts());
                     }
+                    npcv.setNewDialogue(enterDialogue,true);
                 }
 
-                if (Game1.currentLocation == farmHouse)
+                if (Game1.currentLocation.Equals(farmHouse))
                 {
-                    Game1.currentLocation.playSound("doorClose",c.Position ,null,SoundContext.NPC);
+                    Game1.currentLocation.playSound("doorClose");
                 }
 
                 position.Y--;
@@ -265,9 +206,9 @@ namespace FarmVisitors
             }
 
         }
-        internal static void RetireCustom(NPC c, int currentTime, FarmHouse farmHouse, string text)
+        internal static void RetireCustom(NPC c, FarmHouse farmHouse, string text)
         {
-            if (Game1.currentLocation == farmHouse)
+            if (Game1.currentLocation.Equals(farmHouse))
             {
                 try
                 {
@@ -286,15 +227,15 @@ namespace FarmVisitors
                 {
                     DrawDialogue(c, text);
 
-                    ReturnToNormal(c, currentTime);
-                    Game1.currentLocation.playSound("doorClose", c.Position ,null,SoundContext.NPC);
+                    ReturnToNormal(c);
+                    Game1.currentLocation.playSound("doorClose");
                 }
             }
             else
             {
                 try
                 {
-                    Leave(c, currentTime);
+                    Leave(c);
                 }
                 catch (Exception ex)
                 {
@@ -306,7 +247,7 @@ namespace FarmVisitors
         {
             try
             {
-                var farmHouse = Utility.getHomeOfFarmer(Game1.MasterPlayer);
+                var farmHouse = Utility.getHomeOfFarmer(Game1.player);
 
                 if (!Values.IsVisitor(visitor.Name))
                 {
@@ -314,29 +255,12 @@ namespace FarmVisitors
                     return;
                 }
 
-                bool isanimating = visitor.doingEndOfRouteAnimation.Value;
-
-                if (isanimating == true || (visitor.doingEndOfRouteAnimation is not null && visitor.doingEndOfRouteAnimation.Value is true))
-                {
-                    RemoveAnimation(visitor);
-                }
-                /* not needed anymore since we exclude hospital days. however i like it and i restore the dialogues afterwards so it's fine*/
-
-                if (visitor.CurrentDialogue.Any())
-                {
-                    visitor.CurrentDialogue.Clear();
-                }
-
-                visitor.ignoreScheduleToday = true;
-                visitor.temporaryController = null;
-
-
                 var position = farmHouse.getEntryLocation();
                 position.Y--;
                 visitor.faceDirection(0);
-                Game1.warpCharacter(visitor, "FarmHouse", position);
+                Game1.warpCharacter(visitor, farmHouse, position.ToVector2());
 
-                visitor.showTextAboveHead(string.Format(Values.GetDialogueType(visitor, DialogueType.WalkIn), Game1.MasterPlayer.Name));
+                visitor.showTextAboveHead(string.Format(Values.GetDialogueType(visitor, DialogueType.WalkIn), Game1.player.Name));
 
                 position.Y--;
                 visitor.controller = new PathFindController(visitor, farmHouse, position, 0);
@@ -350,133 +274,17 @@ namespace FarmVisitors
 
         #region used by both
 
-        private static void DrawDialogue(NPC visitor, string text)
+        private static void DrawDialogue(NPC visitor, string text) => Game1.drawDialogue(visitor, text);
+
+        private static void ReturnToNormal(Character c)
         {
-            
-            //make stack since now it works like this
-            var intro = new Dialogue(visitor, null,
-                Values.GetDialogueType(visitor, DialogueType.Introduce));
-            var stack = new Stack<Dialogue>();
-            stack.Push(intro);
-            visitor.CurrentDialogue = stack;
-                    
-            //draw dialogue
-            Game1.drawDialogue(visitor);
+            var name = c.Name;
+            //ModEntry.Visitor.Removed();
+            ModEntry.Visitor = null;
+            var realNpc = Game1.getCharacterFromName(name, false);
+            realNpc.IsInvisible = false;
         }
-        internal static void ReturnToNormal(NPC c, int currentTime)
-        {
-            //special NPCs (locked by conditions in game)
-            if (c.Name.Equals("Dwarf") || c.Name.Equals("Kent") || c.Name.Equals("Leo"))
-            {
-                try
-                {
-                    c.CurrentDialogue?.Clear();
-                    //c.Dialogue?.Clear(); as said before this is counterproductive and only lags / doesnt do anything for the mod
-
-                    if (c.Name.Equals("Dwarf"))
-                    {
-                        var mine = Game1.getLocationFromName("Mine");
-                        Game1.warpCharacter(c, mine, new Vector2(43, 6));
-                    }
-                    if (c.Name.Equals("Kent"))
-                    {
-                        var samhouse = Game1.getLocationFromName("SamHouse");
-                        Game1.warpCharacter(c, samhouse, new Vector2(22, 5));
-                    }
-                    if (c.Name.Equals("Leo"))
-                    {
-                        var islandhut = Game1.getLocationFromName("IslandHut");
-                        Game1.warpCharacter(c, islandhut, new Vector2(5, 6));
-                    }
-
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    ModEntry.Log($"Error while returning special NPC ({c.Name}): {ex}", LogLevel.Error);
-                }
-            }
-
-            //everyone else
-            try
-            {
-                var timeOfDay = Game1.timeOfDay;
-
-                c.Halt();
-                c.controller = null;
-
-                c.ignoreScheduleToday = false;
-                c.followSchedule = true;
-
-                if (c.DefaultMap.Equals(ModEntry.VisitorData?.CurrentLocation))
-                {
-                    Point PositionFixed = new((int)(c.DefaultPosition.X / 64), (int)(c.DefaultPosition.Y / 64));
-
-                    Game1.warpCharacter(c, c.DefaultMap, PositionFixed);
-                }
-                else
-                {
-                    Game1.warpCharacter(c, ModEntry.VisitorData?.CurrentLocation, ModEntry.VisitorData.Position);
-                }
-
-                c.Sprite = ModEntry.VisitorData.Sprite;
-                c.endOfRouteMessage.Value = ModEntry.VisitorData.AnimationMessage;
-
-                if (c.Schedule is null)
-                {
-                    c.InvalidateMasterSchedule();
-
-                    var sched = c.TryLoadSchedule(c.dayScheduleName.Value);
-                    c.ignoreScheduleToday = false;
-                }
-
-                c.checkSchedule(currentTime);
-                c.moveCharacterOnSchedulePath();
-                c.warpToPathControllerDestination();
-
-                //change facing direction
-                c.FacingDirection = ModEntry.VisitorData.Facing;
-                c.facingDirection.Value = ModEntry.VisitorData.Facing;
-                c.faceDirection(ModEntry.VisitorData.Facing);
-
-
-                var currentLocation = c.currentLocation;
-
-                if (c.CurrentDialogue.Any() || c.CurrentDialogue is not null) // || c.Dialogue is not null
-                {
-                    c.CurrentDialogue.Clear();
-                    c.resetCurrentDialogue();
-
-                    //c.Dialogue.Clear(); this would clear ALL dialogues (even ones not being used). bad!
-
-                    c.update(Game1.currentGameTime, currentLocation);
-
-                    /*apparently this causes problems for international players (something about key not found).
-                     * int heartlvl = Game1.MasterPlayer.friendshipData[c.displayName].Points / 250;
-                     * fix: take it out since im not using this anyway lol 
-                     * c.checkForNewCurrentDialogue(heartlvl);*/
-
-                    //restores (pre-visit) current dialogue
-                    c.CurrentDialogue = ModEntry.VisitorData.CurrentPreVisit;
-
-                    /*restores all pre visit dialogues
-                    foreach (KeyValuePair<string,string> pair in ModEntry.VisitorData.AllPreVisit)
-                    {
-                        c.Dialogue.Add(pair.Key, pair.Value);
-                    }
-                    taken out because again we dont need this */
-
-                    //if above doesnt work, try using the dialogues with CurrentDialogue.Push
-                }
-
-                c.performTenMinuteUpdate(timeOfDay, currentLocation);
-                c.update(Game1.currentGameTime, currentLocation);
-            }
-            catch (Exception ex)
-            {
-                ModEntry.Log($"Error while returning NPC: {ex}", LogLevel.Error);
-            }
-        }
+       /*
         private static void RemoveAnimation(NPC npcv)
         {
             try
@@ -502,45 +310,38 @@ namespace FarmVisitors
                 ModEntry.Log($"Error while stopping {npcv.displayName} animation: {ex}", LogLevel.Error);
             }
         }  
-        internal static void Leave(NPC c, int currentTime)
+        */
+       private static void Leave(Character c)
         {
             if (c.controller is not null)
             {
                 c.Halt();
                 c.controller = null;
             }
-            ReturnToNormal(c, currentTime);
-
-            Game1.drawObjectDialogue(string.Format(Values.GetNPCGone(Game1.currentLocation.Name.StartsWith("Cellar")), c.displayName));
+            Game1.drawObjectDialogue(string.Format(Values.GetNpcGone(Game1.currentLocation.Name.StartsWith("Cellar")), c.displayName));
+            ReturnToNormal(c);
         }
-        internal static Point RandomPoint_Farmhouse(GameLocation location, Random r, int tries = 30, int maxDistance = 6)
+       
+/*
+        public static Point GetRandomTile(GameLocation location, NPC who, int tries = 30, int maxDistance = 6)
         {
-            NPC who = Game1.getCharacterFromName(ModEntry.VisitorName);
-
-            var map = location.map;
-
-            Point zero = Point.Zero;
-            bool CanGetHere = false;
-
-            for (int i = 0; i < tries; i++)
+            var zero = Point.Zero;
+            for (var i = 0; i < tries; i++)
             {
-                //we get random position using width and height of map
-                zero = new Point(r.Next(map.Layers[0].LayerWidth), r.Next(map.Layers[0].LayerHeight));
-
-                bool isFloorValid = location.isTileOnMap(zero.ToVector2()) && location.isTilePassable(new xTile.Dimensions.Location(zero.X,zero.Y),Game1.viewport) && !location.isWaterTile(zero.X,zero.Y);
-                Warp WarpOrDoor = location.isCollidingWithWarpOrDoor(new Rectangle(zero, new Point(1, 1)));
-
-                //check that location is clear + not water tile + not behind tree + not a warp
-                CanGetHere = location.isTileLocationTotallyClearAndPlaceable(zero.X, zero.Y) && !isFloorValid && WarpOrDoor == null;
+                var zerov = location.getRandomTile();
+                zero = zerov.ToPoint();
+                var canGetHere = IsPlaceable(zerov, location);
 
                 //if the new point is too far away
                 Point difference = new (Math.Abs(zero.X - (int)who.Position.X), Math.Abs(zero.Y - (int)who.Position.Y));
                 if (difference.X > maxDistance || difference.Y > maxDistance)
-                {
-                    CanGetHere = false;
-                }
+                    continue;
 
-                if (CanGetHere)
+                //if not too far away, check that there's no building
+                if (IsThereABuilding(new PathFindController(who, location, zero, 1).pathToEndPoint, location))
+                    canGetHere = false;
+
+                if (canGetHere)
                 {
                     break;
                 }
@@ -554,7 +355,110 @@ namespace FarmVisitors
             return zero;
         }
 
-        /*private static bool IsBackgroundOrEmpty(GameLocation location, Point zero)
+        public static PathFindController GetRandomTile(GameLocation location, NPC who, Random r, int tries = 30, int maxDistance = 6)
+        {
+            PathFindController path = null;
+            var zero = Point.Zero;
+            for (var i = 0; i < tries; i++)
+            {
+                var zerov = location.getRandomTile();
+                zero = zerov.ToPoint();
+                var canGetHere = IsPlaceable(zerov, location);
+
+                //if the new point is too far away
+                Point difference = new (Math.Abs(zero.X - (int)who.Position.X), Math.Abs(zero.Y - (int)who.Position.Y));
+                if (difference.X > maxDistance || difference.Y > maxDistance)
+                    continue;
+
+                path = new PathFindController(who, location, zero, r.Next(0,4));
+
+                //if not too far away, check that there's no building
+                if (IsThereABuilding(path.pathToEndPoint, location))
+                    canGetHere = false;
+
+                if (canGetHere)
+                {
+                    break;
+                }
+            }
+
+            if (ModEntry.Config.Debug)
+            {
+                ModEntry.Log($"New position for {ModEntry.VisitorName}: {zero.X},{zero.Y}", LogLevel.Debug);
+            }
+
+            return path;
+        }
+
+        private static bool IsThereABuilding(Stack<Point> pathToEndPoint, GameLocation location)
+        {
+            var buildings = location.Map.GetLayer("Buildings");
+            var back = location.Map.GetLayer("Back");
+
+            foreach (var point in pathToEndPoint)
+            {
+                var tilebuildings = buildings.Tiles[point.X, point.Y];
+                var tileback = back.Tiles[point.X, point.Y];
+                var isBackgroundTile = IsBackground(tilebuildings) || IsBackground(tileback);
+
+                if (tilebuildings != null || tileback == null || isBackgroundTile)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsBackground(Tile tile) =>
+            tile?.TileIndex == 0 && tile?.TileSheet.ImageSource is "Maps/townInterior" or "Maps/farmhouse_tiles";
+
+        private static bool IsPlaceable(Vector2 asVector, GameLocation location) => location.CanLoadPathObjectHere(asVector) && !location.isTileOccupied(asVector) && location.isTileLocationTotallyClearAndPlaceableIgnoreFloors(asVector); //&& location.canPetWarpHere(asVector);
+        */
+        /*
+         private static bool IsPlaceable(Point asPoint, Vector2 asVector, GameLocation location) => location.CanLoadPathObjectHere(asVector) && location.isTileOnMap(asVector) && location.isTilePlaceable(asVector) && !location.isTileOccupied(asVector) && Utility.canGrabSomethingFromHere(asPoint.X, asPoint.Y, Game1.player);
+        
+
+        internal static Point GetRandomTile(GameLocation location, Random r, int tries = 30, int maxDistance = 6)
+        {
+            var who = Game1.getCharacterFromName(ModEntry.VisitorName);
+
+            var map = location.map;
+
+            var zero = Point.Zero;
+            var canGetHere = false;
+
+            for (var i = 0; i < tries; i++)
+            {
+                //we get random position using width and height of map
+                zero = new Point(r.Next(map.Layers[0].LayerWidth), r.Next(map.Layers[0].LayerHeight));
+
+                var isFloorValid = location.isTileOnMap(zero.ToVector2()) && location.isTilePassable(new Location(zero.X,zero.Y),Game1.viewport) && !location.isWaterTile(zero.X,zero.Y);
+                var warpOrDoor = location.isCollidingWithWarpOrDoor(new Rectangle(zero, new Point(1, 1)));
+
+                //check that location is clear + not water tile + not behind tree + not a warp
+                canGetHere = location.isTileLocationTotallyClearAndPlaceable(zero.X, zero.Y) && !isFloorValid && warpOrDoor == null;
+
+                //if the new point is too far away
+                Point difference = new (Math.Abs(zero.X - (int)who.Position.X), Math.Abs(zero.Y - (int)who.Position.Y));
+                if (difference.X > maxDistance || difference.Y > maxDistance)
+                {
+                    canGetHere = false;
+                }
+
+                if (canGetHere)
+                {
+                    break;
+                }
+            }
+
+            if (ModEntry.Config.Debug)
+            {
+                ModEntry.Log($"New position for {ModEntry.VisitorName}: {zero.X},{zero.Y}", LogLevel.Debug);
+            }
+
+            return zero;
+        }
+
+        private static bool IsBackgroundOrEmpty(GameLocation location, Point zero)
         {
             int[] validFloors = new int[]
             {
@@ -579,23 +483,30 @@ namespace FarmVisitors
         }*/
         #endregion
 
-        //Utility: turn list to string
-        internal static string TurnToString(List<string> list)
+        public static void GoToSleep(NPC who)
         {
-            string result = "";
-
-            foreach (string s in list)
+            var home = Utility.getHomeOfFarmer(Game1.player);
+            if (!who.currentLocation.Equals(home))
             {
-                if(s.Equals(list[0]))
-                {
-                    result = $"{s}";
-                }
-                else
-                {
-                    result = $"{result}, {s}";
-                }
+                Game1.warpCharacter(who,home,home.getEntryLocation().ToVector2());
             }
-            return result;
+            
+            if (Game1.currentLocation.Equals(home))
+                Game1.currentLocation.playSound("doorClose");
+
+            who.controller = new PathFindController(
+                who,
+                home,
+                Values.GetBedSpot(),
+                1,
+                DoSleep(who)
+            );
+        }
+
+        private static PathFindController.endBehavior DoSleep(NPC who)
+        {
+            who.playSleepingAnimation();
+            return null;
         }
     }
 }

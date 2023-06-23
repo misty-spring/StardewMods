@@ -1,7 +1,7 @@
-﻿using StardewModdingAPI;
-using StardewValley;
-using System;
+﻿using System;
 using System.Linq;
+using StardewModdingAPI;
+using StardewValley;
 using static FarmVisitors.ModEntry;
 
 namespace FarmVisitors
@@ -10,66 +10,53 @@ namespace FarmVisitors
     {
         public static void ForceVisit(string command, string[] arg2)
         {
-            var farmHouse = Utility.getHomeOfFarmer(Game1.MasterPlayer);
+            var farmHouse = Utility.getHomeOfFarmer(Game1.player);
 
             if (Context.IsWorldReady)
             {
-                if (Game1.MasterPlayer.currentLocation == farmHouse)
+                if (Game1.player.currentLocation.Equals(farmHouse))
                 {
                     try
                     {
-                        if (arg2 is null || arg2?.Length == 0)
+                        if (arg2 is null || arg2.Length == 0)
                         {
-                            ModEntry.ChooseRandom();
+                            ChooseRandom();
                         }
-                        else if (NPCNames.Contains(arg2?[0]))
+                        else if (NpcNames.Contains(arg2[0]))
                         {
-                            ModEntry.VisitorName = arg2[0];
-                            ModEntry.Log($"VisitorName= {VisitorName}", LogLevel.Trace);
+                            Log($"VisitorName= {arg2[0]}", LogLevel.Trace);
 
-                            if (!TodaysVisitors.Contains(VisitorName))
+                            if (!TodaysVisitors.Contains(arg2[0]) || arg2[1] is "force")
                             {
                                 //save values
-                                NPC visit = Game1.getCharacterFromName(VisitorName);
-
+                                Visitor = new DupeNPC(Game1.getCharacterFromName(arg2[0]));
                                 //add them to farmhouse
-                                Actions.AddToFarmHouse(visit, farmHouse, false);
-                                ModEntry.SetFromCommand(visit);
-                            }
-                            else if (arg2[1] is "force")
-                            {
-                                //save values
-                                NPC visit = Game1.getCharacterFromName(VisitorName);
-                                ModEntry.VisitorData = new TempNPC(visit);
-
-                                //add them to farmhouse
-                                Actions.AddToFarmHouse(visit, farmHouse, false);
-
+                                Actions.AddToFarmHouse(Visitor, farmHouse, false);
+                                SetFromCommand(Visitor);
                             }
                             else
                             {
-                                ModEntry.VisitorName = null;
-                                ModEntry.Log($"{VisitorName} has already visited the Farm today!", LogLevel.Trace);
+                                Log($"{arg2[0]} has already visited the Farm today!", LogLevel.Trace);
                             }
                         }
                         else
                         {
-                            ModEntry.Log(ModEntry.TL.Get("error.InvalidValue"), LogLevel.Error);
+                            Log(TL.Get("error.InvalidValue"), LogLevel.Error);
                         }
                     }
                     catch(Exception)
                     { 
-
+                        //ignore
                     }
                 }
                 else
                 {
-                    ModEntry.Log(ModEntry.TL.Get("error.NotInFarmhouse"), LogLevel.Error);
+                    Log(TL.Get("error.NotInFarmhouse"), LogLevel.Error);
                 }
             }
             else
             {
-                ModEntry.Log(ModEntry.TL.Get("error.WorldNotReady"), LogLevel.Error);
+                Log(TL.Get("error.WorldNotReady"), LogLevel.Error);
             }
         }
 
@@ -77,106 +64,130 @@ namespace FarmVisitors
         {
             if (!Context.IsWorldReady)
             {
-                ModEntry.Log(ModEntry.TL.Get("error.WorldNotReady"), LogLevel.Error);
+                Log(TL.Get("error.WorldNotReady"), LogLevel.Error);
             }
             else
             {
-                Func<string, bool> InArg2 = word => arg2.Any(s => s.ToLower().Equals(word));
+                //Func<string, bool> InArg2 = word => arg2.Any(s => s.ToLower().Equals(word));
 
-                if (arg2 == null || !(arg2.Any()))
+                if (arg2 == null || !arg2.Any())
                 {
-                    ModEntry.Log("Please input an option (Avaiable: animal, blacklist, crop, furniture, info, inlaws, visits).", LogLevel.Warn);
+                    Log("Please input an option (Avaiable: animal, blacklist, crop, furniture, info, inlaws, visits).", LogLevel.Warn);
                 }
-
-                if (InArg2("info"))
+/*
+                if ((bool)arg2.Any( s => s.ToLower().Equals("info")))
                 {
-                    string cc = currentCustom?.Count.ToString() ?? "none";
-                    string f = VisitorData?.Facing.ToString() ?? "none";
-                    string pv = VisitorData?.CurrentPreVisit?.Count.ToString() ?? "none";
-                    string n = VisitorData?.Name ?? "none";
-                    string am = VisitorData?.AnimationMessage ?? "none";
+                    var cc = CurrentCustom?.Count.ToString() ?? "none";
+                    var f = Visitor?.Facing.ToString() ?? "none";
+                    var pv = Visitor?.CurrentPreVisit?.Count.ToString() ?? "none";
+                    var n = Visitor?.Name ?? "none";
+                    var am = Visitor?.AnimationMessage ?? "none";
 
-                    ModEntry.Log($"\ncurrentCustom count = {cc}; \nVisitorData: \n   Name = {n},\n   Facing = {f}, \n  AnimationMessage = {am}, \n  Dialogues pre-visit: {pv}", LogLevel.Trace);
-                }
-
-                if (InArg2("inlaw") || InArg2("inlaws"))
+                    Log($"\ncurrentCustom count = {cc}; \nVisitorData: \n   Name = {n},\n   Facing = {f}, \n  AnimationMessage = {am}, \n  Dialogues pre-visit: {pv}", LogLevel.Trace);
+                }*/
+                else
                 {
-
-                    string result = "\n";
-
-                    foreach (var pair in InLaws)
+                    var print = "\n";
+                    foreach (var arg in arg2)
                     {
-                        string pairvalue = "";
-                        foreach (string name in pair.Value)
+                        var toLower = arg.ToLower();
+                        switch (toLower)
                         {
-                            if (pair.Value[^1].Equals(name))
+                            case "inlaw":
+                            case "inlaws":
                             {
-                                pairvalue += $"{name}.";
+                                print += "\n In-Laws \n--------------------";
+                                var result = "\n";
+                                foreach (var pair in InLaws)
+                                {
+                                    var pairvalue = "";
+                                    foreach (var name in pair.Value)
+                                    {
+                                        if (pair.Value[^1].Equals(name))
+                                        {
+                                            pairvalue += $"{name}.";
+                                        }
+                                        else
+                                        {
+                                            pairvalue += $"{name}, ";
+                                        }
+                                    }
+
+                                    result += $"\n{pair.Key}: {pairvalue}";
+                                }
+
+                                if (result.Equals("\n"))
+                                {
+                                    Log("No in-laws found. (Searched all NPCs with friendship)", LogLevel.Warn);
+                                }
+                                else
+                                {
+                                    print += result;
+                                }
+
+                                break;
                             }
-                            else
+                            case "animal":
+                            case "animals":
                             {
-                                pairvalue += $"{name}, ";
+                                print += "\n Animals \n--------------------";
+                                foreach(var name in Animals)
+                                {
+                                    print += $"{name} \n";
+                                }
+
+                                break;
+                            }
+                            case "crop":
+                            case "crops":
+                            {
+                                print += "\n Crops \n--------------------";
+                                foreach (var type in Crops)
+                                {
+                                    print += $"{type.Value} \n";
+                                }
+
+                                break;
+                            }
+                            case "visits":
+                            case "v":
+                            {
+                                print += "\n Visits \n--------------------";
+                                foreach (var name in TodaysVisitors)
+                                {
+                                    print += $"{name} \n";
+                                }
+
+                                break;
+                            }
+                            case "blacklist":
+                            case "bl":
+                            {
+                                print += "\n Blacklist \n--------------------";
+                                foreach (var name in BlacklistParsed)
+                                {
+                                    print += $"{name} \n";
+                                }
+
+                                break;
+                            }
+                            case "furniture":
+                            case "f":
+                            {
+                                print += "\n Furniture \n--------------------";
+                                foreach (var name in FurnitureList)
+                                {
+                                    print += $"{name} \n";
+                                }
+
+                                break;
                             }
                         }
-
-                        result += $"\n{pair.Key}: {pairvalue}";
                     }
-
-                    if (result.Equals("\n"))
-                    {
-                        ModEntry.Log("No in-laws found. (Searched all NPCs with friendship)", LogLevel.Warn);
-                    }
-                    else
-                    {
-                        ModEntry.Log(result, LogLevel.Info);
-                    }
-
+                    Log(print, LogLevel.Info);
                 }
 
-                if (InArg2("animal") || InArg2("animals"))
-                {
-                    string print = "\n";
-                    foreach(var name in ModEntry.Animals)
-                    {
-                        print += $"{name} \n";
-                    }
-                }
-
-                if (InArg2("crop") || InArg2("crops"))
-                {
-                    string print = "\n";
-                    foreach (var type in ModEntry.Crops)
-                    {
-                        print += $"{type.Value} \n";
-                    }
-                }
-
-                if (InArg2("visits") || InArg2("v"))
-                {
-                    string print = "\n";
-                    foreach (var name in ModEntry.TodaysVisitors)
-                    {
-                        print += $"{name} \n";
-                    }
-                }
-
-                if (InArg2("blacklist") || InArg2("bl"))
-                {
-                    string print = "\n";
-                    foreach (var name in ModEntry.BlacklistParsed)
-                    {
-                        print += $"{name} \n";
-                    }
-                }
-
-                if (InArg2("furniture") || InArg2("f"))
-                {
-                    string print = "\n";
-                    foreach (var name in ModEntry.FurnitureList)
-                    {
-                        print += $"{name} \n";
-                    }
-                }
+                //ModEntry.Log(print,)
             }
         }
     }

@@ -1,10 +1,11 @@
-﻿using StardewValley;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using lv = StardewModdingAPI.LogLevel;
 
 namespace FarmVisitors
@@ -33,90 +34,23 @@ namespace FarmVisitors
         NoneYet,
         Winter
     }
-    internal class Values
+    internal static class Values
     {
-        internal static bool IsMarriedToPlayer(NPC c)
-        {
-            if (c is null)
-            {
-                return false;
-            }
-            else
-            {         
-                Farmer player = Game1.MasterPlayer;
-                if (!player.friendshipData.ContainsKey(c.Name))
-                {
-                    ModEntry.Log(
-                        $"{c.Name} is not in the dictionary.", 
-                        lv.Trace);
-                    return false;
-                }
-                if (player.friendshipData[c.Name].IsMarried())
-                {
-                    ModEntry.Log(
-                        $"{c.Name} is married!", 
-                        lv.Trace);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-
-        internal static bool IsDivorced(NPC c)
-        {
-            if (c is null)
-            {
-                return false;
-            }
-            else
-            {         
-                Farmer player = Game1.MasterPlayer;
-                if (!player.friendshipData.ContainsKey(c.Name))
-                {
-                    /*ModEntry.Log($"Divorced NPC check: {c.Name} is not in the dictionary.");
-                     * taking this out because a message like this is already sent by IsMarried (to avoid dupes and not confuse myself in the future)
-                     */
-                    return false;
-                }
-                if (player.friendshipData[c.Name].IsDivorced())
-                {
-                    ModEntry.Log(
-                        $"{c.Name} is divorced!", 
-                        lv.Trace);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-
         internal static bool IsVisitor(string c)
         {
-            if (c.Equals(ModEntry.VisitorName))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return c.Equals(ModEntry.Visitor.Name);
         }
         
         /// <summary>
         /// Checks if a NPC is free to visit player.
         /// </summary>
         /// <param name="who">NPC to check</param>
-        /// <param name="IsRandom">If it's a randomly-chosen visit.</param>
+        /// <param name="isRandom">If it's a randomly-chosen visit.</param>
         /// <returns></returns>
-        internal static bool IsFree(NPC who, bool IsRandom)
+        internal static bool IsFree(NPC who, bool isRandom)
         {
             //if character is robin and there's a construction ongoing
-            if (who.Name == "Robin" && Game1.getFarm().isThereABuildingUnderConstruction())
+            if (who.Name == "Robin" && (Game1.getFarm().isThereABuildingUnderConstruction() || who.currentLocation.Equals(Game1.getFarm())))
             {
                 ModEntry.Log(
                     $"{who.displayName} is building in the Farm. Visit will be cancelled.", 
@@ -124,12 +58,16 @@ namespace FarmVisitors
                 return false;
             }
 
+            var isAnimating = who.doingEndOfRouteAnimation.Value;
+            var isInvisible = who.IsInvisible;
             var isHospitalDay = Utility.IsHospitalVisitDay(who.Name);
             var visitedToday = ModEntry.TodaysVisitors.Contains(who.Name);
             var visitingIsland = Game1.IsVisitingIslandToday(who.Name);
             var isSleeping = who.isSleeping.Value;
 
-            if (visitedToday && !IsRandom)
+            var defaultReqs = !isHospitalDay && !visitingIsland && !isSleeping && !isAnimating && !isInvisible;
+
+            if (visitedToday && !isRandom)
             {
                 ModEntry.Log(
                     $"{who.displayName} has already visited the Farm today!",
@@ -154,14 +92,12 @@ namespace FarmVisitors
                     lv.Trace);
             }
 
-            if (IsRandom)
+            if (isRandom)
             {
-                return !visitedToday && !isHospitalDay && !visitingIsland && !isSleeping;
+                return !visitedToday && defaultReqs;
             }
-            else
-            {
-                return !isHospitalDay && !visitingIsland && !isSleeping;
-            }
+
+            return defaultReqs;
         }
         
         /// <summary>
@@ -175,7 +111,7 @@ namespace FarmVisitors
             //allowed values: Introduce, Rejected, Greet, Retiring, WalkIn, Furniture
             
             var r = Game1.random.Next(1, 4);
-            int type = Game1.random.Next(0, 3);
+            var type = Game1.random.Next(0, 3);
             
             if(which == DialogueType.Retiring && ModEntry.Config.UniqueDialogue)
             {
@@ -192,26 +128,22 @@ namespace FarmVisitors
                 {
                     return ModEntry.TL.Get($"NPC{which}.Outgoing{r}");
                 }
-                else
-                {
-                    return ModEntry.TL.Get($"NPC{which}.Shy{r}");
-                }
+
+                return ModEntry.TL.Get($"NPC{which}.Shy{r}");
             }
-            else
+
+            if (c.Manners.Equals(1)) //polite
             {
-                if (c.Manners.Equals(1)) //polite
-                {
-                    return ModEntry.TL.Get($"NPC{which}.Polite{r}");
-                }
-                else if (c.Manners.Equals(2)) //rude
-                {
-                    return ModEntry.TL.Get($"NPC{which}.Rude{r}");
-                }
-                else //neutral
-                {
-                    return ModEntry.TL.Get($"NPC{which}.Neutral{r}");
-                }
+                return ModEntry.TL.Get($"NPC{which}.Polite{r}");
             }
+
+            if (c.Manners.Equals(2)) //rude
+            {
+                return ModEntry.TL.Get($"NPC{which}.Rude{r}");
+            }
+
+            //neutral
+            return ModEntry.TL.Get($"NPC{which}.Neutral{r}");
         }
 
         /// <summary>
@@ -229,41 +161,36 @@ namespace FarmVisitors
                 {
                     return ModEntry.TL.Get($"NPCGift.Normal{r}");
                 }
-                else
-                {
-                    return ModEntry.TL.Get($"NPCGift.Kind{r}");
-                }
+
+                return ModEntry.TL.Get($"NPCGift.Kind{r}");
             }
 
             if (c.Manners.Equals(1)) //polite
             {
                 return ModEntry.TL.Get($"NPCGift.Kind{r}");
             }
-            else if (c.Manners.Equals(2)) //rude
+
+            if (c.Manners.Equals(2)) //rude
             {
                 return ModEntry.TL.Get($"NPCGift.Lax{r}");
             }
-            else
-            {
-                return ModEntry.TL.Get($"NPCGift.Normal{r}");
-            }
+
+            return ModEntry.TL.Get($"NPCGift.Normal{r}");
         }
         
         /// <summary>
         /// Returns translation string, for when NPC leaves and player isn't home.
         /// </summary>
-        /// <param name="IsCellar">Whether the player is in the Cellar.</param>
+        /// <param name="isCellar">Whether the player is in the Cellar.</param>
         /// <returns></returns>
-        internal static string GetNPCGone(bool IsCellar)
+        internal static string GetNpcGone(bool isCellar)
         {
-            if(IsCellar)
+            if(isCellar)
             {
                 return ModEntry.TL.Get("NPCGone_Cellar");
             }
-            else
-            {
-                return ModEntry.TL.Get("NPCGoneWhileOutside");
-            }
+
+            return ModEntry.TL.Get("NPCGoneWhileOutside");
         }
         
         /// <summary>
@@ -272,27 +199,28 @@ namespace FarmVisitors
         /// <returns></returns>
         internal static string GetSeasonalGifts()
         {
-            string defaultgifts = "419 246 423 216 247 688 176 180 436 174 182 184 424 186 438"; //Vinegar, Wheat Flour, Rice, Bread, Oil, Warp Totem: Farm, small Egg (2 types),Large Egg (2 types), Goat Milk, Milk, Cheese, Large Milk, L. Goat Milk
+            const string defaultgifts = "419 246 423 216 247 688 176 180 436 174 182 184 424 186 438"; //Vinegar, Wheat Flour, Rice, Bread, Oil, Warp Totem: Farm, small Egg (2 types),Large Egg (2 types), Goat Milk, Milk, Cheese, Large Milk, L. Goat Milk
             if (Game1.IsSpring)
             {
                 return $"{defaultgifts} 400 252 222 190 610 715"; //Strawberry, Rhubarb, Rhubarb Pie, Cauliflower, Fruit Salad, Lobster
             }
-            else if (Game1.IsSummer)
+
+            if (Game1.IsSummer)
             {
                 return $"{defaultgifts} 636 256 258 270 690 260"; //Peach, Tomato, Blueberry, Corn, Warp Totem: Beach, Hot Pepper
             }
-            else if (Game1.IsFall)
+
+            if (Game1.IsFall)
             {
                 return $"{defaultgifts} 276 284 282 395 689 613"; //Pumpkin, Beet, Cranberries, Coffee, Warp Totem: Mountains, Apple
             }
-            else if (Game1.IsWinter)
+
+            if (Game1.IsWinter)
             {
                 return $"{defaultgifts} 414 144 147 178 787 440"; //Crystal Fruit, Pike, Herring, Hay, Battery Pack, Wool
             }
-            else
-            {
-                return defaultgifts;
-            }
+
+            return defaultgifts;
         }
         
         /// <summary>
@@ -302,7 +230,7 @@ namespace FarmVisitors
         internal static string GetRandomObj(ItemType i)
         {
 
-            List<string> list = i switch
+            var list = i switch
             {
                 ItemType.Furniture => ModEntry.FurnitureList,
                 ItemType.Animal => ModEntry.Animals,
@@ -317,7 +245,7 @@ namespace FarmVisitors
             }
 
             //choose random index and return itsdisplayname
-            int amount = list.Count;
+            var amount = list.Count;
             var r = Game1.random.Next(0, (amount + 1));
             return list[r];
         }
@@ -330,7 +258,7 @@ namespace FarmVisitors
         internal static List<string> UpdateFurniture(FarmHouse farmHouse)
         {
             List<string> templist = new();
-            foreach (Furniture f in farmHouse.furniture)
+            foreach (var f in farmHouse.furniture)
             {
                 //templist.Add(f.DisplayName);
                 templist.Add($"\"{f.DisplayName.ToLower()}\"");
@@ -346,67 +274,66 @@ namespace FarmVisitors
         {
             try
             {
-                var slash = ModEntry.slash;
-                Dictionary<int, string> CropData = Game1.content.Load<Dictionary<int, string>>("Data/Crops");
-                Dictionary<int, string> ObjData = Game1.content.Load<Dictionary<int, string>>("Data/ObjectInformation");
+                //var slash = ModEntry.Slash;
+                var cropData = Game1.content.Load<Dictionary<int, string>>("Data/Crops");
+                var objData = Game1.content.Load<Dictionary<int, string>>("Data/ObjectInformation");
 
                 Dictionary<int, string> tempdict = new();
                 var farm = Game1.getFarm();
 
-                foreach (TerrainFeature value in farm.terrainFeatures.Values)
+                foreach (var value in farm.terrainFeatures.Values)
                 {
-                    bool isDirt = value is HoeDirt;
+                    var isDirt = value is HoeDirt;
                     if (!isDirt) //if not dirt
                         continue;
 
                     var crop = (value as HoeDirt).crop;
 
-                    if (crop != null && !(crop.dead.Value))
+                    if (crop == null || crop.dead.Value) continue;
+                    var index = crop.rowInSpriteSheet.Value != Crop.rowOfWildSeeds ? crop.netSeedIndex.Value : crop.whichForageCrop.Value;
+
+                    if(ModEntry.Config.Debug)
                     {
-                        int index = crop.rowInSpriteSheet.Value != Crop.rowOfWildSeeds ? crop.netSeedIndex.Value : crop.whichForageCrop.Value;
+                        ModEntry.Log($"crop index: {index}", lv.Info);
+                    }
 
-                        if(ModEntry.Config.Debug)
+                    if (tempdict.ContainsKey(index))
+                        continue;
+
+                    string seedinfo = null;
+                    cropData?.TryGetValue(index, out seedinfo);
+                    if (seedinfo == null)
+                    {
+                        if (ModEntry.Config.Debug)
                         {
-                            ModEntry.Log($"crop index: {index}", lv.Info);
+                            ModEntry.Log($"Key {index} not found in CropData.", lv.Warn);
                         }
+                        continue;
 
-                        if (tempdict.ContainsKey(index))
-                            continue;
+                    }
 
-                        string seedinfo = null;
-                        CropData?.TryGetValue(index, out seedinfo);
-                        if (seedinfo == null)
-                        {
-                            if (ModEntry.Config.Debug)
-                            {
-                                ModEntry.Log($"Key {index} not found in CropData.", lv.Warn);
-                            }
-                            continue;
-
-                        }
-
-                        //var objInd = SpanSplit.GetNthChunk(info, slash, 3).ToString(); <- not working for some reason
-                        var seedSplit = seedinfo.Split('/');
-                        /*if (ModEntry.Debug)
+                    //var objInd = SpanSplit.GetNthChunk(info, slash, 3).ToString(); <- not working for some reason
+                    var seedSplit = seedinfo.Split('/');
+                    /*if (ModEntry.Debug)
                         {
                             ModEntry.Log($"seedSplit = {seedSplit}", lv.Info);
                         }*/
 
-                        var objInd = seedSplit[3];
+                    var objInd = seedSplit[3];
 
-                        if (ModEntry.Config.Debug)
-                        {
-                            ModEntry.Log($"CropData Key= {index}; string info = {seedinfo}; objInd= {objInd}", lv.Info);
-                        }
-
-                        ObjData.TryGetValue(int.Parse(objInd), out string objInfo);
-                        //var name = SpanSplit.GetNthChunk(objInfo, slash, 5).ToString();
-                        var objSplit = objInfo.Split('/');
-                        var name = objSplit[4];
-
-                        //tempdict.Add(index, $"\"{name}\"");
-                        tempdict.Add(index, $"{name}");
+                    if (ModEntry.Config.Debug)
+                    {
+                        ModEntry.Log($"CropData Key= {index}; string info = {seedinfo}; objInd= {objInd}", lv.Info);
                     }
+
+                    objData.TryGetValue(int.Parse(objInd), out var objInfo);
+                    //var name = SpanSplit.GetNthChunk(objInfo, slash, 5).ToString();
+                    if (objInfo == null) continue;
+                    var objSplit = objInfo.Split('/');
+                    var name = objSplit[4];
+
+                    //tempdict.Add(index, $"\"{name}\"");
+                    tempdict.Add(index, $"{name}");
                 }
                 return tempdict;
             }
@@ -426,11 +353,46 @@ namespace FarmVisitors
             var all = Game1.getFarm().getAllFarmAnimals();
 
             List<string> templist = new();
-            foreach (FarmAnimal animal in all)
+            foreach (var animal in all)
             {
                 templist.Add($"\"{animal.Name}\"");
             }
             return templist;
+        }
+
+        public static bool IsCloseToSleepTime(NPC who)
+        {
+            var time = Game1.timeOfDay;
+            foreach (var data in who.Schedule)
+            {
+                if (data.Key <= time) continue;
+                if (data.Key - time > 100) continue;
+                
+                if (who.Schedule[data.Key].endOfRouteBehavior.Contains("sleep")) 
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static Point GetBedSpot(BedFurniture.BedType bedType = BedFurniture.BedType.Any)
+        {
+            return GetBed(bedType)?.GetBedSpot() ?? new Point(-1000, -1000);
+        }
+        private static BedFurniture GetBed(BedFurniture.BedType bedType = BedFurniture.BedType.Any, int index = 0)
+        {
+            //Furniture f in IslandFarmHouse.Object
+            foreach (var f in Utility.getHomeOfFarmer(Game1.player).furniture)
+            {
+                if (f is not BedFurniture bed) continue;
+                if (bedType != BedFurniture.BedType.Any && bed.bedType != bedType) continue;
+                if (index == 0)
+                {
+                    return bed;
+                }
+                index--;
+            }
+            return null;
         }
     }
 }

@@ -20,6 +20,13 @@
 	"config.Debug.Explanation": "Developer options.",
 	"config.WalkOnFarm.name": "Allow NPCs on farm?",
 	"config.WalkOnFarm.description": "If you go outside during a visit, the NPC will roam the farm.",
+	"config.Sleepovers": "Sleepovers",
+	"config.SleepoverEnabled.name": "Enabled",
+	"config.SleepoverEnabled.description": "Allows NPCs to sleep over if it's close to their bedtime.",
+	"config.SleepoverChance.name": "Probability",
+	"config.SleepoverChance.description": "How likely NPCs are to sleep at your place.",
+	"config.SleepoverMinHearts.name": "Minimum hearts",
+	"config.SleepoverMinHearts.description": "NPCs must have at least this many hearts to sleep over.",
 	
 	/*For translators: your in-laws = the family of your spouse.
 	 * Example: if you're married to alex, george is your "father in law". (explaining in case anyone was confused like me)

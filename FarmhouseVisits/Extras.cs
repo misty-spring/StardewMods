@@ -1,43 +1,16 @@
-﻿using StardewModdingAPI;
-using StardewModdingAPI.Events;
-using StardewValley;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
 
 namespace FarmVisitors
 {
     /* Extras *
      * extra methods that are important, yet don't fit into specific categories (e.g titles, assetloading, booleans) */
-    internal class Extras
+    internal static class Extras
     {
-        /* GMCM related */
-        public static string ExtrasTL()
-        {
-            string result = ModEntry.TL.Get("config.Extras");
-            return result;
-        }
-        public static string BlacklistTL()
-        {
-            string result = ModEntry.TL.Get("config.Blacklist.name");
-            return result;
-        }
-        public static string BlacklistTTP()
-        {
-            string result = ModEntry.TL.Get("config.Blacklist.description");
-            return result;
-        }
-        internal static string VisitConfiguration()
-        {
-            string result = ModEntry.TL.Get("config.VisitConfiguration");
-            return result;
-        }
-        internal static string DebugTL()
-        {
-            string result = ModEntry.TL.Get("config.Debug.name");
-            return result;
-        }
-
         /* Related to custom visits*/
         internal static void AssetRequest(object sender, AssetRequestedEventArgs e)
         {
@@ -88,7 +61,7 @@ namespace FarmVisitors
         /* in the future, see if using these
          * instead of using .Any()  
          * (as of now, they make the whole mod fail, though).
-         */
+         
         internal static bool AnyInList(List<string> list)
         {
             try
@@ -122,17 +95,16 @@ namespace FarmVisitors
                 return false;
             }
         }
+*/    
     }
 
     /* For vanilla NPCS *
      * Gets dialogue for when ur in-laws visit */
-    internal class Vanillas
+    internal static class Vanillas
     {
         public static bool InLawOfSpouse(string who)
         {
-            string of;
-
-            of = who switch
+            var of = who switch
             {
                 "Caroline" => "Abigail",
                 "Pierre" => "Abigail",
@@ -156,7 +128,7 @@ namespace FarmVisitors
                 _ => "none",
             };
 
-            foreach(string spouse in ModEntry.MarriedNPCs)
+            foreach(var spouse in ModEntry.MarriedNPCs)
             {
                 if (spouse.Equals("Maru") || spouse.Equals("Sebastian"))
                 {
@@ -164,22 +136,16 @@ namespace FarmVisitors
                     {
                         return true;
                     }
-                    else
-                    {
-                        return false;
-                    }
+
+                    return false;
                 }
-                else
+
+                if (spouse.Equals(of))
                 {
-                    if (spouse.Equals(of))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return true;
                 }
+
+                return false;
             }
 
             //if none applied
@@ -188,12 +154,12 @@ namespace FarmVisitors
 
         public static string GetInLawDialogue(string who)
         {
-            int choice = Game1.random.Next(0,11);
+            var choice = Game1.random.Next(0,11);
             string result;
 
             if (choice >= 5)
             {
-                int ran = Game1.random.Next(1, 4);
+                var ran = Game1.random.Next(1, 4);
                 result = who switch
                 {
                     //for abigail
@@ -229,10 +195,10 @@ namespace FarmVisitors
             }
             else
             {
-                int ran = Game1.random.Next(1, 16);
+                var ran = Game1.random.Next(1, 16);
 
                 string notParsed = ModEntry.TL.Get($"InLaw.Generic.{ran}");
-                string spousename = GetSpouseName(who);
+                var spousename = GetSpouseName(who);
 
                 result = string.Format(notParsed, spousename);
             }
@@ -240,9 +206,9 @@ namespace FarmVisitors
             return result;
         }
 
-        public static string GetSpouseName (string who)
+        private static string GetSpouseName (string who)
         {
-            string RelatedTo = who switch
+            var relatedTo = who switch
             {
                 "Caroline" => "Abigail",
                 "Pierre" => "Abigail",
@@ -266,17 +232,19 @@ namespace FarmVisitors
                 _ => "none",
             };
 
-            foreach(string spouse in ModEntry.MarriedNPCs)
+            foreach(var spouse in ModEntry.MarriedNPCs)
             {
-                if (spouse.Equals("Maru") && RelatedTo.Equals("Maru&Seb"))
+                if (spouse.Equals("Maru") && relatedTo.Equals("Maru&Seb"))
                 {
                     return "Maru";
                 }
-                else if(spouse.Equals("Sebastian") && RelatedTo.Equals("Maru&Seb"))
+
+                if(spouse.Equals("Sebastian") && relatedTo.Equals("Maru&Seb"))
                 {
                     return "Sebastian";
                 }
-                else if(spouse.Equals(RelatedTo))
+
+                if(spouse.Equals(relatedTo))
                 {
                     return spouse;
                 }
@@ -309,7 +277,7 @@ namespace FarmVisitors
 
     /* For modded NPC data *
      * (e.g get characters theyre family of) */
-    internal class Moddeds
+    internal static class Moddeds
     {
         //get all relatives for NPC
         internal static List<string> GetInlawOf(Dictionary<string, string> reference, string who)
@@ -323,20 +291,20 @@ namespace FarmVisitors
             List<string> result = new();
 
             //set new char array
-            char[] ToSplitWith = new char[1];
-            ToSplitWith[0] = '/';
+            var toSplitWith = new char[1];
+            toSplitWith[0] = '/';
 
             //get relationships field
-            var CloseOnes = SpanSplit.GetNthChunk(reference[who], ToSplitWith, 9);
-            if (CloseOnes.IsEmpty)
+            var closeOnes = reference[who].GetNthChunk(toSplitWith, 9);
+            if (closeOnes.IsEmpty)
                 return null;
 
             //pass to string, split by space
-            string CloseString = CloseOnes.ToString();
-            var CloseArray = CloseString.Split(' ');
+            string closeString = closeOnes.ToString();
+            var closeArray = closeString.Split(' ');
 
             //foreach. if word isnt alias, add
-            foreach (var word in CloseArray)
+            foreach (var word in closeArray)
             {
                 if (!word.Contains('\''))
                 {
@@ -363,7 +331,7 @@ namespace FarmVisitors
                 return null;
             }
 
-            foreach(string spousename in ModEntry.MarriedNPCs)
+            foreach(var spousename in ModEntry.MarriedNPCs)
             {
                 if (ModEntry.InLaws[who].Contains(spousename))
                 {
@@ -376,16 +344,16 @@ namespace FarmVisitors
         //get raw dialogue (needs formatting)
         public static string GetDialogueRaw()
         {
-            int ran = Game1.random.Next(0, 16);
-            string Raw = ModEntry.TL.Get($"InLaw.Generic.{ran}");
+            var ran = Game1.random.Next(0, 16);
+            string raw = ModEntry.TL.Get($"InLaw.Generic.{ran}");
 
             //string result = string.Format(Raw, GetSpouseName(who));
             
-            return Raw;
+            return raw;
         }
         public static bool IsVanillaInLaw(string who)
         {
-            bool result = who switch
+            var result = who switch
             {
                 "Caroline" => true,
                 "Pierre" => true,
@@ -426,8 +394,8 @@ namespace FarmVisitors
                 throw new ArgumentException();
             }
 
-            int start = 0;
-            int ind = 0;
+            var start = 0;
+            var ind = 0;
             while (index-- >= 0)
             {
                 ind = str.IndexOfAny(deliminators, start);
