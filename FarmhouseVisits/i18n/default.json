@@ -396,7 +396,7 @@
 	"NPCRetiring.Dwarf.3": "You should visit the mines sometime, @.",
 
 	"NPCRetiring.Elliott.1": "I must get back to my work.#$b#A great idea passed through my head!",
-	"NPCRetiring.Elliott.2": "Your farm is a wonderful place, @.#$b#It gave me the inspiration to write s new novel.$1",
+	"NPCRetiring.Elliott.2": "Your farm is a wonderful place, @.#$b#It gave me the inspiration to write a new novel.$1",
 	"NPCRetiring.Elliott.3": "I must leave now, @.#$b#Visit the cabin whenever you like.",
 
 	"NPCRetiring.Emily.1": "I have to go, @! But before that...#$b#The flowers are speaking to me. They say you treat them well!$1",
@@ -483,7 +483,7 @@
 	"NPCRetiring.Robin.2": "Look at the time...I have to go.#$b#You know where to find me!$1",
 	"NPCRetiring.Robin.3": "Hey, your house looks really good.$1#$b#If you need another upgrade, you know who to call!",
 	
-	"NPCRetiring.Sam.1": "Vincent asked me to help with homework.#$b#See you later, @.",
+	"NPCRetiring.Sam.1": "Vincent wants help with his homework.#$b#See you later, @.",
 	"NPCRetiring.Sam.2": "Mom's making fish casserole today. I'll get going!$1",
 	"NPCRetiring.Sam.3": "Hmm, I just remembered. We have band practice today.#$b#See you later.",
 	
@@ -503,7 +503,7 @@
 	"NPCRetiring.Vincent.2": "Mom said to go home early. Bye, @.",
 	"NPCRetiring.Vincent.3": "Bye bye, @!#$b#I'll go meet my worm friends!$1",
 	
-	"NPCRetiring.Willy.1": "Tere's some rare fish in season...The sea's calling me!#$b#See ya later, @.",
+	"NPCRetiring.Willy.1": "There's some rare fish in season...The sea's calling me!#$b#See ya later, @.",
 	"NPCRetiring.Willy.2": "Aye, the store won't run itself. Goodbye, @!",
 	"NPCRetiring.Willy.3": "I'll bring you some fish next time.",
 
