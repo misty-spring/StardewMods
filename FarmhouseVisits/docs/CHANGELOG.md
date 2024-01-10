@@ -1,4 +1,4 @@
-([versión en español aquí](https://github.com/misty-spring/FarmhouseVisits/blob/main/CHANGELOG_es.md))
+([versión en español aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/CHANGELOG_es.md))
 
 ## 1.8.0
 ### 1.6-alpha only
@@ -9,9 +9,9 @@
 - Files are reloaded if any changes are made (e.g via ContentPatcher).
 - NPCs can now go into sheds and greenhouse.
 - NPCs can now stay for a sleepover, if the time matches.
-- Changed how custom schedules work: removed "Force", but added "Extras" instead. (see more [here](https://github.com/misty-spring/FarmhouseVisits/blob/main/docs/Custom_visits.md))
+- Changed how custom schedules work: removed "Force", but added "Extras" instead. (see more [here](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/Custom_visits.md))
 - You can use GSQ conditions for scheduled visits.
-- Added bool MustBeExact for scheduled visits (see more [here](https://github.com/misty-spring/FarmhouseVisits/blob/main/docs/Custom_visits.md)).
+- Added bool MustBeExact for scheduled visits (see more [here](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/Custom_visits.md)).
 
 ## 1.7.2
 - Bug fixes
