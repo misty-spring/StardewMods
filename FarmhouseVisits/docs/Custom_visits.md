@@ -6,15 +6,15 @@ This mod lets you make custom visits. This is done by editing its Schedules file
 
 name |type|Required| description
 -----|---|---------|--------- 
-From | int | true | The hour the NPC arrives at.
-To | int | false | The hour the NPC leaves at. If empty, will use default time.
-MustBeExact | bool | false| If true, the visit time must be exact. E.g: If From is 900, the visit will only trigger if you're inside the Farm at 9:00, and 9:10 (etc) won't work.
-EntryBubble | string | false | Text to show over their head when entering.
-EntryQuestion | string | false | If `Confirmation` is enabled, they'll use this to ask for permission.
-EntryDialogue | string | false | Dialogue used when entering.
-ExitDialogue | string | false | Dialogue used when leaving.
-Dialogues | List<string> | false| Dialogues to use during the visit.
-Extras | ExtraBehavior | false | Extra behavior for the NPC.
+From | `int` | true | The hour the NPC arrives at.
+To | `int` | false | The hour the NPC leaves at. If empty, will use default time.
+MustBeExact | `bool` | false| If true, the visit time must be exact. E.g: If From is 900, the visit will only trigger if you're inside the Farm at 9:00, and 9:10 (etc) won't work.
+EntryBubble | `string` | false | Text to show over their head when entering.
+EntryQuestion | `string` | false | If `Confirmation` is enabled, they'll use this to ask for permission.
+EntryDialogue | `string` | false | Dialogue used when entering.
+ExitDialogue | `string` | false | Dialogue used when leaving.
+Dialogues | `List<string>` | false| Dialogues to use during the visit.
+Extras | `ExtraBehavior` | false | Extra behavior for the NPC.
 
 ### Extrabehavior
 Extra behavior is purely optional, and has the following parameters:
