@@ -1,4 +1,4 @@
-([english version here](https://github.com/misty-spring/FarmhouseVisits/blob/main/docs/CHANGELOG.md))
+([english version here](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/CHANGELOG.md))
 
 ## 1.8.0
 ### 1.6-alpha
@@ -9,9 +9,9 @@
 - Los archivos son recargados si se modifican (e.j via ContentPatcher).
 - PNJs pueden entrar al invernadero y cabañas.
 - PNJs se pueden quedar a pijamadas, si el tiempo calza.
-- Se cambió cómo funcionan las visitas agregadas por usuarios: se removió "Force", y se agregó "Extras" en su lugar. (ver [aquí](https://github.com/misty-spring/FarmhouseVisits/blob/main/docs/Custom_visits_es.md))
+- Se cambió cómo funcionan las visitas agregadas por usuarios: se removió "Force", y se agregó "Extras" en su lugar. (ver [aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/Custom_visits.md))
 - Se pueden usar condiciones GSQ para las visitas.
-- Visitas de usuarios: Se agregó MustBeExact (ver [aquí](https://github.com/misty-spring/FarmhouseVisits/blob/main/docs/Custom_visits_es.md)).
+- Visitas de usuarios: Se agregó MustBeExact (ver [aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/Custom_visits.md)).
 
 ## 1.7.2
 - Arreglos de errores
