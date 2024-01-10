@@ -3,7 +3,6 @@
 *.tmx
 *.xnb
 *.png
-*.md
 *.sln
 *.sln.DotSettings.user
 *.txt
@@ -16,10 +15,10 @@
 **/Properties/*
 
 # folders
-ContentPatcher/
-ContentPatcher/*
-bin/*
-.idea/*
+/ContentPatcher/
+/ContentPatcher/*
+/bin/*
+*/.idea/*
 
 ## jetbrains rider
 
