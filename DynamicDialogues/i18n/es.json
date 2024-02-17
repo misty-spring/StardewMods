@@ -1,0 +1,8 @@
+﻿{
+	"config.change_@.name": "Cambiar arroba en burbujas de texto",
+	"config.change_@.description": "Cambia el símbolo arroba por el nombre del jugador/a.",
+	"config.Debug.name": "Depuración",
+	"config.Debug.description":"Opciones de desarrollador.",
+	"config.Verbose.name": "Información",
+	"config.Verbose.description": "Se mandará más información a la consola."
+}

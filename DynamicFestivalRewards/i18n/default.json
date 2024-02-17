@@ -1,0 +1,7 @@
+﻿{
+	"config.MinValue.name": "Minimum gold",
+	"config.MinValue.description": "Minimum gold per item caught.",
+	"config.MaxValue.name": "Maximum gold",
+	"config.MaxValue.description": "Max gold per item. If Random is false, items always have this price",
+	"config.Randomize.description": "A random value between min and max is chosen."
+}

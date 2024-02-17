@@ -1,4 +1,23 @@
-([Versión en Español](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/CHANGELOG-es.md))
+([Versión en Español](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/CHANGELOG.md))
+
+## 1.6.0
+- Doesn't need SpaceCore anymore.
+- Added GSQ+Triggers to framework's dialogues and notifications.
+- Fixed custom greetings not working.
+- Fixed bug about abstract class.
+- Optimized PlayerConditions.
+- Lots of refactoring.
+- New GSQs:
+  - Check what player is wearing
+- New trigger actions.
+- New event commands, including:
+  - Append commands
+  - Add skill EXP
+  - If/else in events
+  - New `end` commands
+  - Object hunts
+  - Set NPC dating.
+  - Stamina and health changes
 
 ## 1.5.0
 - Added NPC switching (mid-dialogue).
