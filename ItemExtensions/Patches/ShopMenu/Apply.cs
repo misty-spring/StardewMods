@@ -87,21 +87,21 @@ public partial class ShopMenuPatches
             prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_receiveLeftClick))
         );
     }
-    
+
     internal static void Post_Initialize(ShopMenu __instance, int currency, Func<ISalable, Farmer, int, bool> onPurchase, Func<ISalable, bool> onSell, bool playOpenSound)
     {
-        ExtraBySalable = new Dictionary<ISalable, List<ExtraTrade>>();
-        ByQualifiedId = new Dictionary<string, List<ExtraTrade>>();
+        #if DEBUG
+        Log($"Initializing shop with {ExtraBySalable.Count} extra trade requirements.");
+        #endif
     }
-
-    /// <summary>
-    /// Reset sale items.
-    /// </summary>
+    
     internal static void Post_cleanupBeforeExit()
     {
-        //_extraSaleItems = new Dictionary<string, List<ExtraTrade>>();
-        ExtraBySalable.Clear();
-        ByQualifiedId.Clear();
+        #if DEBUG
+        Log("Resetting extra trades dictionary...");
+        #endif
+        
+        ExtraBySalable = new Dictionary<ISalable, List<ExtraTrade>>();
     }
     
     /// <summary>
@@ -112,19 +112,22 @@ public partial class ShopMenuPatches
     /// <param name="stock"></param>
     private static void Post_AddForSale(ShopMenu __instance,ISalable item, ItemStockInformation? stock = null)
     {
+        //if null, make
+        ExtraBySalable ??= new Dictionary<ISalable, List<ExtraTrade>>();
+        
+        //get match from data
         var match = FindMatch(__instance, item, stock);
+        
+        //if none was found
         if (match is null)
         {
-            if (ModEntry.Shops.TryGetValue(__instance.ShopId, out var allItemIds) == false)
-                return;
-            
-            if(allItemIds.TryGetValue(item.QualifiedItemId, out var data) == false)
-                return;
-
-            ByQualifiedId.Add(item.QualifiedItemId, data);
+            #if DEBUG
+            Log("No match found.");
+            #endif
             return;
         }
         
+        //if couldn't get right info
         if (ExtraTrade.TryParse(match, out var extras) == false)
             return;
 
@@ -133,49 +136,54 @@ public partial class ShopMenuPatches
 
     private static string FindMatch(ShopMenu menu, ISalable item, ItemStockInformation? stock = null)
     {
-        if (menu.ShopData is null || menu.ShopData.Items is null)
+        if (string.IsNullOrWhiteSpace(menu.ShopId))
         {
-            Log("Shop data (or its items) seems to be null. Skipping...");
+            Log("Shop Id seems to be null. Skipping...");
             return null;
         }
         
-        foreach (var dataItem in menu.ShopData.Items)
+        if (DataLoader.Shops(Game1.content).TryGetValue(menu.ShopId, out var shopData) == false)
         {
-            //don't check those without ID
-            if (string.IsNullOrWhiteSpace(dataItem.TradeItemId))
-                continue;
-            
-            //if id doesnt match
-            if (dataItem.ItemId != item.QualifiedItemId)
+            Log("Shop Id not found. Skipping...");
+            return null;
+        }
+
+        var identifier = stock != null ? stock.Value.SyncedKey : item.QualifiedItemId;
+        
+        foreach (var dataItem in shopData.Items)
+        {
+            #if DEBUG
+            Log($"Checking {dataItem.Id} (for {identifier})");
+            #endif
+
+            if (stock is null)
             {
-                //if its not assumed object
-                if($"(O){dataItem.ItemId}" != item.QualifiedItemId)
-                    continue;
+                #if DEBUG
+                Log("No stock data found.", LogLevel.Warn);
+                #endif
+                return null;
             }
             
-            //also checks stock data if possible
-            if (stock is not null)
+            //compare stocks' Ids
+            if(dataItem.Id.Equals(stock.Value.SyncedKey) == false)
+                continue;
+
+            if (dataItem.CustomFields is null || dataItem.CustomFields.Any() == false)
             {
-                if(dataItem.TradeItemAmount != stock.Value.TradeItemCount)
-                    continue;
-                
-                /*if(dataItem.AvailableStockLimit != stock.Value.LimitedStockMode)
-                    continue;*/
+                #if DEBUG
+                Log("Item seems to have no custom fields. Skipping");
+                #endif
+                return null;
             }
             
-            if (item.appliesProfitMargins().Equals(dataItem.ApplyProfitMargins) == false)
-                continue;
-
-            if (dataItem.IsRecipe != item.IsRecipe)
-                continue;
-
-            if (dataItem.MaxStack != item.maximumStackSize())
-                continue;
-
-            if (dataItem.CustomFields.TryGetValue(Additions.ModKeys.ExtraTradesKey, out var trades) == false)
-                continue;
-
-            return trades;
+            //if stock data -somehow- has no data, ignore
+            if (dataItem.CustomFields.TryGetValue(Additions.ModKeys.ExtraTradesKey, out var trades))
+            {
+                #if DEBUG
+                Log($"Found data at {dataItem.Id}");
+                #endif
+                return trades;
+            }
         }
 
         return null;
@@ -204,16 +212,6 @@ public partial class ShopMenuPatches
                 continue;
 
             list = pair.Value;
-            return true;
-        }
-
-        //fallback to qualifiedId
-        foreach (var pair2 in ByQualifiedId)
-        {
-            if(pair2.Key != hoveredItem.QualifiedItemId)
-                continue;
-
-            list = pair2.Value;
             return true;
         }
 

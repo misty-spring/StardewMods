@@ -15,6 +15,8 @@ public class CropPatches
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
+
+    internal static bool HasCropsAnytime { get; set; }
     internal static void Apply(Harmony harmony)
     {
         Log($"Applying Harmony patch \"{nameof(CropPatches)}\": postfixing SDV method \"Crop.ResolveSeedId(string, GameLocation)\".");
@@ -45,13 +47,15 @@ public class CropPatches
             
             foreach (var id in splitBySpace)
             {
-                if(Game1.cropData[id].Seasons.Contains(Game1.season))
+                if(Game1.cropData[id].Seasons.Contains(Game1.season) || HasCropsAnytime)
                     allFields.Add(id);
             }
             
-            //this checks if seed roster should exclude our seed. if there's no valid seeds, the main seed will be force-added
-            if(ShouldAddMainSeed(itemId, allFields))
+            //also add the "main" seed
+            for (var i = 0; i < AddMainSeedBy(itemId, allFields); i++)
+            {
                 allFields.Add(itemId);
+            }
             
             var fromField = Game1.random.ChooseFrom(allFields);
             
@@ -84,8 +88,10 @@ public class CropPatches
         }
         
         //also add the "main" seed
-        if(ShouldAddMainSeed(itemId, all))
+        for (var i = 0; i < AddMainSeedBy(itemId, all); i++)
+        {
             all.Add(itemId);
+        }
 
         //if none in all, return. shouldn't happen but just in case
         if (all.Any() == false)
@@ -96,28 +102,24 @@ public class CropPatches
         __result = chosen;
     }
 
-    private static bool ShouldAddMainSeed(string itemId, List<string> allFields)
+    private static int AddMainSeedBy(string itemId, List<string> allFields)
     {
         var fields = Game1.objectData[itemId].CustomFields;
         
-        // if empty, return false
-        if (allFields.Any() == false)
-            return false;
+        // if empty, return "once"
+        if (allFields is null || allFields.Any() == false)
+            return 1;
         
         // if there's any custom fields
         if (fields is not null && fields.Any())
         {
-            // if it doesn't have the Exclude field, add
-            if(fields.TryGetValue(ModKeys.ExcludeFromSeedRoster, out var shouldExclude) == false)
+            // if it has specific count
+            if (fields.TryGetValue(ModKeys.AddMainSeed, out var timesToAdd))
             {
-                return true;
+                return int.Parse(timesToAdd);
             }
-            
-            // otherwise, make "should add" return the opposite of "should exclude"
-            // here it checks if it equals false, but basically same intent
-            return bool.Parse(shouldExclude) == false;
         }
 
-        return true;
+        return 1;
     }
 }

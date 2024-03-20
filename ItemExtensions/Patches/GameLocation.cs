@@ -237,17 +237,27 @@ public class GameLocationPatches
         #endif
         
         var validItemId = ModEntry.BigClumps.TryGetValue(forage.ItemId, out _);
-
-        if (!validItemId)
-        {
-            Log($"Couldn't find clump Id '{forage.ItemId}' in data. ({context.Location?.NameOrUniqueName} @ {forage.Id})", LogLevel.Warn);
-            return false;
-        }
-        
-        var isAnyRandomAClump = false;
         
         List<string> randomsThatAreItem = new();
-        List<string> randomsThatAreClump = new() { forage.Id };
+        List<string> randomsThatAreClump = new();
+
+        //if not ours and doesn't start w/ custom query
+        if (!validItemId)
+        {
+            if (forage.ItemId.StartsWith(ModEntry.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                ExtensionClump.Resolve(forage.ItemId, forage.PerItemCondition, context);
+            }
+            else
+            {
+                Log($"Couldn't find clump Id '{forage.ItemId}' in data. ({context.Location?.NameOrUniqueName} @ {forage.Id})", LogLevel.Warn);
+                return false;
+            }
+        }
+        else
+            randomsThatAreClump.Add(forage.Id);
+        
+        var isAnyRandomAClump = false;
 
         //if a random Id exists, consider in
         if (randomItemId != null && randomItemId.Any())

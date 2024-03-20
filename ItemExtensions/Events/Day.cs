@@ -1,5 +1,4 @@
 using ItemExtensions.Additions;
-using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;

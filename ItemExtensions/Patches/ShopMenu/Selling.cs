@@ -8,14 +8,13 @@ namespace ItemExtensions.Patches;
 public partial class ShopMenuPatches
 {
     private static Dictionary<ISalable, List<ExtraTrade>> ExtraBySalable { get; set; }
-    private static Dictionary<string, List<ExtraTrade>> ByQualifiedId { get; set; }
     internal static bool Pre_receiveLeftClick(ShopMenu __instance, int x, int y, bool playSound = true)
     {
         if (__instance.safetyTimer > 0)
             return true;
         
         //if no data in neither
-        if(ExtraBySalable is not { Count: > 0 } && ByQualifiedId is not { Count: > 0 })
+        if(ExtraBySalable is not { Count: > 0 })
             return true;
         
         for (var index1 = 0; index1 < __instance.forSaleButtons.Count; ++index1)
@@ -31,8 +30,8 @@ public partial class ShopMenuPatches
             if (__instance.heldItem != null && __instance.heldItem.QualifiedItemId != thisItem.QualifiedItemId)
                 return true;
             
-            //if neither this trade OR this id is found
-            if (!ExtraBySalable.ContainsKey(thisItem) && !ByQualifiedId.ContainsKey(thisItem.QualifiedItemId))
+            //if item not in salable list
+            if (!ExtraBySalable.ContainsKey(thisItem))
                 return true;
             
             if (__instance.forSale[index2] != null)
@@ -55,7 +54,7 @@ public partial class ShopMenuPatches
                 {
                     var tryPurchase = Reflection.GetMethod(__instance, "tryToPurchaseItem");
                     tryPurchase.Invoke<bool>(__instance.forSale[index2], __instance.heldItem, stockToBuy, x, y);
-                    ReduceExtraItems(__instance, __instance.forSale[index2], stockToBuy);
+                    ReduceExtraItems(__instance.forSale[index2], stockToBuy);
                 }
                 else
                 {
@@ -84,22 +83,21 @@ public partial class ShopMenuPatches
 
     private static List<ExtraTrade> GetData(ISalable item)
     {
-        List<ExtraTrade> data = null;
         //if extrabysalable has no data
         if (ExtraBySalable is not { Count: > 0 })
         {
-            //check if id has
-            if (ByQualifiedId is not { Count: > 0 })
-                return null;
+            #if DEBUG
+            Log("No data found in mod Salable list.");
+            #endif
         }
         
         
         //if data wasn't in salable
-        if (ExtraBySalable.TryGetValue(item, out data) == false)
+        if (ExtraBySalable.TryGetValue(item, out var data) == false)
         {
-            //try fallback to Id
-            if (ByQualifiedId.TryGetValue(item.QualifiedItemId, out data) == false)
-                return null;
+            #if DEBUG
+            Log("Id not found in mod Salables.");
+            #endif
         }
 
         return data;
@@ -130,7 +128,7 @@ public partial class ShopMenuPatches
         return true;
     }
 
-    private static void ReduceExtraItems(ShopMenu __instance, ISalable item, int stockToBuy)
+    private static void ReduceExtraItems(ISalable item, int stockToBuy)
     {
         Log($"Buying {stockToBuy} {item.DisplayName}...");
         

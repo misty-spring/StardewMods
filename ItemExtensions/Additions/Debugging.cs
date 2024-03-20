@@ -143,7 +143,7 @@ public class Debugging
                 break;
             case "shop": 
             case "shops":
-                helper.Data.WriteJsonFile("dump/Shops.json", ModEntry.Shops);
+                helper.Data.WriteJsonFile("dump/Shops.json", GetAllShopExtras());
                 break;
             default:
                 Log($"Command {arg2[0]} not recognized.", LogLevel.Warn);
@@ -151,5 +151,10 @@ public class Debugging
         }
         
         Log("File dumped in mod folder.", LogLevel.Info);
+    }
+
+    private static Dictionary<string, List<ISalable>> GetAllShopExtras()
+    {
+        throw new NotImplementedException();
     }
 }

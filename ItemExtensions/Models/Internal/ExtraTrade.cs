@@ -1,3 +1,4 @@
+using System.Text;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.ItemTypeDefinitions;
@@ -58,7 +59,7 @@ public class ExtraTrade
     public static bool TryParse(string match, out List<ExtraTrade> list)
     {
         list = new List<ExtraTrade>();
-        var split = ArgUtility.SplitBySpace(match);
+        var split = ArgUtility.SplitBySpaceQuoteAware(Trim(match));
         var skipNext = false;
 
         try
@@ -86,5 +87,18 @@ public class ExtraTrade
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Removes commas and double-spaces
+    /// </summary>
+    /// <param name="match"></param>
+    /// <returns></returns>
+    private static string Trim(string match)
+    {
+        var sb = new StringBuilder(match);
+        sb.Replace(",", "");
+        sb.Replace("  ", " ");
+        return sb.ToString();
     }
 }

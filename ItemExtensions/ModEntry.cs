@@ -8,6 +8,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Enums;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Internal;
 using StardewValley.Triggers;
 
 namespace ItemExtensions;
@@ -36,6 +37,7 @@ public sealed class ModEntry : Mod
         Mon = Monitor;
         Help = Helper;
         Id = ModManifest.UniqueID;
+        CropPatches.HasCropsAnytime = helper.ModRegistry.Get("Pathoschild.CropsAnytimeAnywhere") != null;
         
         // patches
         var harmony = new Harmony(ModManifest.UniqueID);
@@ -67,6 +69,9 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_OnUnequip");
         
         TriggerActionManager.RegisterTrigger($"{Id}_AddedToStack");
+
+        //temQueryResolver.Register($"{Id}_RANDOM_CLUMPS", ItemQueries.RandomClumps);
+        //ItemQueryResolver.Register($"{Id}_ALL_CLUMPS", ItemQueries.AllClumps);
         
         #if DEBUG
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
@@ -144,12 +149,6 @@ public sealed class ModEntry : Mod
         var msc = Seeds?.Count ?? 0;
         Monitor.Log($"Loaded {msc} mixed seeds data.", LogLevel.Debug);
         
-        // get shop ext
-        var shopExtensions = Help.GameContent.Load<Dictionary<string, Dictionary<string, List<ExtraTrade>>>>($"Mods/{Id}/Shops");
-        Parser.ShopExtension(shopExtensions);
-        var sc = Shops?.Count ?? 0;
-        Monitor.Log($"Loaded {sc} shop extensions.", LogLevel.Debug);
-        
         var temp = new List<SButton>();
         foreach (var b in Game1.options.actionButton)
         {
@@ -181,6 +180,5 @@ public sealed class ModEntry : Mod
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; set; } = new();
-    internal static Dictionary<string, Dictionary<string, List<ExtraTrade>>> Shops { get; set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
 }

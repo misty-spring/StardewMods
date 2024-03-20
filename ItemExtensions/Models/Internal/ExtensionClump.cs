@@ -2,6 +2,7 @@ using ItemExtensions.Additions;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Internal;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 
@@ -164,5 +165,23 @@ public static class ExtensionClump
         }
         
         return false;
+    }
+
+    public static string Resolve(string id, string perItemConditions, ItemQueryContext context)
+    {
+        if (id.Equals(ModKeys.AllClumpsForage))
+            return AllClumps(perItemConditions, context);
+        else
+            return RandomClump(perItemConditions, context);
+    }
+
+    private static string AllClumps(string perItemConditions, ItemQueryContext context)
+    {
+        
+    }
+
+    private static string RandomClump(string perItemConditions, ItemQueryContext context)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -14,6 +14,8 @@ namespace ItemExtensions.Patches;
 public partial class ShopMenuPatches
 {
     private static (Item, List<ExtraTrade>) _lastHoverItem;
+    
+    // ReSharper disable once UnusedParameter.Global
     internal static void Post_drawHoverText(IClickableMenu __instance, 
         SpriteBatch b, 
         StringBuilder text, 
@@ -42,20 +44,16 @@ public partial class ShopMenuPatches
         int boxWidthOverride = -1, 
         int boxHeightOverride = -1) 
     { 
-        if(Game1.activeClickableMenu is not ShopMenu s) 
+        if(Game1.activeClickableMenu is not ShopMenu) 
             return;
-        
-        //Log($"Shop name {s.ShopId}, checking {extraItemToShowIndex}. Items in extrasale: {_extraSaleItems?.Count}");
         
         if(extraItemToShowIndex == null) 
             return;
         
-        //if neither have data
-        if(ExtraBySalable is not { Count: > 0 } && ByQualifiedId is not { Count: > 0 })
+        //if no salable data
+        if(ExtraBySalable is not { Count: > 0 })
             return;
         
-        //Log($"Hovered item: {hoveredItem.DisplayName}");
-
         List<ExtraTrade> data;
         if (_lastHoverItem is (null,null) || _lastHoverItem.Item1 != hoveredItem)
         {

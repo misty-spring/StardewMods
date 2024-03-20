@@ -19,5 +19,6 @@ public enum StatCounter
     Stone,              //Gathered
     Stumps,             //Chopped
     Seeds,              //Sown
-    Weeds               //Eliminated
+    Weeds,              //Eliminated
+    Any                 //ONLY USED FOR ITEMQUERY   
 }

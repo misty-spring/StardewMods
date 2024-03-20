@@ -94,25 +94,7 @@ public class ResourceData
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(Skill))
-        {
-            if (int.TryParse(Skill, out var intSkill))
-                ActualSkill = intSkill;
-            if (Skill.StartsWith("farm", Comparison))
-                ActualSkill = 0;
-            else if (Skill.StartsWith("fish", Comparison))
-                ActualSkill = 1;
-            else if (Skill.Equals("foraging", Comparison))
-                ActualSkill = 2;
-            else if (Skill.Equals("mining", Comparison))
-                ActualSkill = 3;
-            else if (Skill.Equals("combat", Comparison))
-                ActualSkill = 4;
-            else if (Skill.Equals("luck", Comparison))
-                ActualSkill = 5;
-            else
-                ActualSkill = -1;
-        }
+        ActualSkill = GetSkill(Skill);
         
         if (Light != null)
         {
@@ -159,5 +141,34 @@ public class ResourceData
             Log("The item will still be added, but this may cause issues.");
         }
         return true;
+    }
+
+    internal static int GetSkill(string skill)
+    {
+        if (string.IsNullOrWhiteSpace(skill))
+        {
+            return -1;
+        }
+        
+        int actualSkill;
+        
+        if (int.TryParse(skill, out var intSkill))
+            actualSkill = intSkill;
+        if (skill.StartsWith("farm", Comparison))
+            actualSkill = 0;
+        else if (skill.StartsWith("fish", Comparison))
+            actualSkill = 1;
+        else if (skill.Equals("foraging", Comparison))
+            actualSkill = 2;
+        else if (skill.Equals("mining", Comparison))
+            actualSkill = 3;
+        else if (skill.Equals("combat", Comparison))
+            actualSkill = 4;
+        else if (skill.Equals("luck", Comparison))
+            actualSkill = 5;
+        else
+            actualSkill = -1;
+        
+        return actualSkill;
     }
 }

@@ -3,7 +3,7 @@ namespace ItemExtensions.Additions;
 public static class ModKeys
 {
     /// <summary> For extra trade requirements in shops. </summary>
-    internal const string ExtraTradesKey = "mistyspring.ItemExtensions/ExtraTrades";
+    public const string ExtraTradesKey = "mistyspring.ItemExtensions/ExtraTrades";
     
     //eating/drinking customization
     /// <summary> Sets animation after consuming item. </summary>
@@ -45,5 +45,9 @@ public static class ModKeys
     /// <summary> Sets the allowed mixed seeds. </summary>
     public const string MixedSeeds = "mistyspring.ItemExtensions/MixedSeeds";
     /// <summary> If the user doesn't want this seed to be included in the roster. </summary>
-    public const string ExcludeFromSeedRoster = "mistyspring.ItemExtensions/ExcludeFromRoster";
+    public const string AddMainSeed = "mistyspring.ItemExtensions/AddMainSeed";
+    
+    //for spawning
+    public const string RandomClumpForage = "mistyspring.ItemExtensions_RANDOM_CLUMPS";
+    public const string AllClumpsForage = "mistyspring.ItemExtensions_ALL_CLUMPS";
 }

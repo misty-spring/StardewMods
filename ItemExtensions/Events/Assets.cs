@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley.GameData.Objects;
-using StardewValley.GameData.Shops;
 
 namespace ItemExtensions.Events;
 
@@ -51,14 +50,6 @@ public static class Assets
         {
             var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
             Parser.Resources(clumps);
-        }
-        
-        
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Shops")))
-        {
-            //get menu actions
-            var shopExtensionRaw = Helper.GameContent.Load<Dictionary<string, Dictionary<string, List<ExtraTrade>>>>($"Mods/{Id}/Shops");
-            Parser.ShopExtension(shopExtensionRaw);
         }
     }
 
@@ -149,14 +140,6 @@ public static class Assets
                 () => new Dictionary<string, ResourceData>(),
                 AssetLoadPriority.Low);
         }
-        
-        //shops
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Shops", true))
-        {
-            e.LoadFrom(
-                () => new Dictionary<string, Dictionary<string, List<ExtraTrade>>>(),
-                AssetLoadPriority.Low);
-        }
 
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Drink", true))
         {
@@ -201,18 +184,5 @@ public static class Assets
         {
             {"NameOfAnimation", new() { Animation = new[]{ new FarmerFrame() }, Food = new FoodAnimation()}}
         });
-        var extraTradeTemplate = new Dictionary<string, Dictionary<string, List<ExtraTrade>>>
-        {
-            {
-                "ShopID",
-                new()
-                {
-                    {
-                        "TradeEntryId", new List<ExtraTrade> { new("ItemToTrade", 1) }
-                    }
-                }
-            }
-        };
-        Helper.Data.WriteJsonFile("Templates/ExtraTrade.json", extraTradeTemplate);
     }
 }
