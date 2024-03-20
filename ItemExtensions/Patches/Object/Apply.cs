@@ -89,7 +89,7 @@ public partial class ObjectPatches
         LightData data;
         if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
         {
-            if (ModEntry.Resources.TryGetValue(__instance.ItemId, out var resData) == false)
+            if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resData) == false)
                 return;
             else
                 data = resData.Light;
@@ -114,7 +114,7 @@ public partial class ObjectPatches
     internal static void Post_new(ref Object __instance, string itemId, int initialStack, bool isRecipe = false,
         int price = -1, int quality = 0)
     {
-        if (!ModEntry.Resources.TryGetValue(__instance.ItemId, out var resource))
+        if (!ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource))
             return;
         
         if(resource == null || resource == new ResourceData())

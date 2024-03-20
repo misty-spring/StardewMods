@@ -2,7 +2,10 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Events;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Internal;
 using ItemExtensions.Patches;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -17,7 +20,10 @@ public sealed class ModEntry : Mod
         #if DEBUG
         helper.Events.GameLoop.GameLaunched += Assets.WriteTemplates;
         #endif
+        
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+        helper.Events.GameLoop.DayStarted += Day.Started;
+        helper.Events.GameLoop.DayEnding += Day.Ending;
         
         helper.Events.Content.AssetRequested += Assets.OnRequest;
         helper.Events.Content.AssetsInvalidated += Assets.OnReload;
@@ -31,25 +37,25 @@ public sealed class ModEntry : Mod
         Help = Helper;
         Id = ModManifest.UniqueID;
         
+        // patches
         var harmony = new Harmony(ModManifest.UniqueID);
-        
+        CropPatches.Apply(harmony);
         FarmerPatches.Apply(harmony);
-        FurniturePatches.Apply(harmony);
         GameLocationPatches.Apply(harmony);
         InventoryPatches.Apply(harmony);
         ItemPatches.Apply(harmony);
         ObjectPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
-        ToolPatches.Apply(harmony);
         UtilityPatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
             NpcPatches.Apply(harmony);
         
+        //GSQ
         GameStateQuery.Register($"{Id}_ToolUpgrade", Queries.ToolUpgrade);
         GameStateQuery.Register($"{Id}_InInventory", Queries.InInventory);
         
-        #region trigger actions
+        // trigger actions
         TriggerActionManager.RegisterTrigger($"{Id}_OnBeingHeld");
         TriggerActionManager.RegisterTrigger($"{Id}_OnStopHolding");
         
@@ -61,7 +67,57 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_OnUnequip");
         
         TriggerActionManager.RegisterTrigger($"{Id}_AddedToStack");
-        #endregion
+        
+        #if DEBUG
+        helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Tester);
+        #endif
+    }
+
+    private void Tester(string arg1, string[] arg2)
+    {
+        if (arg2 is null || arg2.Any() == false)
+        {
+            Mon.Log("Must have at least 1 argument.", LogLevel.Warn);
+            return;
+        }
+
+        if(!Context.IsWorldReady)
+            Mon.Log("Must load a save.", LogLevel.Warn);
+
+        const string testPack = "mistyspring.testobj";
+        
+        if (Helper.ModRegistry.Get(testPack) is null)
+        {
+            Mon.Log("The test pack was not found.", LogLevel.Error);
+            return;
+        }
+            
+        switch (arg2[0])
+        {
+            case "ore":
+            case "clump":
+                var pos = new Vector2(Game1.player.Tile.X + 2, Game1.player.Tile.Y);
+                var clump = new ExtensionClump($"{testPack}_TestClump", pos);
+                Mon.Log($"Adding clump ID {clump.ResourceId} at {pos}...", LogLevel.Info);
+                Game1.player.currentLocation.resourceClumps.Add(clump);
+                break;
+            case "jelly":
+                Game1.player.eatObject(new StardewValley.Object($"{testPack}_Jelly",1));
+                break;
+            case "eat":
+                Game1.player.eatObject(new StardewValley.Object($"{testPack}_trash",1));
+                break;
+            case "sip":
+            case "drink":
+                Game1.player.eatObject(new StardewValley.Object("614",1));
+                break;
+            case "list":
+                Mon.Log($"Possible commands: eat, clump, drink, jelly.", LogLevel.Info);
+                break;
+            default:
+                Mon.Log($"Command {arg2[0]} not recognized.", LogLevel.Warn);
+                break;
+        }
     }
 
     public override object GetApi() =>new Api();
@@ -78,17 +134,17 @@ public sealed class ModEntry : Mod
 
     private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
     {
-        //get custom animations
-        var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
-        Parser.EatingAnimations(animations);
-        var ac = EatingAnimations?.Count ?? 0;
-        Monitor.Log($"Loaded {ac} eating animations.", LogLevel.Debug);
-        
         //get obj data
         var objData = Help.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
         Parser.ObjectData(objData);
         var dc = Data?.Count ?? 0;
         Monitor.Log($"Loaded {dc} item data.", LogLevel.Debug);
+        
+        //get custom animations
+        var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
+        Parser.EatingAnimations(animations);
+        var ac = EatingAnimations?.Count ?? 0;
+        Monitor.Log($"Loaded {ac} eating animations.", LogLevel.Debug);
         
         //get item actions
         var menuActions = Help.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
@@ -102,10 +158,10 @@ public sealed class ModEntry : Mod
         var sc = Shops?.Count ?? 0;
         Monitor.Log($"Loaded {sc} shop extensions.", LogLevel.Debug);
         
-        //get resources
+        // get resources
         var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
         Parser.Resources(oreData);
-        var oc = Resources?.Count ?? 0;
+        var oc = Ores?.Count ?? 0;
         Monitor.Log($"Loaded {oc} custom resources.", LogLevel.Debug);
 
         var temp = new List<SButton>();
@@ -133,9 +189,11 @@ public sealed class ModEntry : Mod
 #endif
 
     internal static bool Holding { get; set; }
-    internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
+    public static Dictionary<string, ResourceData> BigClumps { get; set; } = new();
     public static Dictionary<string, ItemData> Data { get; set; } = new();
-    public static Dictionary<string, ResourceData> Resources { get; set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
+    internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
+    public static Dictionary<string, ResourceData> Ores { get; set; } = new();
     internal static Dictionary<string, Dictionary<string, List<ExtraTrade>>> Shops { get; set; } = new();
+    internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; }
 }

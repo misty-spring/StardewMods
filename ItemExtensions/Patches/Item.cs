@@ -73,8 +73,9 @@ public class ItemPatches
       
         ActionButton.CheckBehavior(mainData.OnPurchase);
     }
-    
+
     /// <summary>Handle the item being equipped by the player (i.e. added to an equipment slot, or selected as the active tool).</summary>
+    /// <param name="__instance">Item equipped.</param>
     /// <param name="who">The player who equipped the item.</param>
     public static void Post_onEquip(Item __instance, Farmer who)
     {
@@ -90,6 +91,7 @@ public class ItemPatches
     }
 
     /// <summary>Handle the item being unequipped by the player (i.e. removed from an equipment slot, or deselected as the active tool).</summary>
+    /// <param name="__instance">Item unequipped.</param>
     /// <param name="who">The player who unequipped the item.</param>
     public static void Post_onUnequip(Item __instance, Farmer who)
     {

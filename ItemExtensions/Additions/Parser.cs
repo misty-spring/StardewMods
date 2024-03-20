@@ -1,4 +1,5 @@
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using StardewModdingAPI;
 
 namespace ItemExtensions.Additions;
@@ -132,19 +133,57 @@ public static class Parser
 
     public static void Resources(Dictionary<string, ResourceData> clumps)
     {
-        ModEntry.Resources = new Dictionary<string, ResourceData>();
+        ModEntry.Ores = new Dictionary<string, ResourceData>();
         foreach(var pair in clumps)
         {
             Log($"Checking {pair.Key} data...");
 
             if(pair.Value.IsValid() == false)
                 continue;
-            
-            //add to items
-            ModEntry.Resources.Add(pair.Key, pair.Value);
+    
+            //add depending on size
+            if(pair.Value.Width > 1 || pair.Value.Height > 1)
+                ModEntry.BigClumps.Add(pair.Key,pair.Value);
+            else
+                ModEntry.Ores.Add(pair.Key, pair.Value);
         }
 
         ModEntry.Help.GameContent.InvalidateCache("Data/Objects");
-        ModEntry.Help.GameContent.InvalidateCache("Data/Furniture");
+    }
+
+    public static void MixedSeeds(Dictionary<string, List<MixedSeedData>> seeds)
+    {
+        ModEntry.Seeds = new Dictionary<string, List<MixedSeedData>>();
+        foreach(var pair in seeds)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            var validSeeds = new List<MixedSeedData>();
+            var hasAllSeeds = true;
+            
+            foreach (var data in pair.Value)
+            {
+                //checks id
+                if (data.IsValid())
+                {
+                    //checks sub conditions like having a mod and season
+                    if (data.CheckConditions())
+                    {
+                        validSeeds.Add(data);
+                    }
+                    
+                    continue;
+                }
+                
+                hasAllSeeds = false;
+                break;
+            }
+    
+            //add depending on size
+            if(hasAllSeeds == false)
+                continue;
+            else
+                ModEntry.Seeds.Add(pair.Key, validSeeds);
+        }
     }
 }

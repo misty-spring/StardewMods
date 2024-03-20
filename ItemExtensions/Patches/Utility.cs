@@ -38,7 +38,7 @@ public class UtilityPatches
         if (objectAt is not Furniture f)
             return;
 
-        if (ModEntry.Resources.ContainsKey(f.ItemId) == false)
+        if (ModEntry.Ores.ContainsKey(f.ItemId) == false)
             return;
 
         Game1.mouseCursor = 0;

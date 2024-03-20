@@ -1,10 +1,9 @@
-using System.Text;
 using ItemExtensions.Additions;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewValley.GameData.BigCraftables;
 using StardewValley.GameData.Objects;
 using StardewValley.GameData.Shops;
 
@@ -36,12 +35,11 @@ public static class Assets
             Parser.ItemActions(itemActionsRaw);
         }
         
-        
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Shops")))
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/MixedSeeds")))
         {
             //get menu actions
-            var shopExtensionRaw = Helper.GameContent.Load<Dictionary<string, Dictionary<string, List<ExtraTrade>>>>($"Mods/{Id}/Shops");
-            Parser.ShopExtension(shopExtensionRaw);
+            var seeds = Helper.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
+            Parser.MixedSeeds(seeds);
         }
         
         
@@ -49,6 +47,14 @@ public static class Assets
         {
             var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
             Parser.Resources(clumps);
+        }
+        
+        
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Shops")))
+        {
+            //get menu actions
+            var shopExtensionRaw = Helper.GameContent.Load<Dictionary<string, Dictionary<string, List<ExtraTrade>>>>($"Mods/{Id}/Shops");
+            Parser.ShopExtension(shopExtensionRaw);
         }
     }
 
@@ -68,12 +74,11 @@ public static class Assets
             e.Edit(asset =>
             {
                 var dictionary = asset.AsDictionary<string, ObjectData>();
-                foreach (var (itemId, data) in ModEntry.Resources)
+                foreach (var (itemId, data) in ModEntry.Ores)
                 {
                     if(data.Width > 1 || data.Height > 1)
                         continue;
                     
-                    //$"{key}/other/{data.Width} {data.Height}/{data.Width} {data.Height}/1/0/2/{data.Name ?? key}/{data.SpriteIndex}/{data.Texture}/true"
                     var objectData = new ObjectData
                     {
                         Name = data.Name ?? itemId,
@@ -101,66 +106,6 @@ public static class Assets
                 }
             });
         }
-
-        if (e.NameWithoutLocale.IsEquivalentTo("Data/Furniture"))
-        {
-            e.Edit(asset =>
-            {
-                var dictionary = asset.AsDictionary<string, string>();
-                foreach (var (itemId, data) in ModEntry.Resources)
-                {
-                    if (data.Width <= 1 || data.Height <= 1)
-                        continue;
-
-                    //fix texture to avoid issues
-                    var texture = new StringBuilder(data.Texture);
-                    texture.Replace('/', '\\');
-
-                    //id too JIC
-                    var idForItem = new StringBuilder(itemId);
-                    idForItem.Replace('/', '\\');
-                    
-                    var asFurniture = $"{idForItem}/other/{data.Width} {data.Height}/{data.SolidWidth} {data.SolidHeight}/1/0/2/{data.Name ?? idForItem.ToString()}/{data.SpriteIndex}/{texture}/true/item_type_litter category_litter";
-                    dictionary.Data.TryAdd(itemId, asFurniture);
-                }
-            });
-        } 
-        
-        /*
-        if (e.NameWithoutLocale.IsEquivalentTo("Data/BigCraftables"))
-        {
-            e.Edit(asset =>
-            {
-                var dictionary = asset.AsDictionary<string, BigCraftableData>();
-                foreach (var (itemId, data) in ModEntry.Resources)
-                {
-                    //only big resources are in, well, big craftables
-                    if(data.Width <= 1 || data.Height <= 1)
-                        continue;
-
-                    var index = data.SpriteIndex == 0 ? 0 : data.SpriteIndex / 2;
-                    var bigCraftableData = new BigCraftableData
-                    {
-                        Name = data.Name ?? itemId,
-                        DisplayName = "[LocalizedText Strings\\Objects:Stone_Node_Name]",
-                        Description = "[LocalizedText Strings\\Objects:Stone_Node_Description]",
-                        Price = 0,
-                        Fragility = 1,
-                        CanBePlacedOutdoors = true,
-                        CanBePlacedIndoors = true,
-                        IsLamp = false,
-                        Texture = data.Texture,
-                        SpriteIndex = index,
-                        ContextTags = data.ContextTags,
-                        CustomFields = data.CustomFields
-                    };
-
-                    //if adding fails, force-set the data. this shouldn't happen unless someone tries to get tricky
-                    if(dictionary.Data.TryAdd(itemId, bigCraftableData) == false)
-                        dictionary.Data[itemId] = bigCraftableData;
-                }
-            });
-        }*/
         
         if (e.NameWithoutLocale.IsEquivalentTo("Data/Shops"))
         {
@@ -198,11 +143,6 @@ public static class Assets
             });
         }
         
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/EatingAnimations", true))
-        {
-            e.LoadFrom(DefaultContent.GetAnimations, AssetLoadPriority.Low);
-        }
-        
         //item actions / object behavior
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Data", true))
         {
@@ -211,12 +151,9 @@ public static class Assets
                 AssetLoadPriority.Low);
         }
         
-        //resources
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Resources", true))
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/EatingAnimations", true))
         {
-            e.LoadFrom(
-                () => new Dictionary<string, ResourceData>(),
-                AssetLoadPriority.Low);
+            e.LoadFrom(DefaultContent.GetAnimations, AssetLoadPriority.Low);
         }
         
         //item actions / object behavior
@@ -224,6 +161,21 @@ public static class Assets
         {
             e.LoadFrom(
                 () => new Dictionary<string, List<MenuBehavior>>(),
+                AssetLoadPriority.Low);
+        }
+        
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/MixedSeeds", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, List<MixedSeedData>>(),
+                AssetLoadPriority.Low);
+        }
+        
+        //resources
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Resources", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, ResourceData>(),
                 AssetLoadPriority.Low);
         }
         

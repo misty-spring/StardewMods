@@ -21,7 +21,7 @@ public static class World
 
         foreach (var pair in e.Added)
         {
-            if (ModEntry.Resources.TryGetValue(pair.Value.ItemId, out var resource) == false)
+            if (ModEntry.Ores.TryGetValue(pair.Value.ItemId, out var resource) == false)
                 continue;
 
             if (resource is null)

@@ -1,20 +1,12 @@
 using ItemExtensions.Models;
+using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewValley;
-using StardewValley.GameData.Shops;
 
 namespace ItemExtensions;
 
 public interface IApi
 {
-    /// <summary>
-    /// Checks for resource data in the mod.
-    /// </summary>
-    /// <param name="id">Qualified item ID</param>
-    /// <param name="health">MinutesUntilReady value</param>
-    /// <returns>Whether the object has ore data.</returns>
-    bool IsResource(string id, out int? health);
-    
     /// <summary>
     /// Checks for resource data in the mod.
     /// </summary>
@@ -33,55 +25,29 @@ public interface IApi
     bool HasLight(string id, out Color? light);
     
     /// <summary>
-    /// Checks mod's menu behaviors.
-    /// </summary>
-    /// <param name="qualifiedItemId">Qualified item ID.</param>
-    /// <returns>Whether this item has any menu behavior</returns>
-    bool HasMenuBehavior(string qualifiedItemId);
-
-    /// <summary>
-    /// Checks mod's menu behaviors.
-    /// For checking general behavior, see <see cref="HasMenuBehavior"/>.
+    /// Checks mod's menu behaviors. If a target isn't provided, it'll search whether any exist.
     /// </summary>
     /// <param name="qualifiedItemId">Qualified item ID.</param>
     /// <param name="target">Item to search behavior for. (Qualified item ID)</param>
     /// <returns>Whether this item has menu behavior for target.</returns>
-    bool HasBehaviorFor(string qualifiedItemId, string target);
+    bool HasBehavior(string qualifiedItemId, string target);
     
-    /*
-    /// <summary>
-    /// Checks mod's extra trade data.
-    /// </summary>
-    /// <param name="shop">The shop to check.</param>
-    /// <param name="qualifiedId">Qualified ID of the item.</param>
-    /// <param name="extraTrades">The extra items to trade, if any.</param>
-    /// <returns>Whether trade requires extra items.</returns>
-    bool HasExtraRequirements(string shop, string qualifiedId, out Dictionary<string,int> extraTrades);*/
+    bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false);
+    
+    bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = false);
+
+    List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true);
 }
 
 //remove all of this ↓ when copying to your mod
 public class Api : IApi
 {
-    public bool IsResource(string id, out int? health)
-    {
-        health = null;
-        
-        if (!ModEntry.Resources.TryGetValue(id, out var resource))
-            return false;
-
-        if (resource is null || resource == new ResourceData())
-            return false;
-        
-        health = resource.Health;
-        return true;
-    }
-    
     public bool IsResource(string id, out int? health, out string itemDropped)
     {
         health = null;
         itemDropped = null;
         
-        if (!ModEntry.Resources.TryGetValue(id, out var resource))
+        if (!ModEntry.Ores.TryGetValue(id, out var resource))
             return false;
 
         if (resource is null || resource == new ResourceData())
@@ -111,118 +77,71 @@ public class Api : IApi
         return true;
     }
 
-    public bool HasMenuBehavior(string qualifiedItemId) => ModEntry.MenuActions.ContainsKey(qualifiedItemId);
-    
-    public bool HasBehaviorFor(string item, string target)
+    public bool HasBehavior(string qualifiedItemId, string target = null)
     {
-        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
+        if(string.IsNullOrWhiteSpace(target))
+            return ModEntry.MenuActions.ContainsKey(qualifiedItemId);
+        
+        if (!ModEntry.MenuActions.TryGetValue(qualifiedItemId, out var value))
             return false;
 
         var behavior = value.Find(b => b.TargetID == target);
         return behavior != null;
     }
 
-    /*
-    public bool HasExtraRequirements(string shop, string qualifiedId, out Dictionary<string, int> extraTrades)
-    {
-        extraTrades = new Dictionary<string, int>();
-        if (!ModEntry.ExtraTrades.TryGetValue(shop, out var shopData))
-            return false;
-        
-        if (!shopData.TryGetValue(qualifiedId, out var itemData))
-            return false;
-
-        foreach (var extra in itemData)
-        {
-            extraTrades.Add(extra.QualifiedItemId, extra.Count);
-        }
-
-        return true;
-    }*/
-
-    public bool HasExtraRequirements_deprecated(string shop, string shopItemId, out Dictionary<string,int> extraTrades)
-    {
-        extraTrades = new Dictionary<string, int>();
-        
-        if (!DataLoader.Shops(Game1.content).TryGetValue(shop, out var shopData))
-            return false;
-
-        ShopItemData shopItem = null;
-        foreach (var item in shopData.Items)
-        {
-            if (item.Id != shopItemId)
-                continue;
-
-            shopItem = item;
-        }
-
-        if (shopItem?.CustomFields is null)
-            return false;
-
-        if (!shopItem.CustomFields.TryGetValue(Additions.ModKeys.ExtraTradesKey, out var tradesFromKey))
-            return false;
-
-        var parsed = ArgUtility.SplitBySpace(tradesFromKey);
-        var skipNext = false;
-
-        for (var i = 0; i < parsed.Length - 1; i++)
-        {
-            if (skipNext)
-            {
-                skipNext = false;
-                continue;
-            }
-
-            int.TryParse(parsed[i + 1], out var count);
-            extraTrades.Add(parsed[i], count);
-            skipNext = true;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Checks for stored menu behavior.
-    /// </summary>
-    /// <param name="item">Qualified ID.</param>
-    /// <param name="target">The item we want the behavior of.</param>
-    /// <param name="replacesFor"></param>
-    /// <param name="conditions"></param>
-    /// <param name="trigger"></param>
-    /// <returns>Whether there's menu behavior for this item.</returns>
-    public bool HasBehaviorFor(string item, string target, out string replacesFor, out string conditions, out string trigger)
-    {
-        replacesFor = null;
-        conditions = null;
-        trigger = null;
-        
-        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
-        {
-            return false;
-        }
-
-        var data = value.Find(m => m.TargetID == target);
-        replacesFor = data.ReplaceBy;
-        conditions = data.Conditions;
-        trigger = data.TriggerActionID;
-        
-        return true;
-    }
+    public bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false) => TrySpawnClump(itemId, position, Utility.fuzzyLocationSearch(locationName), out error, avoidOverlap);
     
-    public bool HasBehaviorFor(string item, string target, out int qualityChange, out char? modifier)
+    public bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = false)
     {
-        qualityChange = -1;
-        modifier = null;
+        error = null;
         
-        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
+        if(ModEntry.BigClumps.TryGetValue(itemId, out var data) == false)
         {
+            error = "Couldn't find the given ID.";
             return false;
         }
 
-        var data = value.Find(m => m.TargetID == target);
-        qualityChange = data.ActualQuality;
-        modifier = data.GetQualityModifier();
-        
+        var clump = new ExtensionClump(itemId, data, position);
+
+        try
+        {
+            if(avoidOverlap)
+            {
+                if (location.IsTileOccupiedBy(position))
+                {
+                    var newPosition = Patches.GameLocationPatches.NearestOpenTile(location, position);
+                    clump.Tile = newPosition;
+                }
+            }
+            
+            location.resourceClumps.Add(clump);
+        }
+        catch (Exception ex)
+        {
+            error = $"{ex}";
+            return false;
+        }
+
         return true;
+    }
+
+    public List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true)
+    {
+        //if no seed data
+        if (ModEntry.Seeds.TryGetValue(itemId, out var seeds) == false)
+            return null;
+
+        var result = new List<string>();
+
+        foreach (var mixedSeed in seeds)
+        {
+            if (string.IsNullOrWhiteSpace(mixedSeed.Condition)) 
+                continue; 
+            
+            if (GameStateQuery.CheckConditions(mixedSeed.Condition, Game1.player.currentLocation, Game1.player))
+                result.Add(mixedSeed.ItemId);
+        }
+
+        return result;
     }
 }

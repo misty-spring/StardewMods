@@ -1,3 +1,4 @@
+using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 
 namespace ItemExtensions.Models;
@@ -14,49 +15,60 @@ public class ResourceData
     private const LogLevel Level =  LogLevel.Trace;
 #endif
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
+    private const StringComparison ComparisonType = StringComparison.OrdinalIgnoreCase;
     
-    // required
+    // Required
     public string Name { get; set; }
     public string Texture { get; set; }
     public int SpriteIndex { get; set; } = -1;
     
-    // region
+    // Region
     public int Width { get; set; } = 1;
     public int Height { get; set; } = 1;
 
-    public int SolidWidth { get; set; } = -1;
+    public int SolidWidth { get; set; }
     
-    public int SolidHeight  { get; set; } = -1;
+    public int SolidHeight  { get; set; }
 
-    // obtaining
+    // Obtaining
     /// <summary>
     /// The stone's health. Every hit reduces UpgradeLevel + 1.
     /// For weapons, it does 10% average DMG + 1.
     /// See <see cref="StardewValley.Locations.MineShaft"/> for stone health.
     /// </summary>
     public int Health { get; set; } = 10;
-    public string Sound { get; set; } = "hammer";
-    public string BreakingSound { get; set; } = "stoneCrack";
-    public string Debris { get; set; } = "stone";
-    public string ItemDropped { get; set; } = null;
+    public string ItemDropped { get; set; }
     public int MinDrops { get; set; } = 1;
     public int MaxDrops { get; set; } = 1;
-    public List<ExtraSpawn> ExtraItems { get; set; } = null;
+    public List<ExtraSpawn> ExtraItems { get; set; }
+    
+    // Type of resource
+    /// <summary>
+    /// Debris when destroying item. Can be an ItemId, or one of: coins, wood, stone, bigStone, bigWood, hay, weeds
+    /// </summary>
+    
+    public string Debris { get; set; } = "stone";
+    public string BreakingSound { get; set; } = "stoneCrack";
+    public string Sound { get; set; } = "hammer";
+    public int AddHay { get; set; }
+    public bool SecretNotes { get; set; } = true;
+    public bool Shake { get; set; } = true;
+    public StatCounter CountTowards { get; set; }
 
     /// <summary>
     /// Tool's class. In the case of weapons, it can also be its number.
     /// </summary>
-    public string Tool { get; set; } = null;
+    public string Tool { get; set; }
     /// <summary>
     /// Minimum upgrade tool should have. If a weapon, the minimum number is checked. 
     /// ("number": 10% of average damage)
     /// </summary>
-    public int MinToolLevel { get; set; } = 0;
-    public int Exp { get; set; } = 0;
-    public string Skill { get; set; } = null;
+    public int MinToolLevel { get; set; }
+    public int Exp { get; set; }
+    public string Skill { get; set; }
     internal int ActualSkill { get; set; } = -1;
 
-    //extra
+    // Extra
     public List<string> ContextTags { get; set; } = null;
     public Dictionary<string, string> CustomFields { get; set; } = null;
     public LightData Light { get; set; } = null;
@@ -75,25 +87,28 @@ public class ResourceData
             return false;
         }
 
-        if (SolidWidth < 1)
+        //if -1 or larger than parameter, reset
+        if (SolidWidth < 1 || SolidWidth > Width)
             SolidWidth = Width;
         
-        if (SolidHeight < 1)
+        if (SolidHeight < 1 || SolidHeight > Height)
             SolidHeight = Height;
 
         if (!string.IsNullOrWhiteSpace(Skill))
         {
-            if (Skill.Equals("farming", StringComparison.OrdinalIgnoreCase))
+            if (int.TryParse(Skill, out var intSkill))
+                ActualSkill = intSkill;
+            if (Skill.StartsWith("farm", ComparisonType))
                 ActualSkill = 0;
-            else if (Skill.Equals("fishing", StringComparison.OrdinalIgnoreCase))
+            else if (Skill.StartsWith("fish", ComparisonType))
                 ActualSkill = 1;
-            else if (Skill.Equals("foraging", StringComparison.OrdinalIgnoreCase))
+            else if (Skill.Equals("foraging", ComparisonType))
                 ActualSkill = 2;
-            else if (Skill.Equals("mining", StringComparison.OrdinalIgnoreCase))
+            else if (Skill.Equals("mining", ComparisonType))
                 ActualSkill = 3;
-            else if (Skill.Equals("combat", StringComparison.OrdinalIgnoreCase))
+            else if (Skill.Equals("combat", ComparisonType))
                 ActualSkill = 4;
-            else if (Skill.Equals("luck", StringComparison.OrdinalIgnoreCase))
+            else if (Skill.Equals("luck", ComparisonType))
                 ActualSkill = 5;
             else
                 ActualSkill = -1;
