@@ -1,20 +1,10 @@
+using StardewValley;
+using StardewValley.Triggers;
+
 namespace ItemExtensions.Models.Internal;
 
 public interface IWorldChangeData
 {
-    int ReduceBy { get; set; }
-    
-    string PriceChange { get; set; }
-    internal double ActualPrice { get; set; }
-    internal Modifier PriceModifier { get; set; }
-    
-    string QualityChange { get; set; }
-    internal int ActualQuality { get; set; }
-    internal Modifier QualityModifier { get; set; }
-    
-    public int TextureIndex { get; set; }
-    
-    string ChangeMoney { get; set; }
     string Health { get; set; }
     string Stamina { get; set; }
     
@@ -30,38 +20,166 @@ public interface IWorldChangeData
     string RemoveQuest { get; set; }
     string RemoveSpecialOrder { get; set; }
     
-    List<string> AddContextTags { get; set; }
-    List<string> RemoveContextTags { get; set; }
-    Dictionary<string,string> AddModData { get; set; }
+    string[] AddFlags { get; set; }
+    string[] RemoveFlags { get; set; }
     
-    string Condition { get; set; }
+    string Conditions { get; set; }
     string TriggerAction { get; set; }
-    
-    public char? GetQualityModifier()
+
+    public static void Solve(IWorldChangeData data)
     {
-        return QualityModifier switch
+        /*
+        if (string.IsNullOrWhiteSpace(data.Conditions) == false &&
+            GameStateQuery.CheckConditions(data.Conditions) == false)
+            return;*/
+        
+        #region player values
+        if (!string.IsNullOrWhiteSpace(data.Health))
         {
-            Modifier.Set => '=',
-            Modifier.Sum => '+',
-            Modifier.Substract => '-',
-            Modifier.Divide => '/',
-            Modifier.Multiply => '*',
-            Modifier.Percentage => '%',
-            _ => null
-        };
+            Game1.player.health = ChangeValues(data.Health, Game1.player.health, Game1.player.maxHealth);
+        }
+        
+        if (!string.IsNullOrWhiteSpace(data.Stamina))
+        {
+            Game1.player.Stamina = ChangeValues(data.Stamina, Game1.player.Stamina, Game1.player.MaxStamina);
+        }
+        #endregion
+        
+        #region flags
+        if (data.AddFlags != null && data.AddFlags.Any())
+        {
+            foreach (var pair in data.AddFlags)
+            {
+                Game1.player.mailReceived.Add(pair);
+            }
+        }
+        
+        if (data.RemoveFlags != null && data.RemoveFlags.Any())
+        {
+            foreach (var pair in data.RemoveFlags)
+            {
+                Game1.player.RemoveMail(pair);
+            }
+        }
+        #endregion
+        
+        #region items
+        if (data.AddItems != null && data.AddItems.Any())
+        {
+            foreach (var pair in data.AddItems)
+            {
+                var item = ItemRegistry.Create(pair.Key, pair.Value);
+                Game1.player.addItemByMenuIfNecessary(item);
+            }
+        }
+        
+        if (data.RemoveItems != null && data.RemoveItems.Any())
+        {
+            foreach (var pair in data.RemoveItems)
+            {
+                Game1.player.removeFirstOfThisItemFromInventory(pair.Key, pair.Value);
+            }
+        }
+        #endregion
+        
+        #region quests
+        if(!string.IsNullOrWhiteSpace(data.AddQuest))
+            Game1.player.addQuest(data.AddQuest);
+        
+        if(!string.IsNullOrWhiteSpace(data.AddSpecialOrder))
+            Game1.player.team.AddSpecialOrder(data.AddSpecialOrder);
+        
+        if(!string.IsNullOrWhiteSpace(data.RemoveQuest))
+            Game1.player.removeQuest(data.RemoveQuest);
+
+        if (!string.IsNullOrWhiteSpace(data.RemoveSpecialOrder))
+        {
+            var specialOrders = Game1.player.team.specialOrders;
+            for (var index = specialOrders.Count - 1; index >= 0; --index)
+            {
+                if (specialOrders[index].questKey.Value == data.RemoveSpecialOrder)
+                    specialOrders.RemoveAt(index);
+            }
+        }
+        #endregion
+
+        #region play
+        if (!string.IsNullOrWhiteSpace(data.PlaySound))
+            Game1.playSound(data.PlaySound);
+        
+        if (!string.IsNullOrWhiteSpace(data.PlayMusic))
+            Game1.changeMusicTrack(data.PlayMusic);
+        #endregion
+
+        if (string.IsNullOrWhiteSpace(data.TriggerAction)) 
+            return;
+        
+        TriggerActionManager.TryRunAction(data.TriggerAction, out var error, out var exception);
+        if (!string.IsNullOrWhiteSpace(error))
+        {
+            ModEntry.Mon.Log($"Error: {error}. {exception}");
+        }
     }
+
+    private static int ChangeValues(string howMuch, float value, int defaultValue) =>
+        ChangeValues(howMuch, (int)value, defaultValue);
     
-    public char? GetPriceModifier()
+    public static int ChangeValues(string howMuch, int value, int defaultValue)
     {
-        return PriceModifier switch
+        if(string.IsNullOrWhiteSpace(howMuch))
+            return -1;
+
+        int result;
+        
+        if (int.TryParse(howMuch, out var justNumbers))
         {
-            Modifier.Set => '=',
-            Modifier.Sum => '+',
-            Modifier.Substract => '-',
-            Modifier.Divide => '/',
-            Modifier.Multiply => '*',
-            Modifier.Percentage => '%',
-            _ => null
+            result = justNumbers <= 0 ? 1 : justNumbers;
+            return result;
+        }
+
+        var split = howMuch.Split(' ');
+        var type = split[0];
+        var amt = int.Parse(split[1]);
+        
+        var addsOrReduces = type switch
+        {
+            "add" => true,
+            "more" => true,
+            "reduce" => true,
+            "less" => true,
+            "+" => true,
+            "-" => true,
+            _ => false
         };
+
+        if(addsOrReduces)
+        {
+            //Log("Adding/Substracting from player health.");
+
+            //add/reduce hp
+            if (type is "less" or "-" or "reduce")
+            {
+                var trueAmt = value - amt;
+                result = trueAmt <= 0 ? 1 : trueAmt;
+            }
+            else
+            {
+                var trueAmt = value + amt;
+                result = trueAmt >= value ? value : trueAmt;
+            }
+        }
+        else if (type == "reset")
+        {
+            //Log("Resetting player health.");
+            result = defaultValue;
+        }
+        else
+        {
+            //Log("Setting player health.");
+            //set
+            result = amt;
+        }
+
+        return result;
     }
 }

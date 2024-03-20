@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using ItemExtensions.Models.Enums;
+using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Triggers;
@@ -10,22 +12,12 @@ using StardewValley.Triggers;
 
 namespace ItemExtensions.Models;
 
-public enum Modifier
-{
-    Set, // null or =
-    Sum, // +
-    Substract, // -
-    Divide, // : or / or \
-    Multiply, // * or x
-    Percentage // %
-}
-
 /// <summary>
 /// Behavior on item used.
 /// </summary>
 /// <see cref="CachedTriggerAction"/>
 /// <see cref="StardewValley.Menus.GameMenu"/>
-public class MenuBehavior
+public class MenuBehavior : IWorldChangeData
 {
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
@@ -36,8 +28,8 @@ public class MenuBehavior
     public bool RetainQuality { get; set; } = true;
     public bool RetainAmount { get; set; } = true;
     
-    public List<string> AddContextTags { get; set; } = new();
-    public List<string> RemoveContextTags { get; set; } = new();
+    public int TextureIndex { get; set; } = -1;
+    
     public Dictionary<string,string> AddModData { get; set; } = new();
     
     public string QualityChange { get; set; }
@@ -48,45 +40,79 @@ public class MenuBehavior
     internal double ActualPrice { get; set; }
     internal Modifier PriceModifier { get; set; }
     
-    public int TextureIndex { get; set; } = -1;
+    public string Health { get; set; }
+    public string Stamina { get; set; }
+    
+    public Dictionary<string, int> AddItems { get; set; }
+    public Dictionary<string, int> RemoveItems { get; set; }
+    
+    public string PlayMusic { get; set; }
     public string PlaySound { get; set; }
     
-    public string TriggerActionID { get; set; }
-    public string Conditions { get; set; } = "TRUE";
+    public string TriggerAction { get; set; }
+    public string[] RemoveFlags { get; set; }
+    public string Conditions { get; set; }
+    
+    public List<string> AddContextTags { get; set; }
+    public List<string> RemoveContextTags { get; set; }
     
     public string AddQuest { get; set; }
+    public string AddSpecialOrder { get; set; }
+    
     public string RemoveQuest { get; set; }
+    public string RemoveSpecialOrder { get; set; }
+    public string[] AddFlags { get; set; }
 
     public MenuBehavior()
     {}
     
-    public MenuBehavior(MenuBehavior i)
+    public bool Parse(out MenuBehavior o)
     {
-        TargetId = i.TargetId;
-        RemoveAmount = i.RemoveAmount;
+        try
+        {
+            Price();
+        }
+        catch (Exception e)
+        {
+            Log("Error when parsing price: "+ e, LogLevel.Error);
+            o = null;
+            return false;
+        }
         
-        ReplaceBy = i.ReplaceBy;
-        RetainAmount = i.RetainAmount;
-        RetainQuality = i.RetainQuality;
-        
-        AddContextTags = i.AddContextTags;
-        RemoveContextTags = i.RemoveContextTags;
-        AddModData = i.AddModData;
+        try
+        {
+            Quality();
+        }
+        catch (Exception e)
+        {
+            Log("Error when parsing quality: "+ e, LogLevel.Error);
+            o = null;
+            return false;
+        }
 
-        QualityChange = i.QualityChange;
-        PriceChange = i.PriceChange;
-
-        TextureIndex = i.TextureIndex;
-        PlaySound = i.PlaySound;
+        if (!string.IsNullOrWhiteSpace(PlaySound) && !Game1.soundBank.Exists(PlaySound))
+        {
+            Log($"Error: Sound doesn't exist. ({PlaySound})", LogLevel.Error);
+            o = null;
+            return false;
+        }
         
-        TriggerActionID = i.TriggerActionID;
-        Conditions = i.Conditions;
+        var target = ItemRegistry.GetDataOrErrorItem(TargetId);
+        if (target.DisplayName == ItemRegistry.GetErrorItemName())
+        {
+            Log("Error finding item. Behavior won't be added.", LogLevel.Error);
+            o = null;
+            return false;
+        }
+        
+        o = this;
+        return true;
     }
-
+    
     /// <summary>
     /// Check which price change we're doing, and set modifier
     /// </summary>
-    private void ParsePrice()
+    private void Price()
     {
         if (string.IsNullOrWhiteSpace(PriceChange))
             return;
@@ -123,7 +149,7 @@ public class MenuBehavior
         ActualPrice = int.Parse(stripped);
     }
 
-    private void ParseQuality()
+    private void Quality()
     {
         if (string.IsNullOrWhiteSpace(QualityChange))
             return;
@@ -145,48 +171,5 @@ public class MenuBehavior
         
         var stripped = Regex.Replace(raw, "[^0-9]", "");
         ActualQuality = int.Parse(stripped);
-    }
-    
-    public bool Parse(out MenuBehavior o)
-    {
-        try
-        {
-            ParsePrice();
-        }
-        catch (Exception e)
-        {
-            Log("Error when parsing price: "+ e, LogLevel.Error);
-            o = null;
-            return false;
-        }
-        
-        try
-        {
-            ParseQuality();
-        }
-        catch (Exception e)
-        {
-            Log("Error when parsing quality: "+ e, LogLevel.Error);
-            o = null;
-            return false;
-        }
-
-        if (!string.IsNullOrWhiteSpace(PlaySound) && !Game1.soundBank.Exists(PlaySound))
-        {
-            Log($"Error: Sound doesn't exist. ({PlaySound})", LogLevel.Error);
-            o = null;
-            return false;
-        }
-        
-        var target = ItemRegistry.GetDataOrErrorItem(TargetId);
-        if (target.DisplayName == ItemRegistry.GetErrorItemName())
-        {
-            Log("Error finding item. Behavior won't be added.", LogLevel.Error);
-            o = null;
-            return false;
-        }
-        
-        o = this;
-        return true;
     }
 }

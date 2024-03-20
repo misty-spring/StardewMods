@@ -1,3 +1,4 @@
+using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -25,6 +26,9 @@ public static class World
                 continue;
 
             if (resource is null)
+                continue;
+            
+            if(GeneralResource.IsVanilla(pair.Value.ItemId))
                 continue;
             
             Log("Found data...");

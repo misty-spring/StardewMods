@@ -51,6 +51,13 @@ public static class Assets
             var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
             Parser.Resources(clumps);
         }
+        
+        
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Trees")))
+        {
+            var trees = Helper.GameContent.Load<Dictionary<string, TreeData>>($"Mods/{Id}/Trees");
+            Parser.TreeDrops(trees);
+        }
     }
 
     public static void OnRequest(object sender, AssetRequestedEventArgs e)
@@ -71,6 +78,12 @@ public static class Assets
                 var dictionary = asset.AsDictionary<string, ObjectData>();
                 foreach (var (itemId, data) in ModEntry.Ores)
                 {
+                    //check if vanilla, skip if so
+                    if (int.TryParse(itemId, out var asInt) && asInt < 1000)
+                    {
+                        continue;
+                    }
+
                     if(data.Width > 1 || data.Height > 1)
                         continue;
 
@@ -138,6 +151,14 @@ public static class Assets
         {
             e.LoadFrom(
                 () => new Dictionary<string, ResourceData>(),
+                AssetLoadPriority.Low);
+        }
+        
+        //resources
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Trees", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, TreeData>(),
                 AssetLoadPriority.Low);
         }
 

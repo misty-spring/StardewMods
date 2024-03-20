@@ -40,7 +40,7 @@ public static class ActionButton
 
     public static void CheckBehavior(OnBehavior behavior)
     {
-        if (!GameStateQuery.CheckConditions(behavior.Condition))
+        if (!string.IsNullOrWhiteSpace(behavior.Conditions) && !GameStateQuery.CheckConditions(behavior.Conditions))
         {
             Log("Conditions for item don't match.");
             return;
@@ -75,75 +75,17 @@ public static class ActionButton
 
     private static void RunBehavior(OnBehavior behavior, bool directAction = true)
     {
-        #region items
         if (behavior.ReduceBy > 0)
             Game1.player.ActiveObject.ConsumeStack(behavior.ReduceBy);
 
-        if (behavior.AddItems != null)
-        {
-            foreach (var pair in behavior.AddItems)
-            {
-                var item = ItemRegistry.Create(pair.Key, pair.Value);
-                Game1.player.addItemByMenuIfNecessary(item);
-            }
-        }
-        
-        if (behavior.RemoveItems != null)
-        {
-            foreach (var pair in behavior.RemoveItems)
-            {
-                Log($"Removing {pair}...");
-                Game1.player.removeFirstOfThisItemFromInventory(pair.Key, pair.Value);
-            }
-        }
-        #endregion
-
-        #region player values
-        if (!string.IsNullOrWhiteSpace(behavior.Health))
-        {
-            Game1.player.health = ChangeValues(behavior.Health, Game1.player.health, Game1.player.maxHealth);
-        }
-        
-        if (!string.IsNullOrWhiteSpace(behavior.Stamina))
-        {
-            Game1.player.Stamina = ChangeValues(behavior.Health, Game1.player.Stamina, Game1.player.MaxStamina);
-        }
-
         if (!string.IsNullOrWhiteSpace(behavior.ChangeMoney))
         {
-            Game1.player.Money = ChangeValues(behavior.ChangeMoney, Game1.player.Money, Game1.player.Money);
+            Game1.player.Money = IWorldChangeData.ChangeValues(behavior.ChangeMoney, Game1.player.Money, Game1.player.Money);
         }
-        #endregion
-
-        #region quests
-        if(!string.IsNullOrWhiteSpace(behavior.AddQuest))
-            Game1.player.addQuest(behavior.AddQuest);
         
-        if(!string.IsNullOrWhiteSpace(behavior.AddSpecialOrder))
-            Game1.player.team.AddSpecialOrder(behavior.AddSpecialOrder);
-        
-        if(!string.IsNullOrWhiteSpace(behavior.RemoveQuest))
-            Game1.player.removeQuest(behavior.RemoveQuest);
-
-        if (!string.IsNullOrWhiteSpace(behavior.RemoveSpecialOrder))
-        {
-            var specialOrders = Game1.player.team.specialOrders;
-            for (var index = specialOrders.Count - 1; index >= 0; --index)
-            {
-                if (specialOrders[index].questKey.Value == behavior.RemoveSpecialOrder)
-                    specialOrders.RemoveAt(index);
-            }
-        }
-        #endregion
+        IWorldChangeData.Solve(behavior);
         
         #region menus
-        /*if (!string.IsNullOrWhiteSpace(behavior.OpenMenu))
-        {
-            var newMenu = GetMenuType(behavior.OpenMenu);
-            if(newMenu != null)
-                Game1.activeClickableMenu = newMenu;
-        }*/
-        
         if(directAction && !string.IsNullOrWhiteSpace(behavior.Message))
         {
             Game1.addHUDMessage(new HUDMessage(TokenParser.ParseText(behavior.Message)));
@@ -166,23 +108,6 @@ public static class ActionButton
             }
         }
         #endregion
-        
-        #region play
-        if (!string.IsNullOrWhiteSpace(behavior.PlaySound))
-            Game1.playSound(behavior.PlaySound);
-        
-        if (!string.IsNullOrWhiteSpace(behavior.PlayMusic))
-            Game1.changeMusicTrack(behavior.PlayMusic);
-        #endregion
-
-        if (string.IsNullOrWhiteSpace(behavior.TriggerAction)) 
-            return;
-        
-        TriggerActionManager.TryRunAction(behavior.TriggerAction, out var error, out var exception);
-        if (!string.IsNullOrWhiteSpace(error))
-        {
-            Log($"Error: {error}. {exception}");
-        }
     }
 
     /// <summary>
@@ -212,68 +137,6 @@ public static class ActionButton
             "tailor" or "sew" or "sewing" => new TailoringMenu(),
             _ => null
         };
-
-        return result;
-    }
-
-    private static int ChangeValues(string howMuch, float value, int defaultValue) =>
-        ChangeValues(howMuch, (int)value, defaultValue);
-    
-    private static int ChangeValues(string howMuch, int value, int defaultValue)
-    {
-        if(string.IsNullOrWhiteSpace(howMuch))
-            return -1;
-
-        int result;
-        
-        if (int.TryParse(howMuch, out var justNumbers))
-        {
-            result = justNumbers <= 0 ? 1 : justNumbers;
-            return result;
-        }
-
-        var split = howMuch.Split(' ');
-        var type = split[0];
-        var amt = int.Parse(split[1]);
-        
-        var addsOrReduces = type switch
-        {
-            "add" => true,
-            "more" => true,
-            "reduce" => true,
-            "less" => true,
-            "+" => true,
-            "-" => true,
-            _ => false
-        };
-
-        if(addsOrReduces)
-        {
-            Log("Adding/Substracting from player health.");
-
-            //add/reduce hp
-            if (type is "less" or "-" or "reduce")
-            {
-                var trueAmt = value - amt;
-                result = trueAmt <= 0 ? 1 : trueAmt;
-            }
-            else
-            {
-                var trueAmt = value + amt;
-                result = trueAmt >= value ? value : trueAmt;
-            }
-        }
-        else if (type == "reset")
-        {
-            Log("Resetting player health.");
-            result = defaultValue;
-        }
-        else
-        {
-            Log("Setting player health.");
-            //set
-            result = amt;
-        }
 
         return result;
     }

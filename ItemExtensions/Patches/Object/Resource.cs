@@ -19,6 +19,12 @@ public partial class ObjectPatches
             if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource) == false)
                 return;
 
+            if (resource.Tool.Equals("vanilla") && __instance.MinutesUntilReady <= 0.0)
+            {
+                CheckDrops(resource, __instance.Location, __instance.TileLocation, t);
+                return;
+            }
+
             if (!ToolMatches(t, resource))
             {
                 if (ShouldShowWrongTool(t,resource) && CanShowMessage)

@@ -1,6 +1,5 @@
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Enums;
-using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewValley;
@@ -176,5 +175,45 @@ public class ResourceData
             actualSkill = -1;
         
         return actualSkill;
+    }
+
+    /// <summary>
+    /// Called when the user patches a vanilla resource. Removes every custom value except extra drops
+    /// </summary>
+    /// <param name="asInt"></param>
+    public void Trim(int asInt)
+    {
+        /* doesn't need editing because we skip the entry
+        Name = null;
+        DisplayName = null;
+        Description = null;
+        Texture = null;
+        SpriteIndex = -1;*/
+        if (Additions.GeneralResource.VanillaClumps.Contains(asInt) == false)
+        {
+            Width = 1;
+            Height = 1;
+        }
+        Health = -1;
+        /*
+        ItemDropped = null;
+        MinDrops = 1;
+        MaxDrops = null; */
+        Debris = null;
+        BreakingSound = null;
+        Sound = null;
+        AddHay = -1;
+        SecretNotes = false;
+        Shake = false;
+        CountTowards = StatCounter.None;
+        SayWrongTool = null;
+        MinToolLevel = -1;
+        Exp = 0;
+        Skill = null;
+        ActualSkill = -1;
+        ContextTags = null;
+        CustomFields = null;
+        Light = null;
+        Tool = "vanilla";
     }
 }

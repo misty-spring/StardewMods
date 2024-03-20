@@ -1,5 +1,7 @@
 using HarmonyLib;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Enums;
+using ItemExtensions.Models.Internal;
 using Netcode;
 using StardewModdingAPI;
 using StardewValley;
@@ -74,12 +76,14 @@ public static class InventoryPatches
                 if (data.TargetId != affectedItem.QualifiedItemId)
                     continue;
 
-                if (!GameStateQuery.CheckConditions(data.Conditions))
+                if (!string.IsNullOrWhiteSpace(data.Conditions) && !GameStateQuery.CheckConditions(data.Conditions))
                 {
                     Log($"Conditions for {data.TargetId} don't match.");
                     break;
                 }
 
+                IWorldChangeData.Solve(data);
+                
                 //removeamount is PER item to avoid cheating
                 if (heldItem.Stack < data.RemoveAmount)
                 {
@@ -278,18 +282,6 @@ public static class InventoryPatches
                 {
                     Log($"Changing texture index to {data.TextureIndex}");
                     affectedItem.ParentSheetIndex = data.TextureIndex;
-                }
-
-                if (!string.IsNullOrWhiteSpace(data.PlaySound))
-                {
-                    Game1.playSound(data.PlaySound);
-                }
-
-                if (!string.IsNullOrWhiteSpace(data.TriggerActionID))
-                {
-                    TriggerActionManager.TryRunAction(data.TriggerActionID, out var error, out var exception);
-                    if (!string.IsNullOrWhiteSpace(error))
-                        Log($"Error: {error}. {exception}");
                 }
 
                 break;

@@ -1,4 +1,5 @@
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
@@ -18,6 +19,34 @@ public static class GeneralResource
     private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
+
+    internal static readonly int[] VanillaClumps = { 600, 602, 622, 672, 752, 754, 756, 758 };
+    private static readonly int[] VanillaStones =
+    {
+        2, 4, 6, 8, 10, 12, 14, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 75, 76, 77, 95, 290, 343, 390,
+        450, 668, 670, 751, 760, 762, 764, 765, 25, 816, 817, 818, 819, 843, 844, 845, 846, 847, 849, 850
+    };
+
+    internal static readonly int[] VanillaTwigs = { 294, 295 };
+
+    internal static readonly int[] VanillaWeeds =
+    {
+        0, 313, 314, 315, 316, 317, 318, 319, 320, 321, 452, 674, 675, 676, 677, 678, 679, 750, 784, 785, 786, 792, 793,
+        794, 882, 883, 884
+    };
+
+    internal static List<int> VanillaIds
+    {
+        get
+        {
+            var all = new List<int>();
+            all.AddRange(VanillaStones);
+            all.AddRange(VanillaTwigs);
+            all.AddRange(VanillaWeeds);
+            return all;
+        }
+    }
+    
 #else
     private const LogLevel Level =  LogLevel.Trace;
 #endif
@@ -32,12 +61,27 @@ public static class GeneralResource
     /// <returns>Whether the aforementioned match. If tool is null (ie bomb), it's always true.</returns>
     internal static bool ToolMatches(Tool tool, ResourceData data)
     {
-        if (tool is null) //bomb
+        //bombs call with null tool for Clumps
+        if (tool is null)
             return true;
 
+        //if any
         if (data.Tool.Equals("Any", IgnoreCase) || data.Tool.Equals("All", IgnoreCase))
             return true;
         
+        //"tool" → any non-weapon
+        if (data.Tool.Equals("Tool", IgnoreCase))
+            return tool is not MeleeWeapon;
+
+        //for custom exceptions
+        if (data.Tool.StartsWith("AnyExcept", IgnoreCase))
+        {
+            var exception = data.Tool.Remove(0, 9);
+            
+            return exception.Equals(data.Tool, IgnoreCase) == false;
+        }
+        
+        //check weapon type
         if (tool is MeleeWeapon w)
         {
             //if the user set a number, we assume it's a custom tool
@@ -69,6 +113,7 @@ public static class GeneralResource
             return weaponType == w.type.Value;
         }
         
+        //else, compare values
         var className = tool.GetToolData().ClassName;
         return className.Equals(data.Tool, IgnoreCase);
     }
@@ -241,10 +286,13 @@ public static class GeneralResource
 
     public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t)
     {
+        var who = t?.getLastFarmerToUse() ?? Game1.player;
+        
         //create notes
-        if (resource.SecretNotes && location.HasUnlockedAreaSecretNotes(t.getLastFarmerToUse()) && Game1.random.NextDouble() < 0.05)
+        if (resource.SecretNotes && location.HasUnlockedAreaSecretNotes(who) && Game1.random.NextDouble() < 0.05)
         {
-            var unseenSecretNote = location.tryToCreateUnseenSecretNote(t.getLastFarmerToUse());
+            var unseenSecretNote = location.tryToCreateUnseenSecretNote(who);
+            
             if (unseenSecretNote != null)
                 Game1.createItemDebris(unseenSecretNote, tileLocation * 64f, -1, location);
         }
@@ -268,37 +316,9 @@ public static class GeneralResource
             }
         }
 
-        var chance = Game1.random.NextDouble();
         if (resource.ExtraItems != null && resource.ExtraItems.Any())
         {
-            foreach (var item in resource.ExtraItems)
-            {
-                if(GameStateQuery.CheckConditions(item.Condition, location, t.getLastFarmerToUse()) == false)
-                    continue;
-                
-                //if it has a condition, check first
-                if (chance > item.Chance)
-                    continue;
-
-                #if DEBUG
-                Log($"Chance and condition match. Spawning extra item(s)...({item.ItemId})");
-                #endif
-                
-                var context = new ItemQueryContext(location, t.getLastFarmerToUse(), Game1.random);
-                var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
-                foreach (var result in itemQuery)
-                {
-                    #if DEBUG
-                    Log($"({item.ItemId}) Query item: {result.Item.QualifiedItemId}");
-                    #endif
-                    
-                    var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
-                    var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
-                    var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
-                    var vector = new Vector2((int)tileLocation.X, (int)tileLocation.Y) * 64;
-                    location.debris.Add(new Debris(parsedItem,vector, vector + new Vector2(x, y)));
-                }
-            }
+            TryExtraDrops(resource.ExtraItems, location, t.getLastFarmerToUse(), tileLocation);
         }
 
         if(!string.IsNullOrWhiteSpace(resource.BreakingSound))
@@ -316,6 +336,38 @@ public static class GeneralResource
             AddStats(resource.CountTowards);
     }
 
+    internal static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation)
+    {
+        var chance = Game1.random.NextDouble();
+        foreach (var item in data)
+        {
+            if(GameStateQuery.CheckConditions(item.Condition, location, who) == false)
+                continue;
+                
+            //if it has a condition, check first
+            if (chance > item.Chance)
+                continue;
+
+#if DEBUG
+            Log($"Chance and condition match. Spawning extra item(s)...({item.ItemId})");
+#endif
+                
+            var context = new ItemQueryContext(location, who, Game1.random);
+            var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
+            foreach (var result in itemQuery)
+            {
+#if DEBUG
+                Log($"({item.ItemId}) Query item: {result.Item.QualifiedItemId}");
+#endif
+                    
+                var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
+                var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
+                var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
+                var vector = new Vector2((int)tileLocation.X, (int)tileLocation.Y) * 64;
+                location.debris.Add(new Debris(parsedItem,vector, vector + new Vector2(x, y)));
+            }
+        }
+    }
     private static void AddStats(StatCounter stat)
     {
         switch (stat)
@@ -401,5 +453,17 @@ public static class GeneralResource
         }
         //otherwise, return calculation
         return (int)Math.Max(1f, (tool.UpgradeLevel + 1) * 0.75f);
+    }
+
+    public static bool IsVanilla(string id)
+    {
+        if (int.TryParse(id, out var asInt))
+        {
+            //if it's a vanilla ID
+            if (asInt < 1000)
+                return true;
+        }
+
+        return false;
     }
 }

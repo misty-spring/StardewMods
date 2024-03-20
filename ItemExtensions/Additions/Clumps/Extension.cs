@@ -87,7 +87,7 @@ public static class ExtensionClump
         if (ModEntry.BigClumps.TryGetValue(id, out var resource) == false)
             return false;
 
-        if (!GeneralResource.ToolMatches(t, resource))
+        if (resource.Tool != "vanilla" && !GeneralResource.ToolMatches(t, resource))
         {
             if (GeneralResource.ShouldShowWrongTool(t,resource) && CanShowMessage)
             {
@@ -109,6 +109,16 @@ public static class ExtensionClump
 
         if (parsedDamage <= 0)
             return false;
+
+        if (GeneralResource.VanillaClumps.Contains(clump.parentSheetIndex.Value) && clump.textureName.Value == "Maps\\springobjects")
+        {
+            if (clump.health.Value - parsedDamage <= 0)
+            {
+                GeneralResource.CheckDrops(resource, clump.Location, clump.Tile, t);
+            }
+
+            return true;
+        }
         
         //if health data doesn't exist, idk if it can Not exist but just in case
         try

@@ -157,4 +157,11 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
+
+    /*
+    private static void Post_canBeGivenAsGift(Object __instance, ref bool __result)
+    {
+        if (__instance is Furniture)
+            __result = true;
+    }*/
 }

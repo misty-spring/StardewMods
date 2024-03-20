@@ -22,13 +22,31 @@ internal static class NpcPatches
 	internal static void Post_getGiftTasteForThisItem(NPC __instance, Item item, ref int __result)
 	{
         try
-        {
+        {   
+            /*if (item is Furniture f)
+            {
+                __result = GetTaste(__instance, f);
+                return;
+            }*/
+
             if (item is not Object obj)
                 return;
 
             if (!item.HasContextTag("override_arch_taste") || obj.Type != "Arch")
                 return;
 
+            __result = GetTaste(__instance, obj);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
+    }
+
+    private static int GetTaste(NPC who, Object obj)
+    {
+        try
+        {
             var tasteForItem = 0;
 
             var categoryNumber = obj.Category;
@@ -55,46 +73,46 @@ internal static class NpcPatches
                 tasteForItem = 4;
             }
 
-            if (__instance.CheckTasteContextTags(obj, universalLoves))
+            if (who.CheckTasteContextTags(obj, universalLoves))
             {
                 tasteForItem = 0;
             }
-            else if (__instance.CheckTasteContextTags(obj, universalHates))
+            else if (who.CheckTasteContextTags(obj, universalHates))
             {
                 tasteForItem = 6;
             }
-            else if (__instance.CheckTasteContextTags(obj, universalLikes))
+            else if (who.CheckTasteContextTags(obj, universalLikes))
             {
                 tasteForItem = 2;
             }
-            else if (__instance.CheckTasteContextTags(obj, universalDislikes))
+            else if (who.CheckTasteContextTags(obj, universalDislikes))
             {
                 tasteForItem = 4;
             }
 
             var wasIndividualUniversal = false;
             var skipDefaultValueRules = false;
-            if (__instance.CheckTaste(universalLoves, obj))
+            if (who.CheckTaste(universalLoves, obj))
             {
                 tasteForItem = 0;
                 wasIndividualUniversal = true;
             }
-            else if (__instance.CheckTaste(universalHates, obj))
+            else if (who.CheckTaste(universalHates, obj))
             {
                 tasteForItem = 6;
                 wasIndividualUniversal = true;
             }
-            else if (__instance.CheckTaste(universalLikes, obj))
+            else if (who.CheckTaste(universalLikes, obj))
             {
                 tasteForItem = 2;
                 wasIndividualUniversal = true;
             }
-            else if (__instance.CheckTaste(universalDislikes, obj))
+            else if (who.CheckTaste(universalDislikes, obj))
             {
                 tasteForItem = 4;
                 wasIndividualUniversal = true;
             }
-            else if (__instance.CheckTaste(universalNeutrals, obj))
+            else if (who.CheckTaste(universalNeutrals, obj))
             {
                 tasteForItem = 8;
                 wasIndividualUniversal = true;
@@ -113,7 +131,7 @@ internal static class NpcPatches
                 }
             }
 
-            if (Game1.NPCGiftTastes.TryGetValue(__instance.Name, out var dispositionData))
+            if (Game1.NPCGiftTastes.TryGetValue(who.Name, out var dispositionData))
             {
                 var split = dispositionData.Split('/');
                 var items = new List<string[]>();
@@ -132,105 +150,90 @@ internal static class NpcPatches
                     items.Add(thisItems);
                 }
 
-                if (__instance.CheckTaste(items[0], obj))
+                if (who.CheckTaste(items[0], obj))
                 {
-                    __result = 0;
-                    return;
+                    return 0;
                 }
 
-                if (__instance.CheckTaste(items[3], obj))
+                if (who.CheckTaste(items[3], obj))
                 {
-                    __result = 6;
-                    return;
+                    return 6;
                 }
 
-                if (__instance.CheckTaste(items[1], obj))
+                if (who.CheckTaste(items[1], obj))
                 {
-                    __result = 2;
-                    return;
+                    return 2;
                 }
 
-                if (__instance.CheckTaste(items[2], obj))
+                if (who.CheckTaste(items[2], obj))
                 {
-                    __result = 4;
-                    return;
+                    return 4;
                 }
 
-                if (__instance.CheckTaste(items[4], obj))
+                if (who.CheckTaste(items[4], obj))
                 {
-                    __result = 8;
-                    return;
+                    return 8;
                 }
 
-                if (__instance.CheckTasteContextTags(obj, items[0]))
+                if (who.CheckTasteContextTags(obj, items[0]))
                 {
-                    __result = 0;
-                    return;
+                    return 0;
                 }
 
-                if (__instance.CheckTasteContextTags(obj, items[3]))
+                if (who.CheckTasteContextTags(obj, items[3]))
                 {
-                    __result = 6;
-                    return;
+                    return 6;
                 }
 
-                if (__instance.CheckTasteContextTags(obj, items[1]))
+                if (who.CheckTasteContextTags(obj, items[1]))
                 {
-                    __result = 2;
-                    return;
+                    return 2;
                 }
 
-                if (__instance.CheckTasteContextTags(obj, items[2]))
+                if (who.CheckTasteContextTags(obj, items[2]))
                 {
-                    __result = 4;
-                    return;
+                    return 4;
                 }
 
-                if (__instance.CheckTasteContextTags(obj, items[4]))
+                if (who.CheckTasteContextTags(obj, items[4]))
                 {
-                    __result = 8;
-                    return;
+                    return 8;
                 }
 
                 if (!wasIndividualUniversal)
                 {
                     if (categoryNumber != 0 && items[0].Contains(categoryNumberString))
                     {
-                        __result = 0;
-                        return;
+                        return 0;
                     }
 
                     if (categoryNumber != 0 && items[3].Contains(categoryNumberString))
                     {
-                        __result = 6;
-                        return;
+                        return 6;
                     }
 
                     if (categoryNumber != 0 && items[1].Contains(categoryNumberString))
                     {
-                        __result = 2;
-                        return;
+                        return 2;
                     }
 
                     if (categoryNumber != 0 && items[2].Contains(categoryNumberString))
                     {
-                        __result = 4;
-                        return;
+                        return 4;
                     }
 
                     if (categoryNumber != 0 && items[4].Contains(categoryNumberString))
                     {
-                        __result = 8;
-                        return;
+                        return 8;
                     }
                 }
             }
-
-            __result = tasteForItem;
+            return tasteForItem;
         }
         catch (Exception e)
         {
             Log($"Error: {e}", LogLevel.Error);
+            return 0;
         }
     }
 }

@@ -46,7 +46,7 @@ public class ResourceClumpPatches
                 return;
 
             //if it has a light Id, assume there's one placed
-            if (r.modData.TryGetValue(ModKeys.LightId, out var lightSourceId))
+            if (r.modData.TryGetValue(ModKeys.LightId, out _))
                 return;
 
             //try get light data

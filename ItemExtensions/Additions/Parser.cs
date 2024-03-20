@@ -91,18 +91,33 @@ public static class Parser
     {
         ModEntry.Ores = new Dictionary<string, ResourceData>();
         ModEntry.BigClumps = new Dictionary<string, ResourceData>();
-        foreach(var pair in clumps)
+        foreach(var (id, data) in clumps)
         {
-            Log($"Checking {pair.Key} data...");
-
-            if(pair.Value.IsValid(skipTextureCheck) == false)
+            if(string.IsNullOrWhiteSpace(id))
                 continue;
             
+            Log($"Checking {id} data...");
+
+            if(data.IsValid(skipTextureCheck) == false)
+                continue;
+
+            //check it's not vanilla
+            if (int.TryParse(id, out var asInt))
+            {
+                //if it's a vanilla ID, ignore
+                if (asInt < 1000)
+                    continue;
+                
+                //if vanilla resource, trim
+                if (GeneralResource.VanillaIds.Contains(asInt))
+                    data.Trim(asInt);
+            }
+            
             //add depending on size
-            if(pair.Value.Width > 1 || pair.Value.Height > 1)
-                ModEntry.BigClumps.Add(pair.Key,pair.Value);
+            if(data.Width > 1 || data.Height > 1)
+                ModEntry.BigClumps.Add(id, data);
             else
-                ModEntry.Ores.Add(pair.Key, pair.Value);
+                ModEntry.Ores.Add(id, data);
         }
 
         ModEntry.Help.GameContent.InvalidateCache("Data/Objects");
@@ -141,6 +156,47 @@ public static class Parser
                 continue;
             else
                 ModEntry.Seeds.Add(pair.Key, validSeeds);
+        }
+    }
+
+    public static void TreeDrops(Dictionary<string, TreeData> trees)
+    {
+        ModEntry.Trees = new Dictionary<string, TreeData>();
+        foreach(var pair in trees)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            var validated = new TreeData
+            {
+                OnFall = new List<ExtraSpawn>(),
+                OnShake = new List<ExtraSpawn>()
+            };
+            
+            foreach (var data in pair.Value.OnFall)
+            {
+                if (string.IsNullOrWhiteSpace(data.ItemId))
+                {
+                    Log("Must specify item id! Skipping", LogLevel.Warn);
+                    continue;
+                }
+                
+                validated.OnFall.Add(data);
+            }
+            
+            foreach (var data in pair.Value.OnShake)
+            {
+                if (string.IsNullOrWhiteSpace(data.ItemId))
+                {
+                    Log("Must specify item id! Skipping", LogLevel.Warn);
+                    continue;
+                }
+                
+                validated.OnShake.Add(data);
+            }
+    
+            //if theres any valid value
+            if(validated.OnShake.Any() || validated.OnFall.Any())
+                ModEntry.Trees.Add(pair.Key, validated);
         }
     }
 }
