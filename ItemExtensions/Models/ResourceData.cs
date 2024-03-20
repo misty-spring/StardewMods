@@ -76,6 +76,8 @@ public class ResourceData
     public Dictionary<string, string> CustomFields { get; set; } = null;
     public LightData Light { get; set; } = null;
 
+    public OnBehavior OnDestroy { get; set; } = null;
+
     public bool IsValid(bool skipTextureCheck)
     {
         if (!skipTextureCheck && Game1.content.DoesAssetExist<Texture2D>(Texture) == false)

@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Internal;
+using StardewValley.Monsters;
 using StardewValley.Tools;
 
 namespace ItemExtensions.Additions;
@@ -19,6 +20,9 @@ public static class GeneralResource
     private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
+#else
+    private const LogLevel Level =  LogLevel.Trace;
+#endif
 
     internal static readonly int[] VanillaClumps = { 600, 602, 622, 672, 752, 754, 756, 758 };
     private static readonly int[] VanillaStones =
@@ -27,9 +31,9 @@ public static class GeneralResource
         450, 668, 670, 751, 760, 762, 764, 765, 25, 816, 817, 818, 819, 843, 844, 845, 846, 847, 849, 850
     };
 
-    internal static readonly int[] VanillaTwigs = { 294, 295 };
+    private static readonly int[] VanillaTwigs = { 294, 295 };
 
-    internal static readonly int[] VanillaWeeds =
+    private static readonly int[] VanillaWeeds =
     {
         0, 313, 314, 315, 316, 317, 318, 319, 320, 321, 452, 674, 675, 676, 677, 678, 679, 750, 784, 785, 786, 792, 793,
         794, 882, 883, 884
@@ -46,10 +50,6 @@ public static class GeneralResource
             return all;
         }
     }
-    
-#else
-    private const LogLevel Level =  LogLevel.Trace;
-#endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
     
@@ -287,6 +287,59 @@ public static class GeneralResource
     public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t)
     {
         var who = t?.getLastFarmerToUse() ?? Game1.player;
+
+        if (resource.OnDestroy != null)
+        {
+            IWorldChangeData.Solve(resource.OnDestroy);
+            var monsters = resource.OnDestroy.SpawnMonsters;
+            if (monsters is not null)
+            {
+                foreach (var monster in monsters)
+                {
+                    var mon = new Monster(monster.Name, tileLocation + monster.Distance, Game1.random.Next(0, 3))
+                    {
+                        isHardModeMonster = { monster.Hardmode }
+                    };
+
+                    if (monster.Health > 0)
+                    {
+                        mon.MaxHealth = monster.Health;
+                        mon.Health = monster.Health;
+                    }
+                    
+                    //calculates drops
+                    var drops = new List<string>();
+                    if(monster.ExcludeOriginalDrops == false)
+                        drops.AddRange(mon.objectsToDrop);
+                    var context = new ItemQueryContext(location, who, Game1.random);
+                    //for each one do chance & parse query
+                    foreach (var drop in monster.ExtraDrops)
+                    {
+                        if(drop.Chance < Game1.random.NextDouble())
+                            continue;
+                        
+                        if (string.IsNullOrWhiteSpace(drop.Condition) && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
+                            continue;
+                        var item = ItemQueryResolver.TryResolve(drop.ItemId, context, drop.Filter,
+                            drop.PerItemCondition, avoidRepeat: drop.AvoidRepeat);
+
+                        var id = item.FirstOrDefault()?.Item.QualifiedItemId;
+                        
+                        if (string.IsNullOrWhiteSpace(id))
+                            continue;
+                        
+                        drops.Add(id);
+                    }
+
+                    mon.objectsToDrop.Set(drops);
+
+                    if (location.IsTileOccupiedBy(mon.Tile))
+                        mon.setTileLocation(ClosestOpenTile(location,mon.Tile));
+                    
+                    location.characters.Add(mon);
+                }
+            }
+        }
         
         //create notes
         if (resource.SecretNotes && location.HasUnlockedAreaSecretNotes(who) && Game1.random.NextDouble() < 0.05)
@@ -336,7 +389,63 @@ public static class GeneralResource
             AddStats(resource.CountTowards);
     }
 
-    internal static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation)
+    private static Vector2 ClosestOpenTile(GameLocation location, Vector2 tile)
+    {
+        for (var i = 1; i < 30; i++)
+        {
+            var toLeft = new Vector2(tile.X - i, tile.Y);
+            if (!location.IsTileOccupiedBy(toLeft))
+            {
+                return toLeft;
+            }
+            
+            var toRight = new Vector2(tile.X + i, tile.Y);
+            if (!location.IsTileOccupiedBy(toRight))
+            {
+                return toRight;
+            }
+            
+            var toUp = new Vector2(tile.X, tile.Y - i);
+            if (!location.IsTileOccupiedBy(toUp))
+            {
+                return toUp;
+            }
+            
+            var toDown = new Vector2(tile.X, tile.Y + i);
+            if (!location.IsTileOccupiedBy(toDown))
+            {
+                return toDown;
+            }
+
+            var upperLeft= new Vector2(tile.X - i, tile.Y - 1);
+            if (!location.IsTileOccupiedBy(upperLeft))
+            {
+                return upperLeft;
+            }
+            
+            var lowerLeft= new Vector2(tile.X - i, tile.Y + 1);
+            if (!location.IsTileOccupiedBy(lowerLeft))
+            {
+                return lowerLeft;
+            }
+            
+            var upperRight= new Vector2(tile.X + i, tile.Y - 1);
+            if (!location.IsTileOccupiedBy(upperRight))
+            {
+                return upperRight;
+            }
+            
+            var lowerRight= new Vector2(tile.X + i, tile.Y + 1);
+            if (!location.IsTileOccupiedBy(lowerRight))
+            {
+                return lowerRight;
+            }
+        }
+
+        return tile;
+    }
+
+    private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)
     {
         var chance = Game1.random.NextDouble();
         foreach (var item in data)
@@ -361,6 +470,8 @@ public static class GeneralResource
 #endif
                     
                 var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
+                parsedItem.Stack *= multiplier;
+                
                 var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
                 var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
                 var vector = new Vector2((int)tileLocation.X, (int)tileLocation.Y) * 64;

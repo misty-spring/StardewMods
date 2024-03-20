@@ -32,4 +32,5 @@ public class ExtraSpawn : ISpawnItemData
     public List<QuantityModifier> QualityModifiers { get; set; }
     
     public ItemQuerySearchMode Filter { get; set; } = ItemQuerySearchMode.All;
+    public Dictionary<string, string> ModData { get; set; }
 }

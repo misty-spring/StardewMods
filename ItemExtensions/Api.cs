@@ -39,7 +39,6 @@ public interface IApi
     bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = false);
 
     List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true);
-    List<string> GetTreeDrops(string itemId, bool onFall);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -155,27 +154,6 @@ public class Api : IApi
             
             if (GameStateQuery.CheckConditions(mixedSeed.Condition, Game1.player.currentLocation, Game1.player))
                 result.Add(mixedSeed.ItemId);
-        }
-
-        return result;
-    }
-
-    public List<string> GetTreeDrops(string itemId, bool OnFall = false)
-    {
-        //if no seed data
-        if (ModEntry.Trees.TryGetValue(itemId, out var trees) == false)
-            return null;
-
-        var result = new List<string>();
-
-        //depending on bool either gives fall OR shake drops
-        foreach (var drop in OnFall ? trees.OnFall : trees.OnShake)
-        {
-            if (string.IsNullOrWhiteSpace(drop.Condition)) 
-                continue; 
-            
-            if (GameStateQuery.CheckConditions(drop.Condition, Game1.player.currentLocation, Game1.player))
-                result.Add(drop.ItemId);
         }
 
         return result;

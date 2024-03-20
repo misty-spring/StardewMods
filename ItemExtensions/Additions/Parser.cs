@@ -158,45 +158,4 @@ public static class Parser
                 ModEntry.Seeds.Add(pair.Key, validSeeds);
         }
     }
-
-    public static void TreeDrops(Dictionary<string, TreeData> trees)
-    {
-        ModEntry.Trees = new Dictionary<string, TreeData>();
-        foreach(var pair in trees)
-        {
-            Log($"Checking {pair.Key} data...");
-
-            var validated = new TreeData
-            {
-                OnFall = new List<ExtraSpawn>(),
-                OnShake = new List<ExtraSpawn>()
-            };
-            
-            foreach (var data in pair.Value.OnFall)
-            {
-                if (string.IsNullOrWhiteSpace(data.ItemId))
-                {
-                    Log("Must specify item id! Skipping", LogLevel.Warn);
-                    continue;
-                }
-                
-                validated.OnFall.Add(data);
-            }
-            
-            foreach (var data in pair.Value.OnShake)
-            {
-                if (string.IsNullOrWhiteSpace(data.ItemId))
-                {
-                    Log("Must specify item id! Skipping", LogLevel.Warn);
-                    continue;
-                }
-                
-                validated.OnShake.Add(data);
-            }
-    
-            //if theres any valid value
-            if(validated.OnShake.Any() || validated.OnFall.Any())
-                ModEntry.Trees.Add(pair.Key, validated);
-        }
-    }
 }

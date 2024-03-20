@@ -1,6 +1,7 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -51,13 +52,6 @@ public static class Assets
             var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
             Parser.Resources(clumps);
         }
-        
-        
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Trees")))
-        {
-            var trees = Helper.GameContent.Load<Dictionary<string, TreeData>>($"Mods/{Id}/Trees");
-            Parser.TreeDrops(trees);
-        }
     }
 
     public static void OnRequest(object sender, AssetRequestedEventArgs e)
@@ -78,6 +72,9 @@ public static class Assets
                 var dictionary = asset.AsDictionary<string, ObjectData>();
                 foreach (var (itemId, data) in ModEntry.Ores)
                 {
+                    if(string.IsNullOrWhiteSpace(itemId))
+                        continue;
+                    
                     //check if vanilla, skip if so
                     if (int.TryParse(itemId, out var asInt) && asInt < 1000)
                     {
@@ -102,7 +99,7 @@ public static class Assets
                         SpriteIndex = data.SpriteIndex,
                         Edibility = -300,
                         IsDrink = false,
-                        Buff = null,
+                        Buffs = null,
                         GeodeDropsDefaultItems = false,
                         GeodeDrops = null,
                         ArtifactSpotChances = null,
@@ -153,14 +150,6 @@ public static class Assets
                 () => new Dictionary<string, ResourceData>(),
                 AssetLoadPriority.Low);
         }
-        
-        //resources
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Trees", true))
-        {
-            e.LoadFrom(
-                () => new Dictionary<string, TreeData>(),
-                AssetLoadPriority.Low);
-        }
 
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Drink", true))
         {
@@ -193,7 +182,7 @@ public static class Assets
         {
             { "ItemId", new() }
         });
-        Helper.Data.WriteJsonFile("Templates/Resources/ExtraSpawn.json", new List<ExtraSpawn>()
+        Helper.Data.WriteJsonFile("Templates/Resources/ExtraSpawn.json", new List<ExtraSpawn>
         {
             new()
         });

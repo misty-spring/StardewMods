@@ -7,7 +7,7 @@ using StardewValley.TerrainFeatures;
 
 namespace ItemExtensions.Patches;
 
-internal partial class CropPatches
+internal class CropPatches
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -25,24 +25,6 @@ internal partial class CropPatches
         harmony.Patch(
             original: AccessTools.Method(typeof(Crop), nameof(Crop.ResolveSeedId)),
             postfix: new HarmonyMethod(typeof(CropPatches), nameof(Post_ResolveSeedId))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": postfixing SDV method \"Crop.harvest\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Crop), nameof(Crop.harvest)),
-            postfix: new HarmonyMethod(typeof(CropPatches), nameof(Post_harvest))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": postfixing SDV method \"Crop.harvest\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Crop), nameof(Crop.newDay)),
-            postfix: new HarmonyMethod(typeof(CropPatches), nameof(Post_newDay))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": postfixing SDV method \"Crop.harvest\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.plant)),
-            postfix: new HarmonyMethod(typeof(CropPatches), nameof(Post_plant))
         );
     }
 

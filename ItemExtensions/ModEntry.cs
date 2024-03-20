@@ -48,7 +48,6 @@ public sealed class ModEntry : Mod
         ObjectPatches.Apply(harmony);
         ResourceClumpPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
-        TreePatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
             NpcPatches.Apply(harmony);
@@ -141,12 +140,6 @@ public sealed class ModEntry : Mod
         var msc = Seeds?.Count ?? 0;
         Monitor.Log($"Loaded {msc} mixed seeds data.", LogLevel.Debug);
         
-        //get tree drops
-        var treeData = Help.GameContent.Load<Dictionary<string, TreeData>>($"Mods/{Id}/Trees");
-        Parser.TreeDrops(treeData);
-        var tc = Trees?.Count ?? 0;
-        Monitor.Log($"Loaded {tc} tree data.", LogLevel.Debug);
-        
         var temp = new List<SButton>();
         foreach (var b in Game1.options.actionButton)
         {
@@ -179,5 +172,4 @@ public sealed class ModEntry : Mod
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
-    internal static Dictionary<string, TreeData> Trees { get; set; } = new();
 }
