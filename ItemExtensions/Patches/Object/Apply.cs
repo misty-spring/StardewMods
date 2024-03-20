@@ -1,5 +1,6 @@
 using HarmonyLib;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -82,64 +83,78 @@ public partial class ObjectPatches
     
     private static void Post_initializeLightSource(Object __instance, Vector2 tileLocation, bool mineShaft = false)
     {
-        if(__instance.QualifiedItemId is null)
-            return;
-
-        LightData data;
-        if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
+        try
         {
-            if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resData) == false)
+            if (__instance.QualifiedItemId is null)
                 return;
+
+            LightData data;
+            if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
+            {
+                if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resData) == false)
+                    return;
+                else
+                    data = resData.Light;
+            }
             else
-                data = resData.Light;
+            {
+                data = mainData.Light;
+            }
+
+            if (data is null)
+                return;
+
+            var color = data.GetColor();
+
+            var rad = data.Size;
+            var position = new Vector2(tileLocation.X * 64f + 16f, tileLocation.Y * 64f + 16f);
+
+            //var identifier = (int)(tileLocation.X * 2000f + tileLocation.Y);
+            __instance.lightSource = new LightSource(4, position, rad, color);
         }
-        else
+        catch (Exception e)
         {
-            data = mainData.Light;
+            Log($"Error: {e}", LogLevel.Error);
         }
-
-        if (data is null)
-            return;
-
-        var color = data.GetColor();
-        
-        var rad = data.Size;
-        var position = new Vector2(tileLocation.X * 64f + 16f, tileLocation.Y * 64f + 16f);
-
-        //var identifier = (int)(tileLocation.X * 2000f + tileLocation.Y);
-        __instance.lightSource = new LightSource(4, position, rad, color);
     }
     
     internal static void Post_new(ref Object __instance, string itemId, int initialStack, bool isRecipe = false,
         int price = -1, int quality = 0)
     {
-        if (!ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource))
-            return;
-        
-        if(resource == null || resource == new ResourceData())
-            return;
-
-        Log("Created item has resource data. Adding...");
-
-        __instance.MinutesUntilReady = resource.Health; //mainData.Resource.MinToolLevel + 1;
-        
-        if (__instance.tempData is null)
+        try
         {
-            __instance.tempData =  new Dictionary<string, object>
+            if (!ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource))
+                return;
+
+            if (resource == null || resource == new ResourceData())
+                return;
+
+            Log("Created item has resource data. Adding...");
+
+            __instance.MinutesUntilReady = resource.Health; //mainData.Resource.MinToolLevel + 1;
+
+            if (__instance.tempData is null)
             {
-                { "Health", resource.Health }
-            };
-        }
-        else
-        {
-            __instance.tempData.Add("Health", resource.Health);
-        }
+                __instance.tempData = new Dictionary<string, object>
+                {
+                    { "Health", resource.Health }
+                };
+            }
+            else
+            {
+                __instance.tempData.Add("Health", resource.Health);
+            }
 
-        //__instance.Fragility = Object.fragility_Delicate;
-        __instance.modData["Esca.FarmTypeManager/CanBePickedUp"] = "false";
-        __instance.IsSpawnedObject = false;
-        
-        __instance.CanBeGrabbed = false;
-        __instance.CanBeSetDown = true;
+            //__instance.Fragility = Object.fragility_Delicate;
+            __instance.modData["Esca.FarmTypeManager/CanBePickedUp"] = "false";
+            __instance.IsSpawnedObject = false;
+
+            __instance.CanBeGrabbed = false;
+            __instance.CanBeSetDown = true;
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 }

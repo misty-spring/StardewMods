@@ -21,189 +21,216 @@ internal static class NpcPatches
 	//if context tag has override_default, will make category smth nonexistatn
 	internal static void Post_getGiftTasteForThisItem(NPC __instance, Item item, ref int __result)
 	{
-        if (item is not Object obj)
-			return;
+        try
+        {
+            if (item is not Object obj)
+                return;
 
-		if (!item.HasContextTag("override_arch_taste") || obj.Type != "Arch")
-			return;
+            if (!item.HasContextTag("override_arch_taste") || obj.Type != "Arch")
+                return;
 
-        var tasteForItem = 0;
+            var tasteForItem = 0;
 
-        var categoryNumber = obj.Category;
-        var categoryNumberString = categoryNumber.ToString();
-        var universalLoves = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Love"]);
-        var universalHates = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Hate"]);
-        var universalLikes = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Like"]);
-        var universalDislikes = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Dislike"]);
-        var universalNeutrals = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Neutral"]);
-        if (universalLoves.Contains(categoryNumberString))
-        {
-            tasteForItem = 0;
-        }
-        else if (universalHates.Contains(categoryNumberString))
-        {
-            tasteForItem = 6;
-        }
-        else if (universalLikes.Contains(categoryNumberString))
-        {
-            tasteForItem = 2;
-        }
-        else if (universalDislikes.Contains(categoryNumberString))
-        {
-            tasteForItem = 4;
-        }
-        if (__instance.CheckTasteContextTags(obj, universalLoves))
-        {
-            tasteForItem = 0;
-        }
-        else if (__instance.CheckTasteContextTags(obj, universalHates))
-        {
-            tasteForItem = 6;
-        }
-        else if (__instance.CheckTasteContextTags(obj, universalLikes))
-        {
-            tasteForItem = 2;
-        }
-        else if (__instance.CheckTasteContextTags(obj, universalDislikes))
-        {
-            tasteForItem = 4;
-        }
-        var wasIndividualUniversal = false;
-        var skipDefaultValueRules = false;
-        if (__instance.CheckTaste(universalLoves, obj))
-        {
-            tasteForItem = 0;
-            wasIndividualUniversal = true;
-        }
-        else if (__instance.CheckTaste(universalHates, obj))
-        {
-            tasteForItem = 6;
-            wasIndividualUniversal = true;
-        }
-        else if (__instance.CheckTaste(universalLikes, obj))
-        {
-            tasteForItem = 2;
-            wasIndividualUniversal = true;
-        }
-        else if (__instance.CheckTaste(universalDislikes, obj))
-        {
-            tasteForItem = 4;
-            wasIndividualUniversal = true;
-        }
-        else if (__instance.CheckTaste(universalNeutrals, obj))
-        {
-            tasteForItem = 8;
-            wasIndividualUniversal = true;
-            skipDefaultValueRules = true;
-        }
-        if (tasteForItem == 8 && !skipDefaultValueRules)
-        {
-            if (obj.Edibility != -300 && obj.Edibility < 0)
+            var categoryNumber = obj.Category;
+            var categoryNumberString = categoryNumber.ToString();
+            var universalLoves = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Love"]);
+            var universalHates = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Hate"]);
+            var universalLikes = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Like"]);
+            var universalDislikes = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Dislike"]);
+            var universalNeutrals = ArgUtility.SplitBySpace(Game1.NPCGiftTastes["Universal_Neutral"]);
+            if (universalLoves.Contains(categoryNumberString))
+            {
+                tasteForItem = 0;
+            }
+            else if (universalHates.Contains(categoryNumberString))
             {
                 tasteForItem = 6;
             }
-            else if (obj.Price < 20)
+            else if (universalLikes.Contains(categoryNumberString))
+            {
+                tasteForItem = 2;
+            }
+            else if (universalDislikes.Contains(categoryNumberString))
             {
                 tasteForItem = 4;
             }
-        }
-        if (Game1.NPCGiftTastes.TryGetValue(__instance.Name, out var dispositionData))
-        {
-            var split = dispositionData.Split('/');
-            var items = new List<string[]>();
-            for (var i = 0; i < 10; i += 2)
+
+            if (__instance.CheckTasteContextTags(obj, universalLoves))
             {
-                var splitItems = ArgUtility.SplitBySpace(split[i + 1]);
-                var thisItems = new string[splitItems.Length];
-                for (var j = 0; j < splitItems.Length; j++)
+                tasteForItem = 0;
+            }
+            else if (__instance.CheckTasteContextTags(obj, universalHates))
+            {
+                tasteForItem = 6;
+            }
+            else if (__instance.CheckTasteContextTags(obj, universalLikes))
+            {
+                tasteForItem = 2;
+            }
+            else if (__instance.CheckTasteContextTags(obj, universalDislikes))
+            {
+                tasteForItem = 4;
+            }
+
+            var wasIndividualUniversal = false;
+            var skipDefaultValueRules = false;
+            if (__instance.CheckTaste(universalLoves, obj))
+            {
+                tasteForItem = 0;
+                wasIndividualUniversal = true;
+            }
+            else if (__instance.CheckTaste(universalHates, obj))
+            {
+                tasteForItem = 6;
+                wasIndividualUniversal = true;
+            }
+            else if (__instance.CheckTaste(universalLikes, obj))
+            {
+                tasteForItem = 2;
+                wasIndividualUniversal = true;
+            }
+            else if (__instance.CheckTaste(universalDislikes, obj))
+            {
+                tasteForItem = 4;
+                wasIndividualUniversal = true;
+            }
+            else if (__instance.CheckTaste(universalNeutrals, obj))
+            {
+                tasteForItem = 8;
+                wasIndividualUniversal = true;
+                skipDefaultValueRules = true;
+            }
+
+            if (tasteForItem == 8 && !skipDefaultValueRules)
+            {
+                if (obj.Edibility != -300 && obj.Edibility < 0)
                 {
-                    if (splitItems[j].Length > 0)
-                    {
-                        thisItems[j] = splitItems[j];
-                    }
+                    tasteForItem = 6;
                 }
-                items.Add(thisItems);
+                else if (obj.Price < 20)
+                {
+                    tasteForItem = 4;
+                }
             }
-            if (__instance.CheckTaste(items[0], obj))
+
+            if (Game1.NPCGiftTastes.TryGetValue(__instance.Name, out var dispositionData))
             {
-                __result = 0;
-                return;
-            }
-            if (__instance.CheckTaste(items[3], obj))
-            {
-                __result = 6;
-                return;
-            }
-            if (__instance.CheckTaste(items[1], obj))
-            {
-                __result = 2;
-                return;
-            }
-            if (__instance.CheckTaste(items[2], obj))
-            {
-                __result = 4;
-                return;
-            }
-            if (__instance.CheckTaste(items[4], obj))
-            {
-                __result = 8;
-                return;
-            }
-            if (__instance.CheckTasteContextTags(obj, items[0]))
-            {
-                __result = 0;
-                return;
-            }
-            if (__instance.CheckTasteContextTags(obj, items[3]))
-            {
-                __result = 6;
-                return;
-            }
-            if (__instance.CheckTasteContextTags(obj, items[1]))
-            {
-                __result = 2;
-                return;
-            }
-            if (__instance.CheckTasteContextTags(obj, items[2]))
-            {
-                __result = 4;
-                return;
-            }
-            if (__instance.CheckTasteContextTags(obj, items[4]))
-            {
-                __result = 8;
-                return;
-            }
-            if (!wasIndividualUniversal)
-            {
-                if (categoryNumber != 0 && items[0].Contains(categoryNumberString))
+                var split = dispositionData.Split('/');
+                var items = new List<string[]>();
+                for (var i = 0; i < 10; i += 2)
+                {
+                    var splitItems = ArgUtility.SplitBySpace(split[i + 1]);
+                    var thisItems = new string[splitItems.Length];
+                    for (var j = 0; j < splitItems.Length; j++)
+                    {
+                        if (splitItems[j].Length > 0)
+                        {
+                            thisItems[j] = splitItems[j];
+                        }
+                    }
+
+                    items.Add(thisItems);
+                }
+
+                if (__instance.CheckTaste(items[0], obj))
                 {
                     __result = 0;
                     return;
                 }
-                if (categoryNumber != 0 && items[3].Contains(categoryNumberString))
+
+                if (__instance.CheckTaste(items[3], obj))
                 {
                     __result = 6;
                     return;
                 }
-                if (categoryNumber != 0 && items[1].Contains(categoryNumberString))
+
+                if (__instance.CheckTaste(items[1], obj))
                 {
                     __result = 2;
                     return;
                 }
-                if (categoryNumber != 0 && items[2].Contains(categoryNumberString))
+
+                if (__instance.CheckTaste(items[2], obj))
                 {
                     __result = 4;
                     return;
                 }
-                if (categoryNumber != 0 && items[4].Contains(categoryNumberString))
+
+                if (__instance.CheckTaste(items[4], obj))
                 {
                     __result = 8;
                     return;
                 }
-            }
-        }
 
-        __result = tasteForItem;
+                if (__instance.CheckTasteContextTags(obj, items[0]))
+                {
+                    __result = 0;
+                    return;
+                }
+
+                if (__instance.CheckTasteContextTags(obj, items[3]))
+                {
+                    __result = 6;
+                    return;
+                }
+
+                if (__instance.CheckTasteContextTags(obj, items[1]))
+                {
+                    __result = 2;
+                    return;
+                }
+
+                if (__instance.CheckTasteContextTags(obj, items[2]))
+                {
+                    __result = 4;
+                    return;
+                }
+
+                if (__instance.CheckTasteContextTags(obj, items[4]))
+                {
+                    __result = 8;
+                    return;
+                }
+
+                if (!wasIndividualUniversal)
+                {
+                    if (categoryNumber != 0 && items[0].Contains(categoryNumberString))
+                    {
+                        __result = 0;
+                        return;
+                    }
+
+                    if (categoryNumber != 0 && items[3].Contains(categoryNumberString))
+                    {
+                        __result = 6;
+                        return;
+                    }
+
+                    if (categoryNumber != 0 && items[1].Contains(categoryNumberString))
+                    {
+                        __result = 2;
+                        return;
+                    }
+
+                    if (categoryNumber != 0 && items[2].Contains(categoryNumberString))
+                    {
+                        __result = 4;
+                        return;
+                    }
+
+                    if (categoryNumber != 0 && items[4].Contains(categoryNumberString))
+                    {
+                        __result = 8;
+                        return;
+                    }
+                }
+            }
+
+            __result = tasteForItem;
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 }

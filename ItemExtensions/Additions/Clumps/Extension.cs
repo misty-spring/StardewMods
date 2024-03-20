@@ -1,15 +1,18 @@
-using ItemExtensions.Additions;
+using ItemExtensions.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Internal;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 
-namespace ItemExtensions.Models.Internal;
+namespace ItemExtensions.Additions.Clumps;
 
 public static class ExtensionClump
 {
+    //used so weapon msg isn't repeated 5 times
+    private static bool CanShowMessage { get; set; } = true;
+    private static void Reset() => CanShowMessage = true;
+    
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
 #else
@@ -85,24 +88,20 @@ public static class ExtensionClump
             return false;
 
         if (!GeneralResource.ToolMatches(t, resource))
+        {
+            if (GeneralResource.ShouldShowWrongTool(t,resource) && CanShowMessage)
+            {
+                var msg = Game1.content.LoadString("Strings/Locations:IslandNorth_CaveTool_3");
+                Game1.drawObjectDialogue(msg);
+                CanShowMessage = false;
+                Game1.delayedActions.Add(new DelayedAction(500, Reset));
+            }
+            
             return false;
+        }
 
         //set vars
-        int parsedDamage;
-        
-        if (t is MeleeWeapon w)
-        {
-            var middle = (w.minDamage.Value + w.maxDamage.Value) / 2;
-            parsedDamage = middle / 10;
-        }
-        else if (t is null)
-        {
-            parsedDamage = damage;
-        }
-        else
-        {
-            parsedDamage = (int)Math.Max(1f, (t.UpgradeLevel + 1) * 0.75f);
-        }
+        var parsedDamage = GeneralResource.GetDamage(t, damage);
         
         #if DEBUG
         Log($"Damage: {parsedDamage}");
@@ -121,7 +120,7 @@ public static class ExtensionClump
             clump.health.Set(resource.Health);
         }
 
-        if (damage < resource.MinToolLevel)
+        if (t is not null or MeleeWeapon && t.UpgradeLevel < resource.MinToolLevel)
         {
             clump.Location.playSound("clubhit", tileLocation);
             clump.Location.playSound("clank", tileLocation);
@@ -165,23 +164,5 @@ public static class ExtensionClump
         }
         
         return false;
-    }
-
-    public static string Resolve(string id, string perItemConditions, ItemQueryContext context)
-    {
-        if (id.Equals(ModKeys.AllClumpsForage))
-            return AllClumps(perItemConditions, context);
-        else
-            return RandomClump(perItemConditions, context);
-    }
-
-    private static string AllClumps(string perItemConditions, ItemQueryContext context)
-    {
-        
-    }
-
-    private static string RandomClump(string perItemConditions, ItemQueryContext context)
-    {
-        throw new NotImplementedException();
     }
 }

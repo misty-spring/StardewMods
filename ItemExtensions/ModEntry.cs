@@ -8,7 +8,6 @@ using StardewModdingAPI;
 using StardewModdingAPI.Enums;
 using StardewModdingAPI.Events;
 using StardewValley;
-using StardewValley.Internal;
 using StardewValley.Triggers;
 
 namespace ItemExtensions;
@@ -99,10 +98,6 @@ public sealed class ModEntry : Mod
     /// <param name="e"></param>
     private void LoadStageChanged(object sender, LoadStageChangedEventArgs e)
     {
-        #if DEBUG
-        Monitor.Log($"Stage: {e.NewStage.ToString()}", LogLevel.Info);
-        #endif
-        
         //return if not on saveparsed
         if (e.NewStage.Equals(LoadStage.SaveParsed) == false)
             return;
@@ -112,10 +107,6 @@ public sealed class ModEntry : Mod
         Parser.Resources(oreData, true);
         var oc = Ores?.Count ?? 0;
         Monitor.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
-
-        #if DEBUG
-        Debugging.Dump("dump", new[] { "clumps" });
-        #endif
     }
 
     /// <summary>

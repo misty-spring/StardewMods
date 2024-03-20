@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework;
 
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Contained;
 
 public class FoodAnimation
 {

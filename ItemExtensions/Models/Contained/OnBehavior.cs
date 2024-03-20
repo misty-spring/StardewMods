@@ -1,6 +1,6 @@
 using ItemExtensions.Models.Internal;
 
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Contained;
 
 public class OnBehavior
 {

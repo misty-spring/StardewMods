@@ -56,6 +56,7 @@ public class Day
             }
             
             resource.parentSheetIndex.Set(data.SpriteIndex);
+            resource.loadSprite();
         }
 
         return;

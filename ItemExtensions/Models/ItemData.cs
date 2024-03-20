@@ -1,3 +1,5 @@
+using ItemExtensions.Models.Contained;
+
 namespace ItemExtensions.Models;
 
 public class ItemData

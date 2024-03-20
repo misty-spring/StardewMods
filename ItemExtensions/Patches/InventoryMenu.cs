@@ -44,69 +44,72 @@ public static class InventoryPatches
     /// <see cref="StardewValley.Preconditions.FreeInventorySlots"/>
     internal static void Post_rightClick(InventoryMenu __instance, int x, int y, ref Item toAddTo, ref Item __result, bool playSound = true, bool onlyCheckToolAttachments = false)
     {
-        var affectedItem = __instance.getItemAt(x, y);
-        var heldItem = toAddTo;
-        
-        /*#if DEBUG
+        try
+        {
+            var affectedItem = __instance.getItemAt(x, y);
+            var heldItem = toAddTo;
+
+            /*#if DEBUG
             Log($"\nPosition: {x}, {y}\nHeld item: {heldItem?.QualifiedItemId} ({heldItem?.DisplayName}), Affected item: {affectedItem?.QualifiedItemId}\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n", LogLevel.Debug);
         #endif*/
-        
-        if (affectedItem == null || heldItem == null)
-            return;
-        
-        if (onlyCheckToolAttachments)
-            return;
-        
-        if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
-            return;
+
+            if (affectedItem == null || heldItem == null)
+                return;
+
+            if (onlyCheckToolAttachments)
+                return;
+
+            if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+                return;
 
 
-        // ReSharper disable once PossibleNullReferenceException
-        if (!ModEntry.MenuActions.TryGetValue(heldItem.QualifiedItemId, out var options))
-            return;
-        
-        Log("Found conversion data for item.");
+            // ReSharper disable once PossibleNullReferenceException
+            if (!ModEntry.MenuActions.TryGetValue(heldItem.QualifiedItemId, out var options))
+                return;
 
-        foreach (var data in options)
-        {
-            if (data.TargetId != affectedItem.QualifiedItemId)
-                continue;
+            Log("Found conversion data for item.");
 
-            if (!GameStateQuery.CheckConditions(data.Conditions))
+            foreach (var data in options)
             {
-                Log($"Conditions for {data.TargetId} don't match.");
-                break;
-            }
-            
-            //removeamount is PER item to avoid cheating
-            if (heldItem.Stack < data.RemoveAmount)
-            {
-                Log($"Minimum to remove from {data.TargetId} isn't avaiable.");
-                break;
-            }
-            
-            //if we can't convert entire stack AND no more spaces, return
-            if(heldItem.Stack < data.RemoveAmount * affectedItem.Stack && Game1.player.freeSpotsInInventory() == 0)
-            {
-                Game1.showRedMessageUsingLoadString("Strings/StringsFromCSFiles:BlueprintsMenu.cs.10002");
-                Game1.playSound("cancel");
+                if (data.TargetId != affectedItem.QualifiedItemId)
+                    continue;
 
-                Log("No spaces avaiable in inventory. Can't partially convert stack.");
-                break;
-            }
-            
-            if (!string.IsNullOrWhiteSpace(data.ReplaceBy))
-            {
-                Log($"Replacing {affectedItem.QualifiedItemId} for {data.ReplaceBy}.");
-                var indexOf = __instance.actualInventory.IndexOf(affectedItem);
-                if(data.RemoveAmount <= 0)
+                if (!GameStateQuery.CheckConditions(data.Conditions))
                 {
-                    var newItem = ItemRegistry.Create(data.ReplaceBy,data.RetainAmount ? affectedItem.Stack : 1, data.RetainQuality ? affectedItem.Quality : 0);
-                    __instance.actualInventory[indexOf] = newItem;
+                    Log($"Conditions for {data.TargetId} don't match.");
+                    break;
                 }
-                else
+
+                //removeamount is PER item to avoid cheating
+                if (heldItem.Stack < data.RemoveAmount)
                 {
-                    /* e.g: stack of 8, remove 3 per created
+                    Log($"Minimum to remove from {data.TargetId} isn't avaiable.");
+                    break;
+                }
+
+                //if we can't convert entire stack AND no more spaces, return
+                if (heldItem.Stack < data.RemoveAmount * affectedItem.Stack && Game1.player.freeSpotsInInventory() == 0)
+                {
+                    Game1.showRedMessageUsingLoadString("Strings/StringsFromCSFiles:BlueprintsMenu.cs.10002");
+                    Game1.playSound("cancel");
+
+                    Log("No spaces avaiable in inventory. Can't partially convert stack.");
+                    break;
+                }
+
+                if (!string.IsNullOrWhiteSpace(data.ReplaceBy))
+                {
+                    Log($"Replacing {affectedItem.QualifiedItemId} for {data.ReplaceBy}.");
+                    var indexOf = __instance.actualInventory.IndexOf(affectedItem);
+                    if (data.RemoveAmount <= 0)
+                    {
+                        var newItem = ItemRegistry.Create(data.ReplaceBy, data.RetainAmount ? affectedItem.Stack : 1,
+                            data.RetainQuality ? affectedItem.Quality : 0);
+                        __instance.actualInventory[indexOf] = newItem;
+                    }
+                    else
+                    {
+                        /* e.g: stack of 8, remove 3 per created
                      *
                      * (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount
                      * (8 - (8 % 3)) / 3
@@ -117,176 +120,184 @@ public static class InventoryPatches
                      * if we have 8 and need 3 per conversion, we can make 2 max.
                      * if affected stack is smaller than max, make stack count. else, maxpossible is set
                      */
-                    var maxToCreate = (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount;
-                    var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack :
-                        maxToCreate;
-                    var newItem = ItemRegistry.Create(data.ReplaceBy, actualCreateCount, data.RetainQuality ? affectedItem.Quality : 0);
-                    
-                    Log($"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");
-                    
-                    //if stack is the same, replace.
-                    if (affectedItem.Stack == actualCreateCount)
-                        __instance.actualInventory[indexOf] = newItem;
-                    else
-                    {
-                        __instance.actualInventory[indexOf].ConsumeStack(actualCreateCount); //Stack -= newItem.Stack;
-                        Game1.player.addItemByMenuIfNecessary(newItem);
+                        var maxToCreate = (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount;
+                        var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack : maxToCreate;
+                        var newItem = ItemRegistry.Create(data.ReplaceBy, actualCreateCount,
+                            data.RetainQuality ? affectedItem.Quality : 0);
+
+                        Log(
+                            $"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");
+
+                        //if stack is the same, replace.
+                        if (affectedItem.Stack == actualCreateCount)
+                            __instance.actualInventory[indexOf] = newItem;
+                        else
+                        {
+                            __instance.actualInventory[indexOf]
+                                .ConsumeStack(actualCreateCount); //Stack -= newItem.Stack;
+                            Game1.player.addItemByMenuIfNecessary(newItem);
+                        }
+
+                        Log($"Removing {data.RemoveAmount} for each converted item.");
+                        var consumed = actualCreateCount * data.RemoveAmount;
+
+                        Log($"New stack will be {heldItem.Stack - consumed} ...");
+
+                        //either reduce count OR remove item
+                        if (heldItem.Stack - consumed > 0)
+                        {
+                            heldItem.ConsumeStack(consumed);
+                        }
+                        else
+                        {
+                            //__instance.actualInventory.Remove(heldItem); //not part of inventory so this won't work
+                            //heldItem.Stack = 0;
+                            __result = null;
+                        }
+
+                        //this is to avoid copying new values on a preexisting item (that isnt supposed to be changed)
+                        Log($"New affected item will be {newItem.QualifiedItemId} ({newItem.DisplayName}).");
+                        affectedItem = newItem;
                     }
-                    
-                    Log($"Removing {data.RemoveAmount} for each converted item.");
-                    var consumed = actualCreateCount * data.RemoveAmount;
-                    
-                    Log($"New stack will be {heldItem.Stack - consumed} ...");
-                
-                    //either reduce count OR remove item
-                    if (heldItem.Stack - consumed > 0)
+                }
+
+                if (data.AddContextTags.Count > 0)
+                {
+                    var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
+                    var value = tags.GetValue();
+
+                    foreach (var tag in data.AddContextTags)
                     {
-                        heldItem.ConsumeStack(consumed);
+                        Log($"Attempting to add tag {tag}");
+                        value.Add(tag);
                     }
-                    else
+
+                    tags.SetValue(value);
+                }
+
+                if (data.RemoveContextTags.Count > 0)
+                {
+                    var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
+                    var value = tags.GetValue();
+
+                    foreach (var tag in data.RemoveContextTags)
                     {
-                        //__instance.actualInventory.Remove(heldItem); //not part of inventory so this won't work
-                        //heldItem.Stack = 0;
-                        __result = null;
+                        Log($"Attempting to remove tag {tag}");
+                        value.Remove(tag);
                     }
-                    
-                    //this is to avoid copying new values on a preexisting item (that isnt supposed to be changed)
-                    Log($"New affected item will be {newItem.QualifiedItemId} ({newItem.DisplayName}).");
-                    affectedItem = newItem;
-                }
-            }
-            
-            if (data.AddContextTags.Count > 0)
-            {
-                var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
-                var value = tags.GetValue();
-                
-                foreach (var tag in data.AddContextTags)
-                {
-                    Log($"Attempting to add tag {tag}");
-                    value.Add(tag);
-                }
-                
-                tags.SetValue(value);
-            }
-            
-            if (data.RemoveContextTags.Count > 0)
-            {
-                var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
-                var value = tags.GetValue();
-                
-                foreach (var tag in data.RemoveContextTags)
-                {
-                    Log($"Attempting to remove tag {tag}");
-                    value.Remove(tag);
-                }
-                
-                tags.SetValue(value);
-            }
 
-            if (data.AddModData.Count > 0)
-            {
-                foreach (var p in data.AddModData)
-                {
-                    Log($"Attempting to add mod data \"{p.Key}\":\"{p.Value}\"");
-                    if(!affectedItem.modData.TryAdd(p.Key,p.Value))
-                        affectedItem.modData[p.Key] = p.Value;
+                    tags.SetValue(value);
                 }
-            }
-            
-            if (!string.IsNullOrWhiteSpace(data.QualityChange))
-            {
-                Log($"Changing quality: modifier {data.QualityModifier}, int {data.ActualQuality}");
-                switch (data.QualityModifier)
+
+                if (data.AddModData.Count > 0)
                 {
-                    case Modifier.Set when data.ActualQuality is >= 0 and <= 4:
-                        affectedItem.Quality = data.ActualQuality;
-                        if (affectedItem.Quality == 3)
-                            affectedItem.Quality = 4;
-                        break;
-                    case Modifier.Sum when affectedItem.Quality < 4:
-                        affectedItem.Quality++;
-                        if (affectedItem.Quality == 3)
-                            affectedItem.Quality = 4;
-                        break;
-                    case Modifier.Substract when affectedItem.Quality > 0:
-                        affectedItem.Quality--;
-                        if (affectedItem.Quality == 3)
-                            affectedItem.Quality = 2;
-                        break;
-                    //not considered for quality
-                    case Modifier.Divide:
-                    case Modifier.Multiply:
-                    case Modifier.Percentage:
-                    default:
-                        break;
+                    foreach (var p in data.AddModData)
+                    {
+                        Log($"Attempting to add mod data \"{p.Key}\":\"{p.Value}\"");
+                        if (!affectedItem.modData.TryAdd(p.Key, p.Value))
+                            affectedItem.modData[p.Key] = p.Value;
+                    }
                 }
-            }
 
-            if (!string.IsNullOrWhiteSpace(data.PriceChange) && affectedItem is Object or Ring or Boots)
-            {
-                Log($"Changing price: modifier {data.PriceModifier}, int {data.ActualPrice}");
-                Item obj = affectedItem switch
+                if (!string.IsNullOrWhiteSpace(data.QualityChange))
                 {
-                    Object o => o,
-                    Ring r => r,
-                    Boots b => b,
-                    _ => throw new ArgumentOutOfRangeException(affectedItem.GetType().ToString())
-                };
-
-                var reflectedField = ModEntry.Help.Reflection.GetField<NetInt>(obj, "price");
-                var netPrice = reflectedField.GetValue();
-                var price = (double)netPrice.Value;
-                
-                switch (data.PriceModifier)
-                {
-                    case Modifier.Set when data.ActualPrice >= 0:
-                        price = data.ActualPrice;
-                        break;
-                    case Modifier.Sum:
-                        price += data.ActualPrice;
-                        break;
-                    case Modifier.Substract:
-                        price -= data.ActualPrice;
-                        if (price < 0)
-                            price = 0;
-                        break;
-                    case Modifier.Divide:
-                        price /= data.ActualPrice;
-                        break;
-                    case Modifier.Multiply:
-                        price *= data.ActualPrice;
-                        break;
-                    case Modifier.Percentage:
-                        price /= data.ActualPrice / 100;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(data.PriceModifier), "Value isn't an allowed one.");
+                    Log($"Changing quality: modifier {data.QualityModifier}, int {data.ActualQuality}");
+                    switch (data.QualityModifier)
+                    {
+                        case Modifier.Set when data.ActualQuality is >= 0 and <= 4:
+                            affectedItem.Quality = data.ActualQuality;
+                            if (affectedItem.Quality == 3)
+                                affectedItem.Quality = 4;
+                            break;
+                        case Modifier.Sum when affectedItem.Quality < 4:
+                            affectedItem.Quality++;
+                            if (affectedItem.Quality == 3)
+                                affectedItem.Quality = 4;
+                            break;
+                        case Modifier.Substract when affectedItem.Quality > 0:
+                            affectedItem.Quality--;
+                            if (affectedItem.Quality == 3)
+                                affectedItem.Quality = 2;
+                            break;
+                        //not considered for quality
+                        case Modifier.Divide:
+                        case Modifier.Multiply:
+                        case Modifier.Percentage:
+                        default:
+                            break;
+                    }
                 }
-                
-                netPrice.Set((int)price);
-                reflectedField.SetValue(netPrice);
-            }
-            
-            if (data.TextureIndex >= 0)
-            {
-                Log($"Changing texture index to {data.TextureIndex}");
-                affectedItem.ParentSheetIndex = data.TextureIndex;
-            }
-            
-            if (!string.IsNullOrWhiteSpace(data.PlaySound))
-            {
-                Game1.playSound(data.PlaySound);
-            }
 
-            if (!string.IsNullOrWhiteSpace(data.TriggerActionID))
-            {
-                TriggerActionManager.TryRunAction(data.TriggerActionID, out var error, out var exception);
-                if(!string.IsNullOrWhiteSpace(error))
-                    Log($"Error: {error}. {exception}");
-            }
+                if (!string.IsNullOrWhiteSpace(data.PriceChange) && affectedItem is Object or Ring or Boots)
+                {
+                    Log($"Changing price: modifier {data.PriceModifier}, int {data.ActualPrice}");
+                    Item obj = affectedItem switch
+                    {
+                        Object o => o,
+                        Ring r => r,
+                        Boots b => b,
+                        _ => throw new ArgumentOutOfRangeException(affectedItem.GetType().ToString())
+                    };
 
-            break;
+                    var reflectedField = ModEntry.Help.Reflection.GetField<NetInt>(obj, "price");
+                    var netPrice = reflectedField.GetValue();
+                    var price = (double)netPrice.Value;
+
+                    switch (data.PriceModifier)
+                    {
+                        case Modifier.Set when data.ActualPrice >= 0:
+                            price = data.ActualPrice;
+                            break;
+                        case Modifier.Sum:
+                            price += data.ActualPrice;
+                            break;
+                        case Modifier.Substract:
+                            price -= data.ActualPrice;
+                            if (price < 0)
+                                price = 0;
+                            break;
+                        case Modifier.Divide:
+                            price /= data.ActualPrice;
+                            break;
+                        case Modifier.Multiply:
+                            price *= data.ActualPrice;
+                            break;
+                        case Modifier.Percentage:
+                            price /= data.ActualPrice / 100;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(data.PriceModifier),
+                                "Value isn't an allowed one.");
+                    }
+
+                    netPrice.Set((int)price);
+                    reflectedField.SetValue(netPrice);
+                }
+
+                if (data.TextureIndex >= 0)
+                {
+                    Log($"Changing texture index to {data.TextureIndex}");
+                    affectedItem.ParentSheetIndex = data.TextureIndex;
+                }
+
+                if (!string.IsNullOrWhiteSpace(data.PlaySound))
+                {
+                    Game1.playSound(data.PlaySound);
+                }
+
+                if (!string.IsNullOrWhiteSpace(data.TriggerActionID))
+                {
+                    TriggerActionManager.TryRunAction(data.TriggerActionID, out var error, out var exception);
+                    if (!string.IsNullOrWhiteSpace(error))
+                        Log($"Error: {error}. {exception}");
+                }
+
+                break;
+            }
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
         }
     }
 }

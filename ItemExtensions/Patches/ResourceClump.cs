@@ -1,5 +1,6 @@
 using HarmonyLib;
 using ItemExtensions.Additions;
+using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -35,67 +36,85 @@ public class ResourceClumpPatches
     
     public static void Post_OnAddedToLocation(TerrainFeature __instance, GameLocation location, Vector2 tile)
     {
-        if (__instance is not ResourceClump r)
-            return;
-        
-        //if no custom id
-        if (r.modData.TryGetValue(ModKeys.ClumpId, out var id) is false) 
-            return;
+        try
+        {
+            if (__instance is not ResourceClump r)
+                return;
 
-        //if it has a light Id, assume there's one placed
-        if(r.modData.TryGetValue(ModKeys.LightId, out var lightSourceId))
-            return;
-        
-        //try get light data
-        if(r.modData.TryGetValue(ModKeys.LightSize, out var sizeRaw) == false || r.modData.TryGetValue(ModKeys.LightColor, out var rgb) == false || r.modData.TryGetValue(ModKeys.LightTransparency, out var transRaw) == false)
-        {
-            #if DEBUG
-            Log($"Data for {id} light not found. (onAddedToLocation)");
-            #endif
-            return;
-        }
-        
-        if (float.TryParse(sizeRaw, out var size) == false)
-        {
-            Log($"Couldn't parse light size for clump Id {id} ({sizeRaw})", LogLevel.Debug);
-            return;
-        }
-        
-        if (float.TryParse(transRaw, out var trans) == false)
-        {
-            Log($"Couldn't parse transparency for clump Id {id} ({sizeRaw})", LogLevel.Debug);
-            return;
-        }
+            //if no custom id
+            if (r.modData.TryGetValue(ModKeys.ClumpId, out var id) is false)
+                return;
 
-        //parse
-        Color color;
-        if (rgb.Contains(' ') == false)
-        {
-            color = Utility.StringToColor(rgb) ?? Color.White;
-        }
-        else
-        {
-            var rgbs = ArgUtility.SplitBySpace(rgb);
-            var parsed = rgbs.Select(int.Parse).ToList();
-            color = new Color(parsed[0], parsed[1], parsed[2]);
-        }
-        color *= trans;
+            //if it has a light Id, assume there's one placed
+            if (r.modData.TryGetValue(ModKeys.LightId, out var lightSourceId))
+                return;
 
-        //set
-        var fixedPosition = new Vector2(tile.X + r.width.Value / 2, tile.Y * r.height.Value / 2);
-        var lightSource = new LightSource(4, fixedPosition, size, color);
+            //try get light data
+            if (r.modData.TryGetValue(ModKeys.LightSize, out var sizeRaw) == false ||
+                r.modData.TryGetValue(ModKeys.LightColor, out var rgb) == false ||
+                r.modData.TryGetValue(ModKeys.LightTransparency, out var transRaw) == false)
+            {
+#if DEBUG
+                Log($"Data for {id} light not found. (onAddedToLocation)", LogLevel.Trace);
+#endif
+                return;
+            }
 
-        r.modData.Add(ModKeys.LightId, $"{lightSource.Identifier}");
+            if (float.TryParse(sizeRaw, out var size) == false)
+            {
+                Log($"Couldn't parse light size for clump Id {id} ({sizeRaw})", LogLevel.Debug);
+                return;
+            }
+
+            if (float.TryParse(transRaw, out var trans) == false)
+            {
+                Log($"Couldn't parse transparency for clump Id {id} ({sizeRaw})", LogLevel.Debug);
+                return;
+            }
+
+            //parse
+            Color color;
+            if (rgb.Contains(' ') == false)
+            {
+                color = Utility.StringToColor(rgb) ?? Color.White;
+            }
+            else
+            {
+                var rgbs = ArgUtility.SplitBySpace(rgb);
+                var parsed = rgbs.Select(int.Parse).ToList();
+                color = new Color(parsed[0], parsed[1], parsed[2]);
+            }
+
+            color *= trans;
+
+            //set
+            var fixedPosition = new Vector2(tile.X + r.width.Value / 2, tile.Y * r.height.Value / 2);
+            var lightSource = new LightSource(4, fixedPosition, size, color);
+
+            r.modData.Add(ModKeys.LightId, $"{lightSource.Identifier}");
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}",LogLevel.Error);
+        }
     }
     
     //the transpiler would return anyway, so we make it a prefix
     public static bool Pre_performToolAction(ref ResourceClump __instance, Tool t, int damage, Vector2 tileLocation,
         ref bool __result)
     {
-        if (ExtensionClump.IsCustom(__instance) == false)
-            return true;
+        try
+        {
+            if (ExtensionClump.IsCustom(__instance) == false)
+                return true;
 
-        __result = ExtensionClump.DoCustom(ref __instance, t, damage, tileLocation);
-        return false;
+            __result = ExtensionClump.DoCustom(ref __instance, t, damage, tileLocation);
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}");
+            return true;
+        }
     }
 }

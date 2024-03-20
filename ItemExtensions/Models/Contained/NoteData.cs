@@ -1,4 +1,4 @@
-namespace ItemExtensions.Models.Internal;
+namespace ItemExtensions.Models.Contained;
 
 public class NoteData
 {

@@ -53,6 +53,9 @@ public class MenuBehavior
     
     public string TriggerActionID { get; set; }
     public string Conditions { get; set; } = "TRUE";
+    
+    public string AddQuest { get; set; }
+    public string RemoveQuest { get; set; }
 
     public MenuBehavior()
     {}
@@ -185,33 +188,5 @@ public class MenuBehavior
         
         o = this;
         return true;
-    }
-
-    public char? GetQualityModifier()
-    {
-        return QualityModifier switch
-        {
-            Modifier.Set => '=',
-            Modifier.Sum => '+',
-            Modifier.Substract => '-',
-            Modifier.Divide => '/',
-            Modifier.Multiply => '*',
-            Modifier.Percentage => '%',
-            _ => null
-        };
-    }
-    
-    public char? GetPriceModifier()
-    {
-        return PriceModifier switch
-        {
-            Modifier.Set => '=',
-            Modifier.Sum => '+',
-            Modifier.Substract => '-',
-            Modifier.Divide => '/',
-            Modifier.Multiply => '*',
-            Modifier.Percentage => '%',
-            _ => null
-        };
     }
 }

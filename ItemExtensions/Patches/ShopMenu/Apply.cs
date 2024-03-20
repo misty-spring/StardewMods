@@ -91,7 +91,7 @@ public partial class ShopMenuPatches
     internal static void Post_Initialize(ShopMenu __instance, int currency, Func<ISalable, Farmer, int, bool> onPurchase, Func<ISalable, bool> onSell, bool playOpenSound)
     {
         #if DEBUG
-        Log($"Initializing shop with {ExtraBySalable.Count} extra trade requirements.");
+        Log($"Initializing shop with {ExtraBySalable?.Count} extra trade requirements.");
         #endif
     }
     
@@ -112,26 +112,33 @@ public partial class ShopMenuPatches
     /// <param name="stock"></param>
     private static void Post_AddForSale(ShopMenu __instance,ISalable item, ItemStockInformation? stock = null)
     {
-        //if null, make
-        ExtraBySalable ??= new Dictionary<ISalable, List<ExtraTrade>>();
-        
-        //get match from data
-        var match = FindMatch(__instance, item, stock);
-        
-        //if none was found
-        if (match is null)
+        try
         {
-            #if DEBUG
-            Log("No match found.");
-            #endif
-            return;
-        }
-        
-        //if couldn't get right info
-        if (ExtraTrade.TryParse(match, out var extras) == false)
-            return;
+            //if null, make
+            ExtraBySalable ??= new Dictionary<ISalable, List<ExtraTrade>>();
 
-        ExtraBySalable.Add(item, extras);
+            //get match from data
+            var match = FindMatch(__instance, item, stock);
+
+            //if none was found
+            if (match is null)
+            {
+#if DEBUG
+                Log("No match found.");
+#endif
+                return;
+            }
+
+            //if couldn't get right info
+            if (ExtraTrade.TryParse(match, out var extras) == false)
+                return;
+
+            ExtraBySalable.Add(item, extras);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 
     private static string FindMatch(ShopMenu menu, ISalable item, ItemStockInformation? stock = null)
@@ -152,9 +159,10 @@ public partial class ShopMenuPatches
         
         foreach (var dataItem in shopData.Items)
         {
+            /*
             #if DEBUG
             Log($"Checking {dataItem.Id} (for {identifier})");
-            #endif
+            #endif*/
 
             if (stock is null)
             {

@@ -47,31 +47,52 @@ public class ItemPatches
 
     private static void Post_CreateItem(ParsedItemData data, ref Item __result)
     {
-        if (__result is not Object o)
-            return;
-        ObjectPatches.Post_new(ref o, __result.QualifiedItemId, __result.Stack);
+        try
+        {
+            if (__result is not Object o)
+                return;
+            ObjectPatches.Post_new(ref o, __result.QualifiedItemId, __result.Stack);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
     
     public static void Post_addToStack(Item otherStack)
     {
-        TriggerActionManager.Raise($"{ModEntry.Id}_AddedToStack");
+        try
+        {
+            TriggerActionManager.Raise($"{ModEntry.Id}_AddedToStack");
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
     
     public static void Post_actionWhenPurchased(Item __instance, string shopId)
     {
-        TriggerActionManager.Raise($"{ModEntry.Id}_OnPurchased");
-      
-        #if DEBUG
-        Log($"Called OnPurchased, id {__instance.QualifiedItemId}");
-        #endif
-        
-        if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
-            return;
+        try
+        {
+            TriggerActionManager.Raise($"{ModEntry.Id}_OnPurchased");
 
-        if (mainData.OnPurchase == null)
-            return;
-      
-        ActionButton.CheckBehavior(mainData.OnPurchase);
+#if DEBUG
+            Log($"Called OnPurchased, id {__instance.QualifiedItemId}");
+#endif
+
+            if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
+                return;
+
+            if (mainData.OnPurchase == null)
+                return;
+
+            ActionButton.CheckBehavior(mainData.OnPurchase);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 
     /// <summary>Handle the item being equipped by the player (i.e. added to an equipment slot, or selected as the active tool).</summary>
@@ -79,15 +100,22 @@ public class ItemPatches
     /// <param name="who">The player who equipped the item.</param>
     public static void Post_onEquip(Item __instance, Farmer who)
     {
-        TriggerActionManager.Raise($"{ModEntry.Id}_OnEquip");
-      
-        if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
-            return;
+        try
+        {
+            TriggerActionManager.Raise($"{ModEntry.Id}_OnEquip");
 
-        if (mainData.OnEquip == null)
-            return;
-      
-        ActionButton.CheckBehavior(mainData.OnEquip);
+            if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
+                return;
+
+            if (mainData.OnEquip == null)
+                return;
+
+            ActionButton.CheckBehavior(mainData.OnEquip);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 
     /// <summary>Handle the item being unequipped by the player (i.e. removed from an equipment slot, or deselected as the active tool).</summary>
@@ -95,14 +123,21 @@ public class ItemPatches
     /// <param name="who">The player who unequipped the item.</param>
     public static void Post_onUnequip(Item __instance, Farmer who)
     {
-        TriggerActionManager.Raise($"{ModEntry.Id}_OnUnequip");
-      
-        if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
-            return;
+        try
+        {
+            TriggerActionManager.Raise($"{ModEntry.Id}_OnUnequip");
 
-        if (mainData.OnUnequip == null)
-            return;
-      
-        ActionButton.CheckBehavior(mainData.OnUnequip);
+            if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var mainData))
+                return;
+
+            if (mainData.OnUnequip == null)
+                return;
+
+            ActionButton.CheckBehavior(mainData.OnUnequip);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
     }
 }

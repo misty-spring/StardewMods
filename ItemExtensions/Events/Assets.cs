@@ -80,8 +80,8 @@ public static class Assets
                     var objectData = new ObjectData
                     {
                         Name = data.Name ?? itemId,
-                        DisplayName = "[LocalizedText Strings\\Objects:Stone_Node_Name]",
-                        Description = "[LocalizedText Strings\\Objects:Stone_Node_Description]",
+                        DisplayName = data.DisplayName ?? "[LocalizedText Strings\\Objects:Stone_Node_Name]",
+                        Description = data.Description ?? "[LocalizedText Strings\\Objects:Stone_Node_Description]",
                         Type = "Litter",
                         Category = -999,
                         Price = 0,

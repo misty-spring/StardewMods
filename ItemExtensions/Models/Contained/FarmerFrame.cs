@@ -1,4 +1,4 @@
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Contained;
 
 public class FarmerFrame
 {

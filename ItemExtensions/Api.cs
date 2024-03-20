@@ -1,4 +1,6 @@
+using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewValley;

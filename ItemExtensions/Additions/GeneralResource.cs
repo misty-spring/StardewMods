@@ -1,4 +1,5 @@
 using ItemExtensions.Models;
+using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -268,7 +269,7 @@ public static class GeneralResource
         }
 
         var chance = Game1.random.NextDouble();
-        if (resource.ExtraItems != null)
+        if (resource.ExtraItems != null && resource.ExtraItems.Any())
         {
             foreach (var item in resource.ExtraItems)
             {
@@ -362,5 +363,43 @@ public static class GeneralResource
             default:
                 break;
         }
+    }
+
+    public static bool ShouldShowWrongTool(Tool tool, ResourceData resource)
+    {
+        if (resource.SayWrongTool is null || resource.SayWrongTool.HasValue == false)
+            return false;
+        
+        return resource.SayWrongTool switch
+        {
+            NotifyForTool.None => false,
+            NotifyForTool.Tool when tool is not MeleeWeapon => true,
+            NotifyForTool.Weapon when tool is MeleeWeapon => true,
+            NotifyForTool.All => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Gets weapon damage to resource.
+    /// </summary>
+    /// <param name="tool">Tool</param>
+    /// <param name="damage">Damage as fallback, if tool is null</param>
+    /// <returns>A damage calculation that depends on tool Type</returns>
+    public static int GetDamage(Tool tool, int damage)
+    {
+        //if weapon, get 10% of avg.
+        if (tool is MeleeWeapon w)
+        {
+            var middle = (w.minDamage.Value + w.maxDamage.Value) / 2;
+            return middle / 10;
+        }
+        //if no tool, return fallback
+        if (tool is null)
+        {
+            return damage;
+        }
+        //otherwise, return calculation
+        return (int)Math.Max(1f, (tool.UpgradeLevel + 1) * 0.75f);
     }
 }

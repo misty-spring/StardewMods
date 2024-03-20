@@ -1,3 +1,4 @@
+using ItemExtensions.Models.Contained;
 using StardewModdingAPI;
 using StardewValley;
 

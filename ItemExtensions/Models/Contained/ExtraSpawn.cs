@@ -2,7 +2,7 @@ using StardewValley;
 using StardewValley.GameData;
 using StardewValley.Internal;
 
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Contained;
 
 /// <summary>
 /// Extra spawns for resources.

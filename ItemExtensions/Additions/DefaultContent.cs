@@ -1,4 +1,5 @@
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework;
 
 namespace ItemExtensions.Additions;

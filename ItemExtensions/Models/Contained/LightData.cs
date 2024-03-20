@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
 
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Contained;
 
 public class LightData
 {

@@ -1,5 +1,6 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using ItemExtensions.Additions;
+using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Internal;
@@ -47,19 +48,26 @@ public class GameLocationPatches
     /// <param name="__instance"></param>
     private static void Post_spawnObjects(GameLocation __instance)
     {
-        Log($"Checking spawns made at {__instance.DisplayName ?? __instance.NameOrUniqueName}");
-        
-        foreach (var item in __instance.Objects.Values)
+        try
         {
-            if(!ModEntry.Ores.TryGetValue(item.ItemId, out var resource))
-                continue;
-            
-            if(resource is null || resource == new ResourceData())
-                continue;
-            
-            Log($"Setting spawn data for {item.DisplayName}");
-            
-            World.SetSpawnData(item, resource);
+            Log($"Checking spawns made at {__instance.DisplayName ?? __instance.NameOrUniqueName}");
+
+            foreach (var item in __instance.Objects.Values)
+            {
+                if (!ModEntry.Ores.TryGetValue(item.ItemId, out var resource))
+                    continue;
+
+                if (resource is null || resource == new ResourceData())
+                    continue;
+
+                Log($"Setting spawn data for {item.DisplayName}");
+
+                World.SetSpawnData(item, resource);
+            }
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
         }
     }
     
@@ -229,11 +237,12 @@ public class GameLocationPatches
         }
 
         #if DEBUG
-        Log("BigClumps added:", LogLevel.Info);
+        var logged = "BigClumps added:\n";
         foreach (var pair in ModEntry.BigClumps)
         {
-            Log($"{pair.Key}");
+            logged += $"                  * {pair.Key}\n";
         }
+        Log(logged, LogLevel.Info);
         #endif
         
         var validItemId = ModEntry.BigClumps.TryGetValue(forage.ItemId, out _);
@@ -246,7 +255,17 @@ public class GameLocationPatches
         {
             if (forage.ItemId.StartsWith(ModEntry.Id, StringComparison.OrdinalIgnoreCase))
             {
-                ExtensionClump.Resolve(forage.ItemId, forage.PerItemCondition, context);
+                var id = ClumpQueries.Resolve(forage.ItemId, forage.PerItemCondition, context);
+
+                if (!string.IsNullOrWhiteSpace(id) && ModEntry.BigClumps.ContainsKey(id))
+                {
+                    randomsThatAreClump.Add(id);
+                    forage.ItemId = id;
+                    validItemId = true;
+                    #if DEBUG
+                    Log($"Changed current itemId to solved query: {id}");
+                    #endif
+                }
             }
             else
             {
@@ -283,7 +302,7 @@ public class GameLocationPatches
                 return true;
             }
         }
-        else if (randomItemId is null)
+        else if (randomItemId is null && validItemId)
         {
             #if DEBUG
             Log("No random items listed. Attempting to spawn by ItemId");
@@ -291,11 +310,19 @@ public class GameLocationPatches
             TryPlaceCustomClump(forage.ItemId, context, vector2);
             return true;
         }
+        
 
         //chose randomly from all
         var all = new List<string>();
         all.AddRange(randomsThatAreItem);
         all.AddRange(randomsThatAreClump);
+
+        if (all.Any() == false)
+        {
+            Log($"Found no valid clumps. {forage.Id}", LogLevel.Info);
+            return true;    //because by this point it's an id, we return true anyway
+        }
+        
         var chosen = random.ChooseFrom(all);
         var placeItem = randomsThatAreItem.Contains(chosen);
 

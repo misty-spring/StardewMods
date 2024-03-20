@@ -1,5 +1,6 @@
 using HarmonyLib;
 using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -39,145 +40,166 @@ public class FarmerPatches
     #region harmony
     internal static bool Pre_eatObject(Farmer __instance, Object o, bool overrideFullness = false)
     {
-        //if no obj data (shouldn't happen)
-        if (!Game1.objectData.TryGetValue(o.ItemId, out var objectData))
-            return true;
-        
-        //if can't eat/drink, run og method
-        if (objectData.IsDrink)
+        try
         {
-            if (__instance.IsLocalPlayer && __instance.hasBuff("7") && !overrideFullness)
+            //if no obj data (shouldn't happen)
+            if (!Game1.objectData.TryGetValue(o.ItemId, out var objectData))
                 return true;
-        }
-        else if (objectData.Edibility != -300)
-        {
-            if (__instance.hasBuff("6") && !overrideFullness)
-            {
-                return true;
-            }
-        }
 
-        //if no main data OR no eatingdata
-        if (!ModEntry.Data.TryGetValue(o.QualifiedItemId, out var data))
-        {
-            if (objectData.CustomFields is null)
-                return true;
-        
-            var log = "Custom fields: ";
-            foreach (var keyvalue in objectData.CustomFields)
+            //if can't eat/drink, run og method
+            if (objectData.IsDrink)
             {
-                log += $"{keyvalue.Key} : {keyvalue.Value}";
+                if (__instance.IsLocalPlayer && __instance.hasBuff("7") && !overrideFullness)
+                    return true;
             }
-            Log(log);
-            
-            //if also none in moddata, run og
-            var flag1 = objectData.CustomFields.TryGetValue(CustomEating, out var customField);
-            var flag2 = objectData.CustomFields.TryGetValue(DrinkColor, out var drinkColor);
+            else if (objectData.Edibility != -300)
+            {
+                if (__instance.hasBuff("6") && !overrideFullness)
+                {
+                    return true;
+                }
+            }
 
-            //if you have a drink color set, it will prioritize that over animation
-            if (flag2)
+            //if no main data OR no eatingdata
+            if (ModEntry.Data.TryGetValue(o.QualifiedItemId, out var data) == false)
             {
-                if (flag1 == false)
-                    AddDrinkColor(__instance, drinkColor);
-                
-                return true;
+                if (objectData.CustomFields is null || objectData.CustomFields.Any() == false)
+                    return true;
+
+#if DEBUG
+                var log = "Custom fields: ";
+                foreach (var keyvalue in objectData.CustomFields)
+                {
+                    log += $"{keyvalue.Key} : {keyvalue.Value}";
+                }
+
+                Log(log);
+#endif
+
+                //if also none in moddata, run og
+                var flag1 = objectData.CustomFields.TryGetValue(CustomEating, out var customField);
+                var flag2 = objectData.CustomFields.TryGetValue(DrinkColor, out var drinkColor);
+
+                //if you have a drink color set, it will prioritize that over animation
+                if (flag2)
+                {
+                    if (flag1 == false)
+                        AddDrinkColor(__instance, drinkColor);
+
+                    return true;
+                }
+
+                //if no key
+                if (AnimateFromObject(__instance, customField) == false)
+                    return true;
+
+                __instance.mostRecentlyGrabbedItem = o;
+                __instance.reduceActiveItemByOne();
+                return false;
             }
-            
-            
-            AnimateFromObject(__instance, customField);
+
+            if (data is null || data == new ItemData())
+                return true;
+
+            if (data.Eating is null || data.Eating == new FarmerAnimation())
+                return true;
+
+            CheckExtraActions(data.Eating);
+
+            if (__instance.getFacingDirection() != 2)
+                __instance.faceDirection(2);
+
+            __instance.itemToEat = o;
+            __instance.mostRecentlyGrabbedItem = o;
+            //__instance.forceCanMove();
+            __instance.completelyStopAnimatingOrDoingAction();
+
+            __instance.freezePause = 20000;
+            __instance.CanMove = false;
+            __instance.isEating = true;
+
+            if (__instance.isEmoteAnimating)
+                __instance.EndEmoteAnimation();
+
+            __instance.itemToEat = o;
             __instance.mostRecentlyGrabbedItem = o;
             __instance.reduceActiveItemByOne();
+
+            AnimateFromMod(__instance, data.Eating);
+
             return false;
         }
-
-        if (data is null || data == new ItemData())
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
             return true;
-
-        if (data.Eating is null || data.Eating == new FarmerAnimation())
-            return true;
-        
-        CheckExtraActions(data.Eating);
-        
-        if (__instance.getFacingDirection() != 2)
-            __instance.faceDirection(2);
-        
-        __instance.itemToEat = o;
-        __instance.mostRecentlyGrabbedItem = o;
-        //__instance.forceCanMove();
-        __instance.completelyStopAnimatingOrDoingAction();
-        
-        __instance.freezePause = 20000;
-        __instance.CanMove = false;
-        __instance.isEating = true;
-        
-        if (__instance.isEmoteAnimating)
-            __instance.EndEmoteAnimation();
-
-        __instance.itemToEat = o;
-        __instance.mostRecentlyGrabbedItem = o;
-        __instance.reduceActiveItemByOne();
-        
-        AnimateFromMod(__instance, data.Eating);
-
-        return false;
+        }
     }
 
     internal static void Post_eatObject(Farmer __instance, Object o, bool overrideFullness = false)
     {
-        if (!Game1.objectData.TryGetValue(o.ItemId, out var objectData))
-            return;
-
-        int delay;
-        
-        //if no main data OR no eatingdata
-        if (!ModEntry.Data.TryGetValue(o.QualifiedItemId, out var data))
+        try
         {
-            if (objectData.CustomFields is null)
+            if (!Game1.objectData.TryGetValue(o.ItemId, out var objectData))
                 return;
 
-            if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
+            int delay;
+
+            //if no main data OR no eatingdata
+            if (!ModEntry.Data.TryGetValue(o.QualifiedItemId, out var data))
+            {
+                if (objectData.CustomFields is null)
+                    return;
+
+                if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
+                    return;
+
+                AnimateFromObject(__instance, customField);
+                return;
+            }
+
+            if (data is null || data == new ItemData())
                 return;
 
-            AnimateFromObject(__instance, customField);
-            return;
-        }
+            if (data.Eating is not null && data.Eating != new FarmerAnimation())
+            {
+                delay = data.Eating.ActualAnimation.Length;
+            }
+            else
+            {
+                delay = 640;
+            }
 
-        if (data is null || data == new ItemData())
-            return;
+            if (data.AfterEating is null || data.AfterEating == new FarmerAnimation())
+            {
+                if (objectData.CustomFields is null)
+                    return;
 
-        if (data.Eating is not null && data.Eating != new FarmerAnimation())
-        {
-            delay = data.Eating.ActualAnimation.Length;
-        }
-        else
-        {
-            delay = 640;
-        }
-        
-        if (data.AfterEating is null || data.AfterEating == new FarmerAnimation())
-        {
-            if (objectData.CustomFields is null)
+                if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
+                    return;
+
+                AnimateFromObject(__instance, customField);
                 return;
+            }
 
-            if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
-                return;
+            CheckExtraActions(data.AfterEating);
 
-            AnimateFromObject(__instance, customField);
+            __instance.freezePause = 20000;
+            __instance.CanMove = false;
+
+            if (__instance.isEmoteAnimating)
+                __instance.EndEmoteAnimation();
+
+            Game1.delayedActions.Add(new DelayedAction(delay, AnimationFromMod));
             return;
-        }
 
-        CheckExtraActions(data.AfterEating);
-        
-        __instance.freezePause = 20000;
-        __instance.CanMove = false;
-        
-        if (__instance.isEmoteAnimating)
-            __instance.EndEmoteAnimation();
-        
-        Game1.delayedActions.Add(new DelayedAction(delay, AnimationFromMod));
-        return;
-        
-        void AnimationFromMod() => AnimateFromMod(__instance, data.AfterEating);
+            void AnimationFromMod() => AnimateFromMod(__instance, data.AfterEating);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+            throw;
+        }
     }
     #endregion
     
@@ -215,6 +237,9 @@ public class FarmerPatches
 
     private static bool AnimateFromObject(Farmer who, string key)
     {
+        if (string.IsNullOrWhiteSpace(key))
+            return false;
+        
         Log("Animating from object.");
         
         if (IsDefaultAnimation(key))

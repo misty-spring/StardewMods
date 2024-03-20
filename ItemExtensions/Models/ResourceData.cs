@@ -1,3 +1,5 @@
+using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -21,6 +23,8 @@ public class ResourceData
     
     // Required
     public string Name { get; set; }
+    public string DisplayName { get; set; }
+    public string Description { get; set; }
     public string Texture { get; set; }
     public int SpriteIndex { get; set; } = -1;
     
@@ -56,7 +60,9 @@ public class ResourceData
     /// <summary>
     /// Tool's class. In the case of weapons, it can also be its number.
     /// </summary>
-    public string Tool { get; set; }
+    public string Tool { get; set; } = "Pickaxe";
+
+    public NotifyForTool? SayWrongTool { get; set; } = null;
     /// <summary>
     /// Minimum upgrade tool should have. If a weapon, the minimum number is checked. 
     /// ("number": 10% of average damage)

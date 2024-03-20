@@ -1,4 +1,4 @@
-namespace ItemExtensions.Models.Internal;
+namespace ItemExtensions.Models.Enums;
 
 /// <summary>
 /// What stat to count the resource towards.
