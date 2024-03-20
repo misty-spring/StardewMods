@@ -1,6 +1,7 @@
 using ItemExtensions.Models;
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.GameData.Shops;
 
 namespace ItemExtensions;
 
@@ -47,14 +48,15 @@ public interface IApi
     /// <returns>Whether this item has menu behavior for target.</returns>
     bool HasBehaviorFor(string qualifiedItemId, string target);
     
+    /*
     /// <summary>
     /// Checks mod's extra trade data.
     /// </summary>
     /// <param name="shop">The shop to check.</param>
-    /// <param name="qualifiedItemId">Qualified ID of the item.</param>
+    /// <param name="qualifiedId">Qualified ID of the item.</param>
     /// <param name="extraTrades">The extra items to trade, if any.</param>
     /// <returns>Whether trade requires extra items.</returns>
-    bool HasExtraRequirements(string shop, string qualifiedItemId, out Dictionary<string,int> extraTrades);
+    bool HasExtraRequirements(string shop, string qualifiedId, out Dictionary<string,int> extraTrades);*/
 }
 
 //remove all of this ↓ when copying to your mod
@@ -64,13 +66,13 @@ public class Api : IApi
     {
         health = null;
         
-        if (!ModEntry.Data.TryGetValue(id, out var data))
+        if (!ModEntry.Resources.TryGetValue(id, out var resource))
             return false;
 
-        if (data.Resource is null || data.Resource == new ResourceData())
+        if (resource is null || resource == new ResourceData())
             return false;
         
-        health = data.Resource.Health;
+        health = resource.Health;
         return true;
     }
     
@@ -79,14 +81,14 @@ public class Api : IApi
         health = null;
         itemDropped = null;
         
-        if (!ModEntry.Data.TryGetValue(id, out var data))
+        if (!ModEntry.Resources.TryGetValue(id, out var resource))
             return false;
 
-        if (data.Resource is null || data.Resource == new ResourceData())
+        if (resource is null || resource == new ResourceData())
             return false;
         
-        health = data.Resource.Health;
-        itemDropped = data.Resource.ItemDropped;
+        health = resource.Health;
+        itemDropped = resource.ItemDropped;
         return true;
     }
 
@@ -109,81 +111,118 @@ public class Api : IApi
         return true;
     }
 
-    public bool HasMenuBehavior(string qualifiedItemId) => ModEntry.ItemActions.ContainsKey(qualifiedItemId);
+    public bool HasMenuBehavior(string qualifiedItemId) => ModEntry.MenuActions.ContainsKey(qualifiedItemId);
     
     public bool HasBehaviorFor(string item, string target)
     {
-        if (!ModEntry.ItemActions.TryGetValue(item, out var value))
+        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
             return false;
 
         var behavior = value.Find(b => b.TargetID == target);
         return behavior != null;
     }
-    
-    public bool HasExtraRequirements(string shop, string qualifiedItemId, out Dictionary<string,int> extraTrades)
+
+    /*
+    public bool HasExtraRequirements(string shop, string qualifiedId, out Dictionary<string, int> extraTrades)
     {
         extraTrades = new Dictionary<string, int>();
-        
         if (!ModEntry.ExtraTrades.TryGetValue(shop, out var shopData))
             return false;
-
-        if(!shopData.TryGetValue(qualifiedItemId, out var trades))
+        
+        if (!shopData.TryGetValue(qualifiedId, out var itemData))
             return false;
 
-        foreach (var extra in trades)
+        foreach (var extra in itemData)
         {
             extraTrades.Add(extra.QualifiedItemId, extra.Count);
         }
 
         return true;
-    }
+    }*/
 
-    #region requires custom models
-    /// <summary>
-    /// Checks for resource data in the mod.
-    /// </summary>
-    /// <param name="id">Qualified item ID</param>
-    /// <param name="resource">ResourceData, if found.</param>
-    /// <returns>Whether it's a resource object.</returns>
-    public bool IsResource(string id, out ResourceData resource)
+    public bool HasExtraRequirements_deprecated(string shop, string shopItemId, out Dictionary<string,int> extraTrades)
     {
-        if (!ModEntry.Data.TryGetValue(id, out var data))
-        {
-            resource = null;
+        extraTrades = new Dictionary<string, int>();
+        
+        if (!DataLoader.Shops(Game1.content).TryGetValue(shop, out var shopData))
             return false;
+
+        ShopItemData shopItem = null;
+        foreach (var item in shopData.Items)
+        {
+            if (item.Id != shopItemId)
+                continue;
+
+            shopItem = item;
         }
 
-        resource = data.Resource;
-        
-        //check that it isn't null AND not default values
-        return data.Resource != null && data.Resource != new ResourceData();
-    }
+        if (shopItem?.CustomFields is null)
+            return false;
 
-    /// <summary>
-    /// Checks for item data in the mod.
-    /// </summary>
-    /// <param name="id">Qualified item ID</param>
-    /// <param name="item">Itemdata, including: light, resource, onBehavior(s), etc.</param>
-    /// <returns>Whether the mod has data for this item.</returns>
-    public bool HasItemData(string id, out ItemData item) => ModEntry.Data.TryGetValue(id, out item);
+        if (!shopItem.CustomFields.TryGetValue(Additions.ModKeys.ExtraTradesKey, out var tradesFromKey))
+            return false;
+
+        var parsed = ArgUtility.SplitBySpace(tradesFromKey);
+        var skipNext = false;
+
+        for (var i = 0; i < parsed.Length - 1; i++)
+        {
+            if (skipNext)
+            {
+                skipNext = false;
+                continue;
+            }
+
+            int.TryParse(parsed[i + 1], out var count);
+            extraTrades.Add(parsed[i], count);
+            skipNext = true;
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Checks for stored menu behavior.
     /// </summary>
     /// <param name="item">Qualified ID.</param>
     /// <param name="target">The item we want the behavior of.</param>
-    /// <param name="behavior">The obtained behavior, if any.</param>
+    /// <param name="replacesFor"></param>
+    /// <param name="conditions"></param>
+    /// <param name="trigger"></param>
     /// <returns>Whether there's menu behavior for this item.</returns>
-    public bool HasBehaviorFor(string item, string target, out MenuBehavior behavior)
+    public bool HasBehaviorFor(string item, string target, out string replacesFor, out string conditions, out string trigger)
     {
-        if (!ModEntry.ItemActions.TryGetValue(item, out var value))
+        replacesFor = null;
+        conditions = null;
+        trigger = null;
+        
+        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
         {
-            behavior = null;
             return false;
         }
 
-        behavior = value.Find(b => b.TargetID == target);
-        return behavior != null;
+        var data = value.Find(m => m.TargetID == target);
+        replacesFor = data.ReplaceBy;
+        conditions = data.Conditions;
+        trigger = data.TriggerActionID;
+        
+        return true;
     }
-    #endregion
+    
+    public bool HasBehaviorFor(string item, string target, out int qualityChange, out char? modifier)
+    {
+        qualityChange = -1;
+        modifier = null;
+        
+        if (!ModEntry.MenuActions.TryGetValue(item, out var value))
+        {
+            return false;
+        }
+
+        var data = value.Find(m => m.TargetID == target);
+        qualityChange = data.ActualQuality;
+        modifier = data.GetQualityModifier();
+        
+        return true;
+    }
 }

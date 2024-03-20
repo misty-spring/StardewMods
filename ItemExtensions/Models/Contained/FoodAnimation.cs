@@ -13,7 +13,7 @@ public class FoodAnimation
     public LightData Light { get; set; } = null;
     
     //general settings
-    public float Length { get; set; } = 1270f; //254f
+    public float Duration { get; set; } = 1270f; //254f
     public bool Crunch { get; set; } = true;
     
     //coloring

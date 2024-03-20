@@ -12,20 +12,27 @@ public class FarmerAnimation
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
-    internal FarmerSprite.AnimationFrame[] ActualAnimation { get; set; } = null;
+    internal FarmerSprite.AnimationFrame[] ActualAnimation { get; set; }
         
     /// <summary>
     /// In file: int[] of "frame duration" (repeat).
     /// In item: Can be a name (vanilla or custom), or animation frames.
     /// </summary>
-    public string Animation { get; set; } = null;
+    public FarmerFrame[] Animation { get; set; } = null;
+
+    /// <summary>
+    /// For custom items using pre-made animations.
+    /// </summary>
+    public string AnimateFrom { get; set; } = null;
 
     public FoodAnimation Food { get; set; } = null;
     
     /// <summary>
     /// Mutually exclusive with <see cref="Food"/>.
     /// </summary>
-    public bool HideItem { get; set; } = true;
+    public bool HideItem { get; set; } = false;
+
+    public int Emote { get; set; } = -1;
     
     /// <summary>
     /// Message to show.
@@ -56,11 +63,32 @@ public class FarmerAnimation
     {
         result = null;
         
-        if (string.IsNullOrWhiteSpace(Animation))
+        if ((Food is not null || Food != new FoodAnimation()) && HideItem)
         {
-            Log("Must specify an animation.", LogLevel.Warn);
+            Log("Eating animation and HideItem are mutually exclusive.", LogLevel.Warn);
             return false;
         }
+
+        List<FarmerSprite.AnimationFrame> realFrames = new();
+        if (Animation is null || Animation == Array.Empty<FarmerFrame>())
+        {
+            Log("Farmer frames aren't valid. Skipping", LogLevel.Warn);
+            return false;
+        }
+   
+        foreach (var farmer in Animation)
+        {
+            realFrames.Add(new FarmerSprite.AnimationFrame(farmer.Frame, farmer.Duration, farmer.SecondaryArm, farmer.Flip, farmer.HideArm));
+        }
+        ActualAnimation = realFrames.ToArray();
+        result = this;
+
+        return true;
+    }
+    /*
+    internal bool IsValid(out FarmerAnimation result)
+    {
+        result = null;
         
         if ((Food is not null || Food != new FoodAnimation()) && HideItem)
         {
@@ -68,34 +96,103 @@ public class FarmerAnimation
             return false;
         }
 
-        try
+        List<FarmerSprite.AnimationFrame> realFrames = new();
+        
+        switch (Animation)
         {
-            List<FarmerSprite.AnimationFrame> realFrames = new();
-            var parsed = ArgUtility.SplitBySpace(Animation);
-            var toInt = parsed.Select(int.Parse).ToList();
-            var skipNext = false;
-
-            for (var i = 0; i < toInt.Count - 1; i++)
-            {
-                if (skipNext)
+            case string s when string.IsNullOrWhiteSpace(s):
+                Log("Must specify an animation.", LogLevel.Warn);
+                return false;
+            case string s:
+                //divides by space, assuming it's of format "frame duration frame duration (...)"
+                //every second check is skipped, as it'd be a duration value and not a frame
+                try
                 {
-                    skipNext = false;
-                    continue;
+                    var parsed = ArgUtility.SplitBySpace(s);
+                    var toInt = parsed.Select(int.Parse).ToList();
+                    var skipNext = false;
+
+                    for (var i = 0; i < toInt.Count - 1; i++)
+                    {
+                        if (skipNext)
+                        {
+                            skipNext = false;
+                            continue;
+                        }
+
+                        realFrames.Add(new FarmerSprite.AnimationFrame(toInt[i], toInt[i + 1]));
+                        skipNext = true;
+                    }
+
+                    ActualAnimation = realFrames.ToArray();
+                    result = this;
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Log($"Error: {e}", LogLevel.Error);
+                    return false;
+                }
+            case string[] animation:
+            {
+                //assumes every string is of format "<frame> [duration] [secondaryArm] [flip] [hideArm]"
+                foreach (var frames in animation)
+                {
+                    var parsed = ArgUtility.SplitBySpace(frames);
+                    var toInt = parsed.Select(int.Parse).ToList();
+                    var hasValue = ArgUtility.TryGetInt(parsed, 0, out var frame, out var error);
+                    ArgUtility.TryGetOptionalInt(parsed, 1, out var duration, out _, 200);
+                    ArgUtility.TryGetOptionalBool(parsed, 2, out var secondaryArm, out _);
+                    ArgUtility.TryGetOptionalBool(parsed, 3, out var flip, out _);
+                    ArgUtility.TryGetOptionalBool(parsed, 4, out var hideArm, out _);
+
+                    if (!hasValue)
+                    {
+                        Log($"Error while parsing animation: {error}", LogLevel.Error);
+                        return false;
+                    }
+                    
+                    realFrames.Add(new FarmerSprite.AnimationFrame(frame, duration, secondaryArm, flip, hideArm));
+                }
+                ActualAnimation = realFrames.ToArray();
+                result = this;
+
+                return true;
+            }
+            default:
+            {
+                //if neither, assumes it's FarmerFrame
+                if (Animation is null)
+                {
+                    Log("Farmer frames aren't valid. Skipping", LogLevel.Warn);
+                    return false;
                 }
 
-                realFrames.Add(new FarmerSprite.AnimationFrame(toInt[i], toInt[i + 1]));
-                skipNext = true;
+                var farmerFrames = Animation as FarmerFrame[];
+                
+                if (farmerFrames is null)
+                    return false;
+            
+                foreach (var farmer in farmerFrames)
+                {
+                    realFrames.Add(new FarmerSprite.AnimationFrame(farmer.Frame, farmer.Duration, farmer.SecondaryArm, farmer.Flip, farmer.HideArm));
+                }
+                ActualAnimation = realFrames.ToArray();
+                result = this;
+
+                return true;
             }
-
-            ActualAnimation = realFrames.ToArray();
-            result = this;
-
-            return true;
         }
-        catch (Exception e)
+    }*/
+    public int TotalTime()
+    {
+        var time = 0;
+        foreach (var frame in Animation)
         {
-            Log($"Error: {e}", LogLevel.Error);
-            return false;
+            time += frame.Duration;
         }
+
+        return time;
     }
 }

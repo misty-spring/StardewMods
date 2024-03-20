@@ -1,6 +1,5 @@
 using ItemExtensions.Models;
 using StardewModdingAPI;
-using StardewValley;
 
 namespace ItemExtensions.Additions;
 
@@ -18,7 +17,7 @@ public static class Parser
         var parsed = new Dictionary<string, List<MenuBehavior>>();
         foreach (var item in ia)
         {
-            Log($"Checking {item.Key} ...", LogLevel.Debug);
+            Log($"Checking {item.Key} ...");
             var temp = new List<MenuBehavior>();
             
             foreach (var affected in item.Value)
@@ -36,12 +35,13 @@ public static class Parser
         }
 
         if (parsed.Count > 0)
-            ModEntry.ItemActions = parsed;
+            ModEntry.MenuActions = parsed;
     }
 
+    
     internal static void ShopExtension(Dictionary<string, Dictionary<string, List<ExtraTrade>>> shopExtensions)
     {
-        ModEntry.ExtraTrades = new Dictionary<string, Dictionary<string, List<ExtraTrade>>>();
+        ModEntry.Shops = new Dictionary<string, Dictionary<string, List<ExtraTrade>>>();
         
         foreach(var shop in shopExtensions)
         {
@@ -78,8 +78,9 @@ public static class Parser
                 continue;
             
             //add to extra trades
-            ModEntry.ExtraTrades.Add(shop.Key, shopTrades);
+            ModEntry.Shops.Add(shop.Key, shopTrades);
         }
+        ModEntry.Help.GameContent.InvalidateCache("Data/Shops");
     }
 
     internal static void ObjectData(Dictionary<string, ItemData> objData)
@@ -105,28 +106,6 @@ public static class Parser
                 }
             }
             
-            var resource = obj.Value.Resource;
-            if (resource != null)
-            {
-                if (resource.Health <= 0)
-                {
-                    Log($"Resource health must be over 0. Skipping {obj.Key}.", LogLevel.Warn);
-                    continue;
-                }
-                
-                if(string.IsNullOrWhiteSpace(resource.Tool))
-                {
-                    Log($"Must specify a tool for resource. Skipping {obj.Key}.", LogLevel.Warn);
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(resource.ItemDropped))
-                {
-                    Log($"Resource's dropped item is empty. ({obj.Key})", LogLevel.Warn);
-                    Log($"The item will still be added, but this may cause issues.");
-                }
-            }
-            
             //add to items
             ModEntry.Data.Add(obj.Key, obj.Value);
             
@@ -149,5 +128,23 @@ public static class Parser
             //add to items
             ModEntry.EatingAnimations.Add(anim.Key, parsed);
         }
+    }
+
+    public static void Resources(Dictionary<string, ResourceData> clumps)
+    {
+        ModEntry.Resources = new Dictionary<string, ResourceData>();
+        foreach(var pair in clumps)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            if(pair.Value.IsValid() == false)
+                continue;
+            
+            //add to items
+            ModEntry.Resources.Add(pair.Key, pair.Value);
+        }
+
+        ModEntry.Help.GameContent.InvalidateCache("Data/Objects");
+        ModEntry.Help.GameContent.InvalidateCache("Data/Furniture");
     }
 }

@@ -1,10 +1,11 @@
-using ItemExtensions.Models;
+using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
+
 // ReSharper disable PossibleLossOfFraction
 
 namespace ItemExtensions.Additions;
@@ -17,7 +18,7 @@ public class LetterWithImage : LetterViewerMenu
     private bool HasImage { get; set; }
     private Vector2 ImagePosition { get; set; } = new Vector2(-999);
     private Vector2 TextPosition { get; set; } = new Vector2(-999);
-    private string Text { get; set; } = null;
+    private string Text { get; set; }
     
     public LetterWithImage(NoteData note) : base(null)
     {
@@ -125,7 +126,7 @@ public class LetterWithImage : LetterViewerMenu
     {
         //draw note
         b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
-        b.Draw(letterTexture, new Vector2(xPositionOnScreen + width / 2, yPositionOnScreen + height / 2), new Rectangle?(new Rectangle(whichBG * 320, 0, 320, 180)), Color.White, 0.0f, new Vector2(160f, 90f), 4f * scale, SpriteEffects.None, 0.86f);
+        b.Draw(letterTexture, new Vector2(xPositionOnScreen + width / 2, yPositionOnScreen + height / 2), new Rectangle(whichBG * 320, 0, 320, 180), Color.White, 0.0f, new Vector2(160f, 90f), 4f * scale, SpriteEffects.None, 0.86f);
         
         if (HasImage)
         {

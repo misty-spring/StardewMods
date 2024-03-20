@@ -29,10 +29,10 @@ public class MenuBehavior
 {
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
-    public string TargetID { get; set; } = null; //qualified item ID
-    public int RemoveAmount { get; set; } = 0;
+    public string TargetID { get; set; } //qualified item ID
+    public int RemoveAmount { get; set; }
     
-    public string ReplaceBy { get; set; } = null; //qualified item ID
+    public string ReplaceBy { get; set; } //qualified item ID
     public bool RetainQuality { get; set; } = true;
     public bool RetainAmount { get; set; } = true;
     
@@ -40,18 +40,18 @@ public class MenuBehavior
     public List<string> RemoveContextTags { get; set; } = new();
     public Dictionary<string,string> AddModData { get; set; } = new();
     
-    public string QualityChange { get; set; } = null;
+    public string QualityChange { get; set; }
     internal int ActualQuality { get; set; }
     internal Modifier QualityModifier { get; set; }
     
-    public string PriceChange { get; set; } = null;
+    public string PriceChange { get; set; }
     internal double ActualPrice { get; set; }
     internal Modifier PriceModifier { get; set; }
     
     public int TextureIndex { get; set; } = -1;
-    public string PlaySound { get; set; } = null;
+    public string PlaySound { get; set; }
     
-    public string TriggerActionID { get; set; } = null;
+    public string TriggerActionID { get; set; }
     public string Conditions { get; set; } = "TRUE";
 
     public MenuBehavior()
@@ -185,5 +185,33 @@ public class MenuBehavior
         
         o = this;
         return true;
+    }
+
+    public char? GetQualityModifier()
+    {
+        return QualityModifier switch
+        {
+            Modifier.Set => '=',
+            Modifier.Sum => '+',
+            Modifier.Substract => '-',
+            Modifier.Divide => '/',
+            Modifier.Multiply => '*',
+            Modifier.Percentage => '%',
+            _ => null
+        };
+    }
+    
+    public char? GetPriceModifier()
+    {
+        return PriceModifier switch
+        {
+            Modifier.Set => '=',
+            Modifier.Sum => '+',
+            Modifier.Substract => '-',
+            Modifier.Divide => '/',
+            Modifier.Multiply => '*',
+            Modifier.Percentage => '%',
+            _ => null
+        };
     }
 }

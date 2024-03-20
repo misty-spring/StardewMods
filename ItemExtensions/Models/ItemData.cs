@@ -8,7 +8,7 @@ public class ItemData
 
     //more capability (?)
     public LightData Light { get; set; } = null;
-    public ResourceData Resource { get; set; } = null;
+    //public ResourceData Resource { get; set; } = null;
         
     //when x happens
     public OnBehavior OnEquip { get; set; } = null;
@@ -20,7 +20,4 @@ public class ItemData
     // before/after eating
     public FarmerAnimation Eating { get; set; } = null;
     public FarmerAnimation AfterEating { get; set; } = null;
-    
-    public ItemData()
-    {}
 }

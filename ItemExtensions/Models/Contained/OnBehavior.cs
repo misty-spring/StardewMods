@@ -1,3 +1,5 @@
+using ItemExtensions.Models.Internal;
+
 namespace ItemExtensions.Models;
 
 public class OnBehavior
@@ -22,7 +24,4 @@ public class OnBehavior
     public string TriggerAction { get; set; } = null;
     public NoteData ShowNote { get; set; } = null;
     public string[] AddFlags { get; set; } = null;
-    
-    public OnBehavior()
-    {}
 }
