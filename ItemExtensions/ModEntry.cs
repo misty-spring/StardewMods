@@ -45,8 +45,8 @@ public sealed class ModEntry : Mod
         InventoryPatches.Apply(harmony);
         ItemPatches.Apply(harmony);
         ObjectPatches.Apply(harmony);
+        ResourceClumpPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
-        UtilityPatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
             NpcPatches.Apply(harmony);
@@ -69,57 +69,11 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_AddedToStack");
         
         #if DEBUG
-        helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Tester);
+        helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
         #endif
+        helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
-
-    private void Tester(string arg1, string[] arg2)
-    {
-        if (arg2 is null || arg2.Any() == false)
-        {
-            Mon.Log("Must have at least 1 argument.", LogLevel.Warn);
-            return;
-        }
-
-        if(!Context.IsWorldReady)
-            Mon.Log("Must load a save.", LogLevel.Warn);
-
-        const string testPack = "mistyspring.testobj";
-        
-        if (Helper.ModRegistry.Get(testPack) is null)
-        {
-            Mon.Log("The test pack was not found.", LogLevel.Error);
-            return;
-        }
-            
-        switch (arg2[0])
-        {
-            case "ore":
-            case "clump":
-                var pos = new Vector2(Game1.player.Tile.X + 2, Game1.player.Tile.Y);
-                var clump = new ExtensionClump($"{testPack}_TestClump", pos);
-                Mon.Log($"Adding clump ID {clump.ResourceId} at {pos}...", LogLevel.Info);
-                Game1.player.currentLocation.resourceClumps.Add(clump);
-                break;
-            case "jelly":
-                Game1.player.eatObject(new StardewValley.Object($"{testPack}_Jelly",1));
-                break;
-            case "eat":
-                Game1.player.eatObject(new StardewValley.Object($"{testPack}_trash",1));
-                break;
-            case "sip":
-            case "drink":
-                Game1.player.eatObject(new StardewValley.Object("614",1));
-                break;
-            case "list":
-                Mon.Log($"Possible commands: eat, clump, drink, jelly.", LogLevel.Info);
-                break;
-            default:
-                Mon.Log($"Command {arg2[0]} not recognized.", LogLevel.Warn);
-                break;
-        }
-    }
-
+    
     public override object GetApi() =>new Api();
 
     private static void LocaleChanged(object sender, LocaleChangedEventArgs e)
@@ -134,6 +88,15 @@ public sealed class ModEntry : Mod
 
     private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
     {
+        //reset every file
+        BigClumps.Clear();
+        Data.Clear();
+        EatingAnimations.Clear();
+        MenuActions.Clear();
+        Ores.Clear();
+        Seeds.Clear();
+        Shops.Clear();
+        
         //get obj data
         var objData = Help.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
         Parser.ObjectData(objData);
@@ -152,6 +115,12 @@ public sealed class ModEntry : Mod
         var ic = MenuActions?.Count ?? 0;
         Monitor.Log($"Loaded {ic} menu actions.", LogLevel.Debug);
         
+        //get obj data
+        var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
+        Parser.MixedSeeds(seedData);
+        var msc = Seeds?.Count ?? 0;
+        Monitor.Log($"Loaded {msc} mixed seeds data.", LogLevel.Debug);
+        
         // get shop ext
         var shopExtensions = Help.GameContent.Load<Dictionary<string, Dictionary<string, List<ExtraTrade>>>>($"Mods/{Id}/Shops");
         Parser.ShopExtension(shopExtensions);
@@ -162,7 +131,7 @@ public sealed class ModEntry : Mod
         var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
         Parser.Resources(oreData);
         var oc = Ores?.Count ?? 0;
-        Monitor.Log($"Loaded {oc} custom resources.", LogLevel.Debug);
+        Monitor.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
 
         var temp = new List<SButton>();
         foreach (var b in Game1.options.actionButton)
@@ -195,5 +164,5 @@ public sealed class ModEntry : Mod
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; set; } = new();
     internal static Dictionary<string, Dictionary<string, List<ExtraTrade>>> Shops { get; set; } = new();
-    internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; }
+    internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
 }

@@ -71,8 +71,8 @@ public class FarmerPatches
             Log(log);
             
             //if also none in moddata, run og
-            var flag1 = objectData.CustomFields.TryGetValue(CustomEatingKey, out var customField);
-            var flag2 = objectData.CustomFields.TryGetValue(DrinkColorKey, out var drinkColor);
+            var flag1 = objectData.CustomFields.TryGetValue(CustomEating, out var customField);
+            var flag2 = objectData.CustomFields.TryGetValue(DrinkColor, out var drinkColor);
 
             //if you have a drink color set, it will prioritize that over animation
             if (flag2)
@@ -135,7 +135,7 @@ public class FarmerPatches
             if (objectData.CustomFields is null)
                 return;
 
-            if (!objectData.CustomFields.TryGetValue(AfterEatingKey, out var customField))
+            if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
                 return;
 
             AnimateFromObject(__instance, customField);
@@ -159,7 +159,7 @@ public class FarmerPatches
             if (objectData.CustomFields is null)
                 return;
 
-            if (!objectData.CustomFields.TryGetValue(AfterEatingKey, out var customField))
+            if (!objectData.CustomFields.TryGetValue(AfterEating, out var customField))
                 return;
 
             AnimateFromObject(__instance, customField);

@@ -5,9 +5,9 @@ namespace ItemExtensions.Models;
 
 public class LightData
 {
-    public int R { get; set; } = 1;
-    public int G { get; set; } = 1;
-    public int B { get; set; } = 1;
+    public int R { get; set; }
+    public int G { get; set; }
+    public int B { get; set; }
     public float Transparency { get; set; } = 0.9f;
     public string Hex { get; set; } = null;
     public float Size { get; set; } = 1.2f;
@@ -21,5 +21,15 @@ public class LightData
         }
         
         return new Color(R, G, B) * Transparency;
+    }
+
+    public string ColorString()
+    {
+        if (!string.IsNullOrWhiteSpace(Hex))
+        {
+            return Hex;
+        }
+        
+        return $"{R} {G} {B}";
     }
 }

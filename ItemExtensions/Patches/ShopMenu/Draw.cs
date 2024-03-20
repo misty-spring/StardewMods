@@ -50,7 +50,8 @@ public partial class ShopMenuPatches
         if(extraItemToShowIndex == null) 
             return;
         
-        if(_extraBySalable is not { Count: > 0 })
+        //if neither have data
+        if(ExtraBySalable is not { Count: > 0 } && ByQualifiedId is not { Count: > 0 })
             return;
         
         //Log($"Hovered item: {hoveredItem.DisplayName}");

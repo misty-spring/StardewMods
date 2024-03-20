@@ -45,7 +45,7 @@ public partial class ObjectPatches
     
     public static void Pre_maximumStackSize(Object __instance, ref int __result)
     {
-        if(__instance.modData.TryGetValue(StackModData, out var stack))
+        if(__instance.modData.TryGetValue(MaxStack, out var stack))
             __result = int.Parse(stack);
         
         if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var data))
@@ -59,7 +59,7 @@ public partial class ObjectPatches
     
     public static void Pre_IsHeldOverHead(Object __instance, ref bool __result)
     {
-        if(__instance.modData.TryGetValue(ItemHeadModData, out var boolean))
+        if(__instance.modData.TryGetValue(ShowAboveHead, out var boolean))
             __result = bool.Parse(boolean);
         
         if (!ModEntry.Data.TryGetValue(__instance.QualifiedItemId, out var data))

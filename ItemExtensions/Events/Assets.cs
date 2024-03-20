@@ -202,6 +202,10 @@ public static class Assets
         Helper.Data.WriteJsonFile("Templates/Item/Model.json", new ItemData());
         Helper.Data.WriteJsonFile("Templates/Item/LightData.json", new LightData());
         Helper.Data.WriteJsonFile("Templates/Item/OnBehavior.json", new OnBehavior());
+        Helper.Data.WriteJsonFile("Templates/MixedSeeds.json", new Dictionary<string, List<MixedSeedData>>
+        {
+            { "ItemId", new(){ new MixedSeedData()}}
+        });
         Helper.Data.WriteJsonFile("Templates/Resources/Model.json", new Dictionary<string, ResourceData>
         {
             { "ItemId", new() }

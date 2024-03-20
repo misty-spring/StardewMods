@@ -7,13 +7,15 @@ namespace ItemExtensions.Patches;
 
 public partial class ShopMenuPatches
 {
-    private static Dictionary<ISalable, List<ExtraTrade>> _extraBySalable;
+    private static Dictionary<ISalable, List<ExtraTrade>> ExtraBySalable { get; set; }
+    private static Dictionary<string, List<ExtraTrade>> ByQualifiedId { get; set; }
     internal static bool Pre_receiveLeftClick(ShopMenu __instance, int x, int y, bool playSound = true)
     {
         if (__instance.safetyTimer > 0)
             return true;
         
-        if(_extraBySalable is not { Count: > 0 })
+        //if no data in neither
+        if(ExtraBySalable is not { Count: > 0 } && ByQualifiedId is not { Count: > 0 })
             return true;
         
         for (var index1 = 0; index1 < __instance.forSaleButtons.Count; ++index1)
@@ -30,7 +32,7 @@ public partial class ShopMenuPatches
                 return true;
             
             //if it doesn't have extra trades
-            if (!_extraBySalable.ContainsKey(thisItem))
+            if (!ExtraBySalable.ContainsKey(thisItem))
                 return true;
             
             if (__instance.forSale[index2] != null)
@@ -80,19 +82,41 @@ public partial class ShopMenuPatches
         return true;
     }
 
+    private static List<ExtraTrade> GetData(ISalable item)
+    {
+        List<ExtraTrade> data = null;
+        //if extrabysalable has no data
+        if (ExtraBySalable is not { Count: > 0 })
+        {
+            //check if id has
+            if (ByQualifiedId is not { Count: > 0 })
+                return null;
+        }
+        
+        
+        //if data wasn't in salable
+        if (ExtraBySalable.TryGetValue(item, out data) == false)
+        {
+            //try fallback to Id
+            if (ByQualifiedId.TryGetValue(item.QualifiedItemId, out data) == false)
+                return null;
+        }
+
+        return data;
+    }
+    
     private static bool CanPurchase(ISalable item, int stockToBuy)
     {
         if (Game1.player.Money < item.salePrice() * stockToBuy)
             return false;
         
         #if DEBUG
-        Log($"item: {item.DisplayName}, stockToBuy {stockToBuy}, in _extraSaleItems {_extraBySalable.Count}");
+        Log($"item: {item.DisplayName}, stockToBuy {stockToBuy}, in _extraSaleItems {ExtraBySalable.Count}");
         #endif
+
+        var data = GetData(item);
         
-        if(_extraBySalable is not { Count: > 0 })
-            return false;
-        
-        if(!_extraBySalable.TryGetValue(item, out var data))
+        if (data is null)
             return false;
 
         foreach (var extra in data)
@@ -110,7 +134,9 @@ public partial class ShopMenuPatches
     {
         Log($"Buying {stockToBuy} {item.DisplayName}...");
         
-        if(!_extraBySalable.TryGetValue(item, out var data))
+        var data = GetData(item);
+        
+        if (data is null)
             return;
 
         foreach (var extra in data)

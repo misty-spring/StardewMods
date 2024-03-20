@@ -3,12 +3,11 @@ namespace ItemExtensions.Models;
 public class ItemData
 {
     //misc
-    public int MaximumStack { get; set; } = 0;
+    public int MaximumStack { get; set; } = -1;
     public bool HideItem { get; set; } = false;
 
     //more capability (?)
     public LightData Light { get; set; } = null;
-    //public ResourceData Resource { get; set; } = null;
         
     //when x happens
     public OnBehavior OnEquip { get; set; } = null;

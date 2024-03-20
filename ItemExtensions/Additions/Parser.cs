@@ -26,7 +26,7 @@ public static class Parser
                 if (!affected.Parse(out var rightInfo)) 
                     continue;
 #if DEBUG
-                Log($"Information parsed successfully! ({rightInfo.TargetID})");
+                Log($"Information parsed successfully! ({rightInfo.TargetId})");
 #endif
                 temp.Add(rightInfo);
             }
@@ -121,8 +121,9 @@ public static class Parser
         ModEntry.EatingAnimations = new Dictionary<string, FarmerAnimation>();
         foreach(var anim in animations)
         {
-            Log($"Checking {anim.Key} data...");
-
+            if(anim.Key.StartsWith("base") == false)
+                Log($"Checking {anim.Key} data...");
+            
             if(!anim.Value.IsValid(out var parsed))
                 continue;
             
@@ -140,7 +141,7 @@ public static class Parser
 
             if(pair.Value.IsValid() == false)
                 continue;
-    
+            
             //add depending on size
             if(pair.Value.Width > 1 || pair.Value.Height > 1)
                 ModEntry.BigClumps.Add(pair.Key,pair.Value);

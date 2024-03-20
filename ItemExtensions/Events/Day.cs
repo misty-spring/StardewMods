@@ -1,5 +1,7 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models.Internal;
+using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.TerrainFeatures;
@@ -8,110 +10,105 @@ namespace ItemExtensions.Events;
 
 public class Day
 {
+#if DEBUG
+    private const LogLevel Level = LogLevel.Debug;
+#else
+    private const LogLevel Level =  LogLevel.Trace;
+#endif
+    
+    private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
+    
+    /// <summary>
+    /// On day start, set each clump's custom texture and index.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     public static void Started(object sender, DayStartedEventArgs e)
     {
         List<ResourceClump> clumps = new();
         
         Utility.ForEachLocation(LoadCustomClumps, true, true);
 
-        foreach (var resourceClump in clumps)
+        foreach (var resource in clumps)
         {
-            //copy data
-            var position = resourceClump.Tile * 64;
-            var health = resourceClump.health.Value;
-            var texture = resourceClump.textureName.Value;
-            var id = resourceClump.modData[ModKeys.CustomClumpId];
+            //if no custom id (shouldn't happen but JIC)
+            if (resource.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
+            {
+                Log($"Clump at {resource.Location.NameOrUniqueName} {resource.Tile} doesn't seem to have mod data.");
+                continue;
+            }
             
-            //remove
-            var location = resourceClump.Location;
-            location.resourceClumps.Remove(resourceClump);
-            
-            //get data
+            //if not found in data
             if(ModEntry.BigClumps.TryGetValue(id, out var data) == false)
-                return;
-            
-            //make replacement
-            var replacement = new ExtensionClump(id, data, position, (int)health);
+            {
+                Log($"Couldn't find mod data for custom clump {id}. Resource will stay as default clump.", LogLevel.Info);
+                continue;
+            }
 
-            //add
-            location.resourceClumps.Add(replacement);
+            //if texture not found
+            if (Game1.content.DoesAssetExist<Texture2D>(data.Texture))
+            {
+                resource.textureName.Set(data.Texture);
+            }
+            else
+            {
+                Log($"Couldn't find texture {data.Texture} for clump at {resource.Location.NameOrUniqueName} {resource.Tile}. Resource will stay as default clump.", LogLevel.Info);
+                continue;
+            }
+            
+            resource.parentSheetIndex.Set(data.SpriteIndex);
         }
 
         return;
         
         bool LoadCustomClumps(GameLocation arg)
         {
-            var newClumps = new List<ResourceClump>();
-            
             foreach (var resource in arg.resourceClumps)
             {
-                if(resource.modData.TryGetValue(ModKeys.IsCustomClump, out var raw) == false)
-                    continue;
-
-                //if not a custom clump
-                if(bool.TryParse(raw, out var isCustom) == false || isCustom == false)
+                //if not custom
+                if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
                     continue;
                     
-                newClumps.Add(resource);
+                clumps.Add(resource);
             }
 
-            return newClumps.Any();
+            return true;
         }
     }
 
+    /// <summary>
+    /// On day ending, set all custom clumps to a default stone. This is made in case the mod (or a component) is uninstalled.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     public static void Ending(object sender, DayEndingEventArgs e)
     {
-        List<ExtensionClump> clumps = new();
+        List<ResourceClump> clumps = new();
         
         Utility.ForEachLocation(CheckForCustomClumps, true, true);
 
-        foreach (var resourceClump in clumps)
+        foreach (var resource in clumps)
         {
-            //copy data
-            var index = resourceClump.parentSheetIndex.Value;
-            var w = resourceClump.width.Value;
-            var h = resourceClump.height.Value;
-            var position = resourceClump.Tile * 64;
-            var health = resourceClump.health.Value;
-            var texture = resourceClump.textureName.Value;
-            
-            //remove
-            var location = resourceClump.Location;
-            location.resourceClumps.Remove(resourceClump);
-            
-            //make replacement
-            var replacement = new ResourceClump(index, w, h, position, (int)health, texture);
-            replacement.modData.Add(ModKeys.IsCustomClump, "true");
-            replacement.modData.Add(ModKeys.CustomClumpId, resourceClump.ResourceId);
-
-            //add
-            location.resourceClumps.Add(replacement);
+            //give default values of a stone
+            resource.textureName.Set("Maps/springobjects");
+            resource.parentSheetIndex.Set(672);
+            resource.loadSprite();
         }
 
         return;
 
         bool CheckForCustomClumps(GameLocation arg)
         {
-            var newClumps = new List<ResourceClump>();
-            
             foreach (var resource in arg.resourceClumps)
             {
-                if(resource is not ExtensionClump)
+                //if not custom
+                if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
                     continue;
-                
-                /*
-                if(resource.modData.TryGetValue(ModKeys.IsCustomClump, out var raw) == false)
-                    continue;
-                
-                //if not a custom clump
-                if(bool.TryParse(raw, out var isCustom) == false || isCustom == false)
-                    continue;
-                */
                     
-                newClumps.Add(resource);
+                clumps.Add(resource);
             }
 
-            return newClumps.Any();
+            return true;
         }
     }
 }

@@ -85,7 +85,7 @@ public class Api : IApi
         if (!ModEntry.MenuActions.TryGetValue(qualifiedItemId, out var value))
             return false;
 
-        var behavior = value.Find(b => b.TargetID == target);
+        var behavior = value.Find(b => b.TargetId == target);
         return behavior != null;
     }
 
@@ -101,7 +101,7 @@ public class Api : IApi
             return false;
         }
 
-        var clump = new ExtensionClump(itemId, data, position);
+        var clump = ExtensionClump.Create(itemId, data, position);
 
         try
         {

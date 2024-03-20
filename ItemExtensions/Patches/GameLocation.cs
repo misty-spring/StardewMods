@@ -309,14 +309,14 @@ public class GameLocationPatches
             return;
         }
 
-        var clump = new ExtensionClump(clumpId, data, position);
+        var clump = ExtensionClump.Create(clumpId, data, position);
         var cf = context.Location.GetData().CustomFields;
 
         try
         {
             if (cf is not null)
             {
-                var hasRect = cf.TryGetValue(ModKeys.ClumpSpawnRect, out var rawRect);
+                var hasRect = cf.TryGetValue(ModKeys.SpawnRect, out var rawRect);
                 var avoidOverlap = cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap) && bool.Parse(overlap);
 
                 if (hasRect)

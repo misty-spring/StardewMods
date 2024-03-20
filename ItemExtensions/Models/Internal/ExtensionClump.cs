@@ -2,16 +2,12 @@ using ItemExtensions.Additions;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Extensions;
-using StardewValley.Internal;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
-using static ItemExtensions.Patches.ObjectPatches;
-// ReSharper disable PossibleLossOfFraction
 
 namespace ItemExtensions.Models.Internal;
 
-public sealed class ExtensionClump : ResourceClump
+public static class ExtensionClump
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -20,78 +16,65 @@ public sealed class ExtensionClump : ResourceClump
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
-    public string ResourceId { get; set; }
-    public ResourceData Data { get; set; }
-    private LightSource LightSource { get; set; }
 
-    public ExtensionClump(string id, ResourceData data, Vector2 position, int remainingHealth = -1) : base()
+    public static ResourceClump Create (string id, ResourceData data, Vector2 position, int remainingHealth = -1)
     {
-        width.Value = data.Width;
-        height.Value = data.Height;
-        parentSheetIndex.Value = data.SpriteIndex;
-        Tile = position;
-        textureName.Value = data.Texture;
-        health.Value = remainingHealth > 0 ? remainingHealth : data.Health;
+        var clump = new ResourceClump(data.SpriteIndex, data.Width, data.Height, position,
+            remainingHealth > 0 ? remainingHealth : data.Health, data.Texture);
         
-        Data = data;
-        ResourceId = id;
+        clump.modData.Add(ModKeys.ClumpId, id);
         
-        modData.Add(ModKeys.IsCustomClump, "true");
-        modData.Add(ModKeys.CustomClumpId, id);
-        //modData.Add(ModKeys.LightSize, data.Light.Size);
-        //modData.Add(ModKeys.LightColor, data.Light.GetColor());
+        if (data.Light is not null)
+        {
+            clump.modData.Add(ModKeys.LightSize, $"{data.Light.Size}");
+            clump.modData.Add(ModKeys.LightColor, $"{data.Light.ColorString()}");
+        }
         
-        loadSprite();
+        return clump;
     }
     
-    public ExtensionClump(string id, Vector2 position, int remainingHealth = -1) : base()
+    public static ResourceClump Create (string id, Vector2 position, int remainingHealth = -1)
     {
         if (ModEntry.BigClumps.TryGetValue(id, out var data) == false)
         {
-            Log("Clump not found.");
-            return;
+            Log($"Data for {id} not found. (clumps)");
+            return null;
         }
         
-        width.Value = data.Width;
-        height.Value = data.Height;
-        parentSheetIndex.Value = data.SpriteIndex;
-        Tile = position;
-        textureName.Value = data.Texture;
-        health.Value = remainingHealth > 0 ? remainingHealth : data.Health;
-        
-        Data = data;
-        ResourceId = id;
-        
-        modData.Add(ModKeys.IsCustomClump, "true");
-        modData.Add(ModKeys.CustomClumpId, id);
-        
-        loadSprite();
+        var clump = Create(id, data, position, remainingHealth);
+        return clump;
     }
 
-    public override void OnAddedToLocation(GameLocation location, Vector2 tile)
+    /// <summary>
+    /// Tries to get custom clump ID from mod data. if it exists, uses ID to check if in big clumps.
+    /// </summary>
+    /// <param name="clump"></param>
+    /// <returns></returns>
+    public static bool IsCustom(ResourceClump clump)
     {
-        base.OnAddedToLocation(location,tile);
-
-        if (Data.Light is null) 
-            return;
+        if (clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
+            return false;
         
-        var fixedPosition = new Vector2(tile.X + width.Value / 2, tile.Y * height.Value / 2);
-        LightSource = new LightSource(4, fixedPosition, Data.Light.Size, Data.Light.GetColor());
+        return ModEntry.BigClumps.TryGetValue(id, out _);
     }
     
     /// <summary>
     /// Actions to do on tool action or bomb explosion.
     /// </summary>
+    /// <param name="clump"></param>
     /// <param name="t">Tool used</param>
     /// <param name="damage">Damage made</param>
     /// <param name="tileLocation">Location of hit</param>
     /// <returns>If the clump must be destroyed.</returns>
-    public override bool performToolAction(Tool t, int damage, Vector2 tileLocation)
+    public static bool DoCustom(ref ResourceClump clump, Tool t, int damage, Vector2 tileLocation)
     {
-        if (ModEntry.BigClumps.TryGetValue(ResourceId, out var resource) == false)
+        if (clump.modData.TryGetValue(ModKeys.ClumpId, out var id) is false) 
+            return false;
+        
+        if (ModEntry.BigClumps.TryGetValue(id, out var resource) == false)
             return false;
 
-        if (!ToolMatches(t, resource))
+        if (!GeneralResource.ToolMatches(t, resource))
             return false;
 
         //set vars
@@ -102,10 +85,18 @@ public sealed class ExtensionClump : ResourceClump
             var middle = (w.minDamage.Value + w.maxDamage.Value) / 2;
             parsedDamage = middle / 10;
         }
-        else
+        else if (t is null)
         {
             parsedDamage = damage;
         }
+        else
+        {
+            parsedDamage = (int)Math.Max(1f, (t.UpgradeLevel + 1) * 0.75f);
+        }
+        
+        #if DEBUG
+        Log($"Damage: {parsedDamage}");
+        #endif
 
         if (parsedDamage <= 0)
             return false;
@@ -113,146 +104,56 @@ public sealed class ExtensionClump : ResourceClump
         //if health data doesn't exist, idk if it can Not exist but just in case
         try
         {
-            _ = health.Value;
+            _ = clump.health.Value;
         }
         catch(Exception)
         {
-            health.Set(resource.Health);
+            clump.health.Set(resource.Health);
         }
 
         if (damage < resource.MinToolLevel)
         {
-            Location.playSound("clubhit", tileLocation);
-            Location.playSound("clank", tileLocation);
+            clump.Location.playSound("clubhit", tileLocation);
+            clump.Location.playSound("clank", tileLocation);
             Game1.drawObjectDialogue(string.Format(ModEntry.Help.Translation.Get("CantBreak"), t.DisplayName));
             Game1.player.jitterStrength = 1f;
             return false;
         }
 
         if(!string.IsNullOrWhiteSpace(resource.Sound))
-            Location.playSound(resource.Sound, tileLocation);
+            clump.Location.playSound(resource.Sound, tileLocation);
         
-        health.Value -= parsedDamage;
-
-        if (health.Value <= 0.0)
-        {
-            //create notes
-            DoResourceDrop(t, resource);
-            RemoveLight();
-            
-            if(resource.ActualSkill >= 0)
-                t.getLastFarmerToUse().gainExperience(resource.ActualSkill, resource.Exp);
-            
-            if (resource.AddHay > 0)
-            {
-                AddHay(resource, Location, tileLocation);
-            }
-            
-            return true;
-        }
+        clump.health.Value -= parsedDamage;
         
-        if(Data.Shake)
-            shakeTimer = 100;
-        return false;
-    }
-    
-    /// <summary>
-    /// Drops resources associated to clump.
-    /// </summary>
-    /// <param name="t"></param>
-    /// <param name="resource"></param>
-    private void DoResourceDrop(Tool t, ResourceData resource)
-    {
-        if (Data.SecretNotes && Location.HasUnlockedAreaSecretNotes(t.getLastFarmerToUse()) && Game1.random.NextDouble() < 0.05)
-        {
-            var unseenSecretNote = Location.tryToCreateUnseenSecretNote(t.getLastFarmerToUse());
-            if (unseenSecretNote != null)
-                Game1.createItemDebris(unseenSecretNote, Tile * 64f, -1, Location);
-        }
-            
-        var num2 = Game1.random.Next(resource.MinDrops, resource.MaxDrops);
-            
-        if(!string.IsNullOrWhiteSpace(resource.Debris))
-            CreateRadialDebris(Game1.currentLocation, resource.Debris, (int)Tile.X, (int)Tile.Y, Game1.random.Next(1, 6), false);
+        #if DEBUG
+        Log($"Remaining health {clump.health.Value}");
+        #endif
 
-        if (!string.IsNullOrWhiteSpace(resource.ItemDropped))
+        if (clump.health.Value <= 0.0)
         {
-            if (Game1.IsMultiplayer)
-            {
-                Game1.recentMultiplayerRandom = Utility.CreateRandom(Tile.X * 1000.0, Tile.Y);
-                for (var index = 0; index < Game1.random.Next(2, 4); ++index)
-                    CreateItemDebris(resource.ItemDropped, num2, (int)Tile.X, (int)Tile.Y, Location);
-            }
-            else
-            {
-                CreateItemDebris(resource.ItemDropped, num2, (int)Tile.X, (int)Tile.Y, Location);
-            }
-        }
+            //create drops & etc
+            GeneralResource.CheckDrops(resource, clump.Location, tileLocation, t);
 
-        var chance = Game1.random.NextDouble();
-        if (resource.ExtraItems != null)
-        {
-            foreach (var item in resource.ExtraItems)
+            //if has a light ID, remove
+            if (clump.modData.TryGetValue(ModKeys.LightId, out var lightSourceRaw))
             {
-                if(GameStateQuery.CheckConditions(item.Condition, Location, t.getLastFarmerToUse()) == false)
-                    continue;
-                
-                //if it has a condition, check first
-                if (chance > item.Chance)
-                    continue;
-
-                Log("Chance and condition mstch. Spawning extra item(s)...");
-                
-                var context = new ItemQueryContext(Location, t.getLastFarmerToUse(), Game1.random);
-                var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
-                foreach (var result in itemQuery)
+                if (int.TryParse(lightSourceRaw, out var lightSource))
                 {
-                    var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
-                    var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
-                    var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
-                    var vector = new Vector2((int)Tile.X, (int)Tile.Y) * 64;
-                    Location.debris.Add(new Debris(parsedItem,vector, vector + new Vector2(x, y)));
+                    clump.Location.removeLightSource(lightSource);
                 }
             }
-        }
 
-        if(!string.IsNullOrWhiteSpace(resource.BreakingSound))
-            Location.playSound(resource.BreakingSound);
-    }
-    
-    /// <summary>
-    /// Removes LightSource from map.
-    /// </summary>
-    private void RemoveLight()
-    {
-        if (LightSource is null) 
-            return;
-        
-        var id = LightSource.Identifier;
-        Location.removeLightSource(id);
-    }
-    
-    public override bool isPassable(Character c = null)
-    {
-        if (isTemporarilyInvisible)
+            //var location = __instance.Location;
+            //location.resourceClumps.Remove(__instance);
             return true;
-        
-        if (c is null)
-            return false;
+        }
 
-        if (Data.SolidHeight == Data.Height && Data.SolidWidth == Data.Width)
+        if (resource.Shake)
         {
-            return getBoundingBox().Contains(c.Position) == false;
+            var shakeTimerReflected = ModEntry.Help.Reflection.GetField<float>(clump, "shakeTimer");
+            shakeTimerReflected.SetValue(100);
         }
-        else
-        {
-            var extraX = Data.Width - Data.SolidWidth;
-            var extraY = Data.Height - Data.SolidHeight;
-            var trueX = (int)(Tile.X + extraX);
-            var trueY = (int)(Tile.Y + extraY);
-            
-            var source = new Rectangle(trueX * 64, trueY * 64, Data.SolidWidth * 64, Data.SolidHeight * 64);
-            return source.Contains(c.Position) == false;
-        }
+        
+        return false;
     }
 }

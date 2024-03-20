@@ -42,10 +42,18 @@ public class CropPatches
             //do from custom field
             var splitBySpace = ArgUtility.SplitBySpace(seeds);
             var allFields = new List<string>();
-            allFields.AddRange(splitBySpace);
+            
+            foreach (var id in splitBySpace)
+            {
+                if(Game1.cropData[id].Seasons.Contains(Game1.season))
+                    allFields.Add(id);
+            }
+            
+            //allFields.AddRange(splitBySpace);
             allFields.Add(itemId);
             
             var fromField = Game1.random.ChooseFrom(allFields);
+            
             Log($"Choosing seed {fromField}");
             __result = fromField;
             
@@ -58,6 +66,14 @@ public class CropPatches
         {
             if(!string.IsNullOrWhiteSpace(seedData.Condition) && GameStateQuery.CheckConditions(seedData.Condition, location, Game1.player) == false)
                 continue;
+            
+            //if outdoors AND not in island
+            if (Game1.player.currentLocation.IsOutdoors && Game1.player.currentLocation.InIslandContext() == false)
+            {
+                //if season not allowed
+                if(Game1.cropData[seedData.ItemId].Seasons.Contains(Game1.season) == false)
+                    continue;
+            }
 
             //add as many times as weight. e.g, weight 1 gets added once
             for (var i = 0; i < seedData.Weight; i++)

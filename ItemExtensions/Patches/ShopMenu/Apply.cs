@@ -28,6 +28,12 @@ public partial class ShopMenuPatches
             postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_Initialize))
         );
         
+        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.Initialize\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(ShopMenu), "AddForSale"),
+            postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_AddForSale))
+        );
+        
         Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"ShopMenu.cleanupBeforeExit\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(ShopMenu), "cleanupBeforeExit"),
@@ -84,7 +90,8 @@ public partial class ShopMenuPatches
     
     internal static void Post_Initialize(ShopMenu __instance, int currency, Func<ISalable, Farmer, int, bool> onPurchase, Func<ISalable, bool> onSell, bool playOpenSound)
     {
-        _extraBySalable ??= new Dictionary<ISalable, List<ExtraTrade>>();
+        ExtraBySalable = new Dictionary<ISalable, List<ExtraTrade>>();
+        ByQualifiedId = new Dictionary<string, List<ExtraTrade>>();
     }
 
     /// <summary>
@@ -93,19 +100,35 @@ public partial class ShopMenuPatches
     internal static void Post_cleanupBeforeExit()
     {
         //_extraSaleItems = new Dictionary<string, List<ExtraTrade>>();
-        _extraBySalable = new Dictionary<ISalable, List<ExtraTrade>>();
+        ExtraBySalable.Clear();
+        ByQualifiedId.Clear();
     }
     
+    /// <summary>
+    /// Adds salable items.
+    /// </summary>
+    /// <param name="__instance"></param>
+    /// <param name="item"></param>
+    /// <param name="stock"></param>
     private static void Post_AddForSale(ShopMenu __instance,ISalable item, ItemStockInformation? stock = null)
     {
         var match = FindMatch(__instance, item, stock);
-        if(match is null)
+        if (match is null)
+        {
+            if (ModEntry.Shops.TryGetValue(__instance.ShopId, out var allItemIds) == false)
+                return;
+            
+            if(allItemIds.TryGetValue(item.QualifiedItemId, out var data) == false)
+                return;
+
+            ByQualifiedId.Add(item.QualifiedItemId, data);
             return;
+        }
         
         if (ExtraTrade.TryParse(match, out var extras) == false)
             return;
 
-        _extraBySalable.Add(item, extras);
+        ExtraBySalable.Add(item, extras);
     }
 
     private static string FindMatch(ShopMenu menu, ISalable item, ItemStockInformation? stock = null)
@@ -155,7 +178,9 @@ public partial class ShopMenuPatches
     private static bool InDictionary(Item hoveredItem, out List<ExtraTrade> list)
     {
         list = null;
-        foreach (var pair in _extraBySalable)
+        
+        //prioritize bySalable check
+        foreach (var pair in ExtraBySalable)
         {
             if (pair.Key.QualifiedItemId != hoveredItem.QualifiedItemId)
                 continue;
@@ -168,8 +193,21 @@ public partial class ShopMenuPatches
 
             if (pair.Key.IsInfiniteStock() != hoveredItem.IsInfiniteStock())
                 continue;
+            
+            if(pair.Key.Stack != hoveredItem.Stack)
+                continue;
 
             list = pair.Value;
+            return true;
+        }
+
+        //fallback to qualifiedId
+        foreach (var pair2 in ByQualifiedId)
+        {
+            if(pair2.Key != hoveredItem.QualifiedItemId)
+                continue;
+
+            list = pair2.Value;
             return true;
         }
 

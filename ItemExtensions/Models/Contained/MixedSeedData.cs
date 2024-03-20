@@ -15,10 +15,8 @@ public class MixedSeedData
     private static IModHelper Helper => ModEntry.Help;
     
     public string ItemId { get; set; }
-    public SeasonCondition Season { get; set; } = SeasonCondition.Any;
     public string Condition { get; set; }
     public string HasMod { get; set; }
-    public string NotHaveMod { get; set; }
     public int Weight { get; set; } = 1;
 
     public bool IsValid()
@@ -44,12 +42,6 @@ public class MixedSeedData
     {
         if (string.IsNullOrWhiteSpace(HasMod))
             return true;
-        
-        if (Season != SeasonCondition.Any)
-        {
-            if (Game1.season.Equals(Season) == false)
-                return false;
-        }
 
         return Helper.ModRegistry.Get(HasMod) != null;
     }
@@ -66,4 +58,6 @@ public enum SeasonCondition{
     Fall,
     /// <summary>The winter season.</summary>
     Winter,
+    /// <summary> Only if it's indoors.</summary>
+    Indoors
 }

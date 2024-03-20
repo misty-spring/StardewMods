@@ -1,5 +1,7 @@
 using ItemExtensions.Models.Internal;
+using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using StardewValley;
 
 namespace ItemExtensions.Models;
 
@@ -15,7 +17,7 @@ public class ResourceData
     private const LogLevel Level =  LogLevel.Trace;
 #endif
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
-    private const StringComparison ComparisonType = StringComparison.OrdinalIgnoreCase;
+    private const StringComparison Comparison = StringComparison.OrdinalIgnoreCase;
     
     // Required
     public string Name { get; set; }
@@ -25,10 +27,6 @@ public class ResourceData
     // Region
     public int Width { get; set; } = 1;
     public int Height { get; set; } = 1;
-
-    public int SolidWidth { get; set; }
-    
-    public int SolidHeight  { get; set; }
 
     // Obtaining
     /// <summary>
@@ -47,13 +45,13 @@ public class ResourceData
     /// Debris when destroying item. Can be an ItemId, or one of: coins, wood, stone, bigStone, bigWood, hay, weeds
     /// </summary>
     
-    public string Debris { get; set; } = "stone";
-    public string BreakingSound { get; set; } = "stoneCrack";
-    public string Sound { get; set; } = "hammer";
+    public string Debris { get; set; } //= "stone";
+    public string BreakingSound { get; set; } //= "stoneCrack";
+    public string Sound { get; set; } //= "hammer";
     public int AddHay { get; set; }
     public bool SecretNotes { get; set; } = true;
     public bool Shake { get; set; } = true;
-    public StatCounter CountTowards { get; set; }
+    public StatCounter CountTowards { get; set; } = StatCounter.None;
 
     /// <summary>
     /// Tool's class. In the case of weapons, it can also be its number.
@@ -75,6 +73,12 @@ public class ResourceData
 
     public bool IsValid()
     {
+        if (Game1.content.DoesAssetExist<Texture2D>(Texture) == false)
+        {
+            Log($"Couldn't find texture {Texture} for resource {Name}. Skipping.", LogLevel.Info);
+            return false;
+        }
+        
         if (Width <= 0)
         {
             Log("Resource width must be over 0. Skipping.", LogLevel.Warn);
@@ -87,28 +91,21 @@ public class ResourceData
             return false;
         }
 
-        //if -1 or larger than parameter, reset
-        if (SolidWidth < 1 || SolidWidth > Width)
-            SolidWidth = Width;
-        
-        if (SolidHeight < 1 || SolidHeight > Height)
-            SolidHeight = Height;
-
         if (!string.IsNullOrWhiteSpace(Skill))
         {
             if (int.TryParse(Skill, out var intSkill))
                 ActualSkill = intSkill;
-            if (Skill.StartsWith("farm", ComparisonType))
+            if (Skill.StartsWith("farm", Comparison))
                 ActualSkill = 0;
-            else if (Skill.StartsWith("fish", ComparisonType))
+            else if (Skill.StartsWith("fish", Comparison))
                 ActualSkill = 1;
-            else if (Skill.Equals("foraging", ComparisonType))
+            else if (Skill.Equals("foraging", Comparison))
                 ActualSkill = 2;
-            else if (Skill.Equals("mining", ComparisonType))
+            else if (Skill.Equals("mining", Comparison))
                 ActualSkill = 3;
-            else if (Skill.Equals("combat", ComparisonType))
+            else if (Skill.Equals("combat", Comparison))
                 ActualSkill = 4;
-            else if (Skill.Equals("luck", ComparisonType))
+            else if (Skill.Equals("luck", Comparison))
                 ActualSkill = 5;
             else
                 ActualSkill = -1;

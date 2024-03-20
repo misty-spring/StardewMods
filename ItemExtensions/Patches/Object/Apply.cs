@@ -9,7 +9,6 @@ namespace ItemExtensions.Patches;
 
 public partial class ObjectPatches
 {
-    private const StringComparison IgnoreCase = StringComparison.OrdinalIgnoreCase;
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
 #else

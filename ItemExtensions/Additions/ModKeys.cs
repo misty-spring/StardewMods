@@ -6,21 +6,25 @@ public static class ModKeys
     internal const string ExtraTradesKey = "mistyspring.ItemExtensions/ExtraTrades";
     
     //eating/drinking customization
-    public const string AfterEatingKey = "mistyspring.ItemExtensions/AfterEatingAnimation";
-    public const string CustomEatingKey = "mistyspring.ItemExtensions/EatingAnimation";
-    public const string DrinkColorKey = "mistyspring.ItemExtensions/DrinkColor";
+    public const string AfterEating = "mistyspring.ItemExtensions/AfterEatingAnimation";
+    public const string CustomEating = "mistyspring.ItemExtensions/EatingAnimation";
+    public const string DrinkColor = "mistyspring.ItemExtensions/DrinkColor";
     
     //small changes via customfields
-    public const string StackModData = "mistyspring.ItemExtensions/MaximumStack";
-    public const string ItemHeadModData = "mistyspring.ItemExtensions/ShowAboveHead";
+    public const string MaxStack = "mistyspring.ItemExtensions/MaximumStack";
+    public const string ShowAboveHead = "mistyspring.ItemExtensions/ShowAboveHead";
     
     //for spawning
-    public const string ClumpSpawnRect = "mistyspring.ItemExtensions/ClumpSpawnRect";
+    public const string SpawnRect = "mistyspring.ItemExtensions/ClumpSpawnRect";
     public const string AvoidOverlap = "mistyspring.ItemExtensions/AvoidOverlap";
     
-    //for replacing on day start/end
-    public const string IsCustomClump = "mistyspring.ItemExtensions/IsCustomClump";
-    public const string CustomClumpId = "mistyspring.ItemExtensions/CustomClumpId";
+    //for custom clump actions
+    public const string ClumpId = "mistyspring.ItemExtensions/CustomClumpId";
+    //clump light
+    public const string LightId = "mistyspring.ItemExtensions/LightId";
+    public const string LightSize = "mistyspring.ItemExtensions/LightSize";
+    public const string LightColor = "mistyspring.ItemExtensions/LightColor";
+    public const string LightTransparency = "mistyspring.ItemExtensions/LightTrans";
 
     //simpler version of SeedData
     public const string MixedSeeds = "mistyspring.ItemExtensions/MixedSeeds";

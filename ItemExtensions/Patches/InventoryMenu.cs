@@ -69,19 +69,19 @@ public static class InventoryPatches
 
         foreach (var data in options)
         {
-            if (data.TargetID != affectedItem.QualifiedItemId)
+            if (data.TargetId != affectedItem.QualifiedItemId)
                 continue;
 
             if (!GameStateQuery.CheckConditions(data.Conditions))
             {
-                Log($"Conditions for {data.TargetID} don't match.");
+                Log($"Conditions for {data.TargetId} don't match.");
                 break;
             }
             
             //removeamount is PER item to avoid cheating
             if (heldItem.Stack < data.RemoveAmount)
             {
-                Log($"Minimum to remove from {data.TargetID} isn't avaiable.");
+                Log($"Minimum to remove from {data.TargetId} isn't avaiable.");
                 break;
             }
             

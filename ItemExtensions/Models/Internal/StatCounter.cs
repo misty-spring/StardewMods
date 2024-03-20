@@ -9,7 +9,7 @@ public enum StatCounter
     None,
     Copper,             //Found
     Diamonds,
-    Geodes,
+    GeodesBroken,
     Gold,
     Iridium,
     Iron,

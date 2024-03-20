@@ -29,7 +29,7 @@ public class MenuBehavior
 {
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
-    public string TargetID { get; set; } //qualified item ID
+    public string TargetId { get; set; } //qualified item ID
     public int RemoveAmount { get; set; }
     
     public string ReplaceBy { get; set; } //qualified item ID
@@ -59,7 +59,7 @@ public class MenuBehavior
     
     public MenuBehavior(MenuBehavior i)
     {
-        TargetID = i.TargetID;
+        TargetId = i.TargetId;
         RemoveAmount = i.RemoveAmount;
         
         ReplaceBy = i.ReplaceBy;
@@ -175,7 +175,7 @@ public class MenuBehavior
             return false;
         }
         
-        var target = ItemRegistry.GetDataOrErrorItem(TargetID);
+        var target = ItemRegistry.GetDataOrErrorItem(TargetId);
         if (target.DisplayName == ItemRegistry.GetErrorItemName())
         {
             Log("Error finding item. Behavior won't be added.", LogLevel.Error);
