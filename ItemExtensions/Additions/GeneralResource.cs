@@ -75,6 +75,7 @@ public static class GeneralResource
     internal static void CreateRadialDebris(GameLocation location, string debrisType, int xTile, int yTile, int numberOfChunks, bool resource, bool item = false, int quality = 0)
     {
         var vector = new Vector2(xTile * 64 + 64, yTile * 64 + 64);
+        var tileLocation = new Vector2(xTile, yTile);
         
         if (item)
         {
@@ -105,25 +106,63 @@ public static class GeneralResource
         }
         else
         {
+            //get color
+            var split = ArgUtility.SplitBySpaceQuoteAware(debrisType);
+            ArgUtility.TryGet(split, 0, out var debrisName, out _);
+            ArgUtility.TryGetOptional(split, 1, out var rawColor, out _, "White");
+            var color = Utility.StringToColor(rawColor) ?? Color.White;
             var spawned = true;
             
-            switch (debrisType.ToLower())
+            switch (debrisName.ToLower())
             {
                 //default of debris
                 case "coins":
-                    Game1.createRadialDebris(Game1.currentLocation, 8, xTile, yTile, Game1.random.Next(2, 7), false);
+                    Game1.createRadialDebris(Game1.currentLocation, 8, xTile, yTile, Game1.random.Next(2, 7), false, color: color);
                     break;
                 case "stone":
-                    Game1.createRadialDebris(Game1.currentLocation, 14, xTile, yTile, Game1.random.Next(2, 7), false);
+                    Game1.createRadialDebris(Game1.currentLocation, 14, xTile, yTile, Game1.random.Next(2, 7), false, color: color);
                     break;
                 case "bigstone":
-                    Game1.createRadialDebris(Game1.currentLocation, 32, xTile, yTile, Game1.random.Next(5, 11), false);
+                case "boulder":
+                    Game1.createRadialDebris(Game1.currentLocation, 32, xTile, yTile, Game1.random.Next(5, 11), false, color: color);
+                    Game1.Multiplayer.broadcastSprites(Game1.currentLocation, new TemporaryAnimatedSprite(48, tileLocation * 64f, color, 5, animationInterval: 180f, sourceRectWidth: 128, sourceRectHeight: 128)
+                    {
+                        alphaFade = 0.01f
+                    });
                     break;
                 case "wood":
-                    Game1.createRadialDebris(Game1.currentLocation, 12, xTile, yTile, Game1.random.Next(2, 7), false);
+                    Game1.createRadialDebris(Game1.currentLocation, 12, xTile, yTile, Game1.random.Next(2, 7), false, color: color);
                     break;
                 case "bigwood":
-                    Game1.createRadialDebris(Game1.currentLocation, 34, xTile, yTile, Game1.random.Next(5, 11), false);
+                case "stump":
+                    var textureStump = color == Color.White ? "TileSheets\\animations" : $"Mods/{ModEntry.Id}/Textures/Stump";
+                    var sourceStump = new Rectangle(385, 1522, sbyte.MaxValue, 79);
+                    if (color != Color.White)
+                        sourceStump.Y = 0;
+                    
+                    Game1.createRadialDebris(Game1.currentLocation, 34, xTile, yTile, Game1.random.Next(5, 11), false, color: color);
+                    Game1.Multiplayer.broadcastSprites(Game1.currentLocation, new TemporaryAnimatedSprite(textureStump, sourceStump, 2000f, 1, 1, tileLocation * 64f + new Vector2(0.0f, 49f), false, false, 1E-05f, 0.016f, color, 1f, 0.0f, 0.0f, 0.0f));
+                    break;
+                case "custom":
+                    /* follows this format:
+                     * custom color texturepath x y width height frames [speed] [alphaFade]
+                     */
+                    ArgUtility.TryGetOptional(split, 2, out var textureSheet, out _, "TileSheets/animations");
+                    ArgUtility.TryGetInt(split, 3, out var x, out var error);
+                    ArgUtility.TryGetInt(split, 4, out var y, out error);
+                    ArgUtility.TryGetInt(split, 5, out var width, out error);
+                    ArgUtility.TryGetInt(split, 6, out var height, out error);
+                    ArgUtility.TryGetInt(split, 7, out var frames, out error);
+                    ArgUtility.TryGetOptionalFloat(split, 8, out var speed, out _, 180f);
+                    ArgUtility.TryGetOptionalFloat(split, 9, out var alphaFade, out _, 0.01f);
+
+                    if (string.IsNullOrWhiteSpace(error))
+                    {
+                        Log($"Error when creating custom animation: {error}", LogLevel.Error);
+                        return;
+                    }
+                    
+                    Game1.Multiplayer.broadcastSprites(Game1.currentLocation, new TemporaryAnimatedSprite(textureSheet, new Rectangle(x, y, width, height), tileLocation, false, alphaFade, color){ animationLength = frames, interval = speed });
                     break;
                 default:
                     spawned = false;
@@ -136,15 +175,10 @@ public static class GeneralResource
                 //these can be of "debris" or "debris #color"
                 if (debrisType.StartsWith("weeds", IgnoreCase))
                 {
-                    var split = ArgUtility.SplitBySpace(debrisType);
-                    var color = Utility.StringToColor(split[1]) ?? Color.White;
-                    Game1.Multiplayer.broadcastSprites(location, new TemporaryAnimatedSprite(28, vector * 64f + new Vector2((float) Game1.random.Next(-16, 16), (float) Game1.random.Next(-16, 16)), color, flipped: Game1.random.NextBool(), animationInterval: (float) Game1.random.Next(60, 100)));
+                    Game1.Multiplayer.broadcastSprites(location, new TemporaryAnimatedSprite(28, vector * 64f + new Vector2(Game1.random.Next(-16, 16), Game1.random.Next(-16, 16)), color, flipped: Game1.random.NextBool(), animationInterval: Game1.random.Next(60, 100)));
                 }
                 else if (debrisType.StartsWith("hay", IgnoreCase) || debrisType.StartsWith("grass", IgnoreCase))
                 {
-                    var split = ArgUtility.SplitBySpace(debrisType);
-                    var color = Utility.StringToColor(split[1]) ?? Color.White;
-                    
                     //grass bits
                     Game1.createRadialDebris(location, color == Color.White ? "TerrainFeatures/grass" : $"Mods/{ModEntry.Id}/Textures/Grass", new Rectangle(2, 8, 8, 8), 1, (int)(vector.X * 64),(int)(vector.Y * 64), Game1.random.Next(6, 14), (int) vector.Y + 1, color, 4f);
                 }
@@ -199,7 +233,7 @@ public static class GeneralResource
             {
                 Y = -1f
             },
-            layerDepth = (float)(1.0 - (double)Game1.random.Next(100) / 10000.0),
+            layerDepth = (float)(1.0 - Game1.random.Next(100) / 10000.0),
             delayBeforeAnimationStart = Game1.random.Next(350)
         });
     }
@@ -245,12 +279,18 @@ public static class GeneralResource
                 if (chance > item.Chance)
                     continue;
 
-                Log("Chance and condition match. Spawning extra item(s)...");
+                #if DEBUG
+                Log($"Chance and condition match. Spawning extra item(s)...({item.ItemId})");
+                #endif
                 
                 var context = new ItemQueryContext(location, t.getLastFarmerToUse(), Game1.random);
                 var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
                 foreach (var result in itemQuery)
                 {
+                    #if DEBUG
+                    Log($"({item.ItemId}) Query item: {result.Item.QualifiedItemId}");
+                    #endif
+                    
                     var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
                     var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
                     var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });

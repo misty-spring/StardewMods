@@ -132,14 +132,15 @@ public static class Parser
         }
     }
 
-    public static void Resources(Dictionary<string, ResourceData> clumps)
+    public static void Resources(Dictionary<string, ResourceData> clumps, bool skipTextureCheck = false)
     {
         ModEntry.Ores = new Dictionary<string, ResourceData>();
+        ModEntry.BigClumps = new Dictionary<string, ResourceData>();
         foreach(var pair in clumps)
         {
             Log($"Checking {pair.Key} data...");
 
-            if(pair.Value.IsValid() == false)
+            if(pair.Value.IsValid(skipTextureCheck) == false)
                 continue;
             
             //add depending on size

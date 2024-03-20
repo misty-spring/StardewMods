@@ -133,6 +133,12 @@ public partial class ShopMenuPatches
 
     private static string FindMatch(ShopMenu menu, ISalable item, ItemStockInformation? stock = null)
     {
+        if (menu.ShopData is null || menu.ShopData.Items is null)
+        {
+            Log("Shop data (or its items) seems to be null. Skipping...");
+            return null;
+        }
+        
         foreach (var dataItem in menu.ShopData.Items)
         {
             //don't check those without ID

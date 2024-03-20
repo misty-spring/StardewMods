@@ -3,10 +3,9 @@ using ItemExtensions.Additions;
 using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
-using ItemExtensions.Models.Internal;
 using ItemExtensions.Patches;
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewModdingAPI.Enums;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Triggers;
@@ -21,12 +20,13 @@ public sealed class ModEntry : Mod
         helper.Events.GameLoop.GameLaunched += Assets.WriteTemplates;
         #endif
         
+        helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         helper.Events.GameLoop.DayStarted += Day.Started;
         helper.Events.GameLoop.DayEnding += Day.Ending;
         
         helper.Events.Content.AssetRequested += Assets.OnRequest;
-        helper.Events.Content.AssetsInvalidated += Assets.OnReload;
+        helper.Events.Content.AssetsInvalidated += Assets.OnInvalidate;
         
         helper.Events.Input.ButtonPressed += ActionButton.Pressed;
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
@@ -70,10 +70,11 @@ public sealed class ModEntry : Mod
         
         #if DEBUG
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
+        helper.ConsoleCommands.Add("dump", "Exports ItemExtension's internal data", Debugging.Dump);
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
-    
+
     public override object GetApi() =>new Api();
 
     private static void LocaleChanged(object sender, LocaleChangedEventArgs e)
@@ -86,17 +87,39 @@ public sealed class ModEntry : Mod
         };
     }
 
+    /// <summary>
+    /// Because forage is created early on, custom resources are loaded at SaveParsed.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void LoadStageChanged(object sender, LoadStageChangedEventArgs e)
+    {
+        #if DEBUG
+        Monitor.Log($"Stage: {e.NewStage.ToString()}", LogLevel.Info);
+        #endif
+        
+        //return if not on saveparsed
+        if (e.NewStage.Equals(LoadStage.SaveParsed) == false)
+            return;
+        
+        // get resources
+        var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
+        Parser.Resources(oreData, true);
+        var oc = Ores?.Count ?? 0;
+        Monitor.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
+
+        #if DEBUG
+        Debugging.Dump("dump", new[] { "clumps" });
+        #endif
+    }
+
+    /// <summary>
+    /// At this point, the mod loads its files and adds contentpacks' changes.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
     {
-        //reset every file
-        BigClumps.Clear();
-        Data.Clear();
-        EatingAnimations.Clear();
-        MenuActions.Clear();
-        Ores.Clear();
-        Seeds.Clear();
-        Shops.Clear();
-        
         //get obj data
         var objData = Help.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
         Parser.ObjectData(objData);
@@ -115,7 +138,7 @@ public sealed class ModEntry : Mod
         var ic = MenuActions?.Count ?? 0;
         Monitor.Log($"Loaded {ic} menu actions.", LogLevel.Debug);
         
-        //get obj data
+        //get mixed seeds
         var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
         Parser.MixedSeeds(seedData);
         var msc = Seeds?.Count ?? 0;
@@ -127,12 +150,6 @@ public sealed class ModEntry : Mod
         var sc = Shops?.Count ?? 0;
         Monitor.Log($"Loaded {sc} shop extensions.", LogLevel.Debug);
         
-        // get resources
-        var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
-        Parser.Resources(oreData);
-        var oc = Ores?.Count ?? 0;
-        Monitor.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
-
         var temp = new List<SButton>();
         foreach (var b in Game1.options.actionButton)
         {
@@ -144,6 +161,7 @@ public sealed class ModEntry : Mod
         ActionButtons = temp;
     }
 
+    /// <summary>Buttons used for custom item actions</summary>
     internal static List<SButton> ActionButtons { get; set; }
 
     public static string Id { get; set; }

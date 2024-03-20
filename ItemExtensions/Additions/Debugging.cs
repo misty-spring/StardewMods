@@ -101,4 +101,55 @@ public class Debugging
             return true;
         }
     }
+
+    public static void Dump(string arg1, string[] arg2)
+    {
+        if (arg2 is null || arg2.Any() == false)
+        {
+            Log("Must have at least 1 argument.", LogLevel.Warn);
+            return;
+        }
+
+        if (!Context.IsWorldReady)
+        {
+            Log("No save has been loaded yet. This may cause issues", LogLevel.Warn);
+        }
+
+        var helper = ModEntry.Help;
+        
+        switch (arg2[0])
+        {
+            case "ore":
+            case "ores":
+                helper.Data.WriteJsonFile("dump/Ores.json", ModEntry.Ores);
+                break;
+            case "clump":
+            case "clumps":
+                helper.Data.WriteJsonFile("dump/ResourceClumps.json", ModEntry.BigClumps);
+                break;
+            case "eat":
+            case "sip":
+            case "drink":
+                helper.Data.WriteJsonFile("dump/Animations.json", ModEntry.EatingAnimations);
+                break;
+            case "seed":
+            case "seeds":
+                helper.Data.WriteJsonFile("dump/Seeds.json", ModEntry.Seeds);
+                break;
+            case "menu":
+            case "menuactions":
+            case "actions":
+                helper.Data.WriteJsonFile("dump/MenuActions.json", ModEntry.MenuActions);
+                break;
+            case "shop": 
+            case "shops":
+                helper.Data.WriteJsonFile("dump/Shops.json", ModEntry.Shops);
+                break;
+            default:
+                Log($"Command {arg2[0]} not recognized.", LogLevel.Warn);
+                return;
+        }
+        
+        Log("File dumped in mod folder.", LogLevel.Info);
+    }
 }

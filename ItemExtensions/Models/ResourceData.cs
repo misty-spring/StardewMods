@@ -71,9 +71,9 @@ public class ResourceData
     public Dictionary<string, string> CustomFields { get; set; } = null;
     public LightData Light { get; set; } = null;
 
-    public bool IsValid()
+    public bool IsValid(bool skipTextureCheck)
     {
-        if (Game1.content.DoesAssetExist<Texture2D>(Texture) == false)
+        if (!skipTextureCheck && Game1.content.DoesAssetExist<Texture2D>(Texture) == false)
         {
             Log($"Couldn't find texture {Texture} for resource {Name}. Skipping.", LogLevel.Info);
             return false;

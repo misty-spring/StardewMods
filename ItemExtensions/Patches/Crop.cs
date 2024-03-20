@@ -49,8 +49,9 @@ public class CropPatches
                     allFields.Add(id);
             }
             
-            //allFields.AddRange(splitBySpace);
-            allFields.Add(itemId);
+            //this checks if seed roster should exclude our seed. if there's no valid seeds, the main seed will be force-added
+            if(ShouldAddMainSeed(itemId, allFields))
+                allFields.Add(itemId);
             
             var fromField = Game1.random.ChooseFrom(allFields);
             
@@ -83,7 +84,8 @@ public class CropPatches
         }
         
         //also add the "main" seed
-        all.Add(itemId);
+        if(ShouldAddMainSeed(itemId, all))
+            all.Add(itemId);
 
         //if none in all, return. shouldn't happen but just in case
         if (all.Any() == false)
@@ -92,5 +94,30 @@ public class CropPatches
         var chosen = Game1.random.ChooseFrom(all);
         Log($"Choosing seed {chosen}");
         __result = chosen;
+    }
+
+    private static bool ShouldAddMainSeed(string itemId, List<string> allFields)
+    {
+        var fields = Game1.objectData[itemId].CustomFields;
+        
+        // if empty, return false
+        if (allFields.Any() == false)
+            return false;
+        
+        // if there's any custom fields
+        if (fields is not null && fields.Any())
+        {
+            // if it doesn't have the Exclude field, add
+            if(fields.TryGetValue(ModKeys.ExcludeFromSeedRoster, out var shouldExclude) == false)
+            {
+                return true;
+            }
+            
+            // otherwise, make "should add" return the opposite of "should exclude"
+            // here it checks if it equals false, but basically same intent
+            return bool.Parse(shouldExclude) == false;
+        }
+
+        return true;
     }
 }

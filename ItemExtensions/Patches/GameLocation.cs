@@ -79,9 +79,32 @@ public class GameLocationPatches
         var index = codes.FindIndex(ci => ci.opcode == OpCodes.Callvirt && ci.operand is MethodInfo { Name: "get_Chance"});
         Log($"index: {index}", LogLevel.Info);
         
-        var redirectTo = codes.Find(ci => codes.IndexOf(ci) == index + 3);//new[]{typeof(ISpawnItemData), typeof(ItemQueryContext), typeof(bool), typeof(HashSet<string>), typeof(Func<string, string>), typeof(Item), typeof(Action<string, string>)})};
-        //&& (ConstructorInfo)ci.operand == AccessTools.Method(typeof(ItemQueryResolver), nameof(ItemQueryResolver.TryResolveRandomItem), new[]{typeof(ISpawnItemData), typeof(ItemQueryContext), typeof(bool), typeof(HashSet<string>), typeof(Func<string, string>), typeof(Item), typeof(Action<string, string>)}));
+        var redirectTo = codes.Find(ci => codes.IndexOf(ci) == index + 3);
         var breakAt = codes.Find(ci => ci.opcode == OpCodes.Ldloc_S && ((LocalBuilder)ci.operand).LocalIndex == 11);
+        
+        CodeInstruction forage = null;
+        for (var i = 0; i < codes.Count - 1; i++)
+        {
+            if(codes[i].opcode != OpCodes.Ldloc_S)
+                continue;
+            
+            /* not necessary, because the first ldloc_S + ldfld is also the one we want
+            if(codes[i].OperandIs(13) == false)
+                continue;
+            */
+            
+            if(codes[i + 1].opcode != OpCodes.Ldfld)
+                continue;
+
+            forage = codes[i + 1];
+            break;
+        }
+
+        if (forage is null)
+        {
+            Log("Forage variable wasn't found.");
+            return codes.AsEnumerable();
+        }
         
         //add label for brfalse
         var brfalseLabel = il.DefineLabel();
@@ -111,7 +134,7 @@ public class GameLocationPatches
         
         //arguments
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 13)); //spawndata arg
-        //instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(SpawnForageData), "forage"))); //load forage
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldfld, forage.operand)); //load forage
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 10)); //context arg
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 16)); //position arg
         
@@ -137,12 +160,31 @@ public class GameLocationPatches
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Stfld, typeof(GameLocation).GetRuntimeField("numberOfSpawnedObjectsOnMap")));
         
         //break
-        
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Br_S, brSLabel));
 
         Log($"codes count: {codes.Count}, insert count: {instructionsToInsert.Count}");
         Log("Inserting method");
         codes.InsertRange(index + 3, instructionsToInsert);
+        
+        /* print the IL code
+         * courtesy of atravita
+         *
+        StringBuilder sb = new();
+        sb.Append("ILHelper for: GameLocation.spawnObjects");
+        for (int i = 0; i < codes.Count; i++)
+        {
+            sb.AppendLine().Append(codes[i]);
+            if (index + 3 == i)
+            {
+                sb.Append("       <---- start of transpiler");
+            }
+            if (index + 3 + instructionsToInsert.Count == i)
+            {
+                sb.Append("       <----- end of transpiler");
+            }
+        }
+        Log(sb.ToString(), LogLevel.Info);
+        */
         return codes.AsEnumerable();
     }
 
@@ -156,8 +198,10 @@ public class GameLocationPatches
     public static bool CheckIfCustomClump(SpawnForageData forage, ItemQueryContext context, Vector2 vector2)
     {
         //var log = ModEntry.Help.Reflection.GetField<IGameLogger>(typeof(Game1), "log").GetValue();
-        //Log("Called transpiled code");
-
+        #if DEBUG
+        Log($"Called transpiled code for {forage?.Id}");
+        #endif
+        
         if (forage is null)
         {
             Log("parameter forage can't be null.");
@@ -173,19 +217,39 @@ public class GameLocationPatches
         var random = context.Random ?? Game1.random;
         var randomItemId = forage.RandomItemId;
 
-        //check spawnData validity
-        var isOurs = forage.Id.StartsWith("Clump ItemExtension", StringComparison.OrdinalIgnoreCase);
-        
-        if (!isOurs)
-            return false;
+        //check validity
+        var isOurs = forage.Id.StartsWith("ItemExtension.Clump", StringComparison.OrdinalIgnoreCase);
 
-        var validItemId = ModEntry.BigClumps.ContainsKey(forage.ItemId);
+        if (!isOurs)
+        {
+            #if DEBUG
+            Log("Doesn't seem to be a clump spawn");
+            #endif
+            return false;
+        }
+
+        #if DEBUG
+        Log("BigClumps added:", LogLevel.Info);
+        foreach (var pair in ModEntry.BigClumps)
+        {
+            Log($"{pair.Key}");
+        }
+        #endif
+        
+        var validItemId = ModEntry.BigClumps.TryGetValue(forage.ItemId, out _);
+
+        if (!validItemId)
+        {
+            Log($"Couldn't find clump Id '{forage.ItemId}' in data. ({context.Location?.NameOrUniqueName} @ {forage.Id})", LogLevel.Warn);
+            return false;
+        }
+        
         var isAnyRandomAClump = false;
         
         List<string> randomsThatAreItem = new();
-        List<string> randomsThatAreClump = new();
+        List<string> randomsThatAreClump = new() { forage.Id };
 
-        //if a random Id exists
+        //if a random Id exists, consider in
         if (randomItemId != null && randomItemId.Any())
         {
             foreach (var randomId in randomItemId)
@@ -204,16 +268,9 @@ public class GameLocationPatches
             //if no random is clump
             if (!isAnyRandomAClump)
             {
-                //if main is clump
-                if (validItemId)
-                {
-                    TryPlaceCustomClump(forage.ItemId, context, vector2);
-                    return true;
-                }
-
-                //else
-                Log($"None of the item IDs seem to be a custom clump. No spawn will be made. ({context.Location.NameOrUniqueName} @ {forage.Id})", LogLevel.Warn);
-                return false;
+                //prioritize clump
+                TryPlaceCustomClump(forage.ItemId, context, vector2);
+                return true;
             }
         }
         else if (randomItemId is null)
@@ -225,33 +282,16 @@ public class GameLocationPatches
             return true;
         }
 
-        if (!isAnyRandomAClump)
-        {
-            if (!validItemId)
-            {
-                Log($"None of the item IDs seem to be a custom clump. No spawn will be made. ({context.Location?.NameOrUniqueName} @ {forage.Id})", LogLevel.Warn);
-                return false;
-            }
-        }
-        
-        //if id isn't valid clump, add to random items
-        if (!string.IsNullOrWhiteSpace(forage.ItemId))
-        {
-            if (!validItemId)
-                randomsThatAreItem.Add(forage.ItemId);
-            else
-                randomsThatAreClump.Add(forage.ItemId);
-        }
-
+        //chose randomly from all
         var all = new List<string>();
         all.AddRange(randomsThatAreItem);
         all.AddRange(randomsThatAreClump);
-
         var chosen = random.ChooseFrom(all);
         var placeItem = randomsThatAreItem.Contains(chosen);
 
         if (placeItem)
         {
+            //try to get item
             var firstOrDefault = ItemQueryResolver.TryResolve(
                 chosen, 
                 context, 
@@ -261,20 +301,19 @@ public class GameLocationPatches
                 logError: (query, error) => { Log($"Location '{context.Location.NameOrUniqueName}' failed parsing item query '{query}' for forage '{chosen}': {error}"); }
                 ).FirstOrDefault();
             
-            //return true because the list already has items that might fail
+            //spawn if so
             if (firstOrDefault is not null)
             {
                 //create
                 var asItem = ItemQueryResolver.ApplyItemFields(firstOrDefault.Item, forage, context) as Item;
-                
-                // 1 out of [clumps count]
-                // e.g, if you have 4 possible clumps, 20% chance
                 if (asItem is Object o)
                 {
                     o.IsSpawnedObject = true;
                     if (context.Location.dropObject(o, vector2 * 64f, Game1.viewport, true))
                     {
-                        ++context.Location.numberOfSpawnedObjectsOnMap;
+                        #if DEBUG
+                        Log($"Placed forage randomly chosen: item {o.DisplayName} ({o.QualifiedItemId}");
+                        #endif
                         return true;
                     }
                 }
@@ -288,7 +327,6 @@ public class GameLocationPatches
         }
         
         TryPlaceCustomClump(chosen, context, vector2);
-
         return true;
     }
 
@@ -303,13 +341,8 @@ public class GameLocationPatches
         #if DEBUG
         Log("Placing clump...");
         #endif
-        
-        if(ModEntry.BigClumps.TryGetValue(clumpId, out var data) == false)
-        {
-            return;
-        }
 
-        var clump = ExtensionClump.Create(clumpId, data, position);
+        var clump = ExtensionClump.Create(clumpId, position);
         var cf = context.Location.GetData().CustomFields;
 
         try
@@ -317,16 +350,15 @@ public class GameLocationPatches
             if (cf is not null)
             {
                 var hasRect = cf.TryGetValue(ModKeys.SpawnRect, out var rawRect);
-                var avoidOverlap = cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap) && bool.Parse(overlap);
+                
+                //default true, but can be set off, idk why
+                var avoidOverlap = true;
+                if (cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap))
+                    avoidOverlap = bool.Parse(overlap);
 
                 if (hasRect)
                 {
                     var newPosition = CheckPosition(context, position, rawRect, avoidOverlap);
-                    clump.Tile = newPosition;
-                }
-                else if(avoidOverlap && context.Location.IsTileOccupiedBy(position))
-                {
-                    var newPosition = NearestOpenTile(context.Location, position);
                     clump.Tile = newPosition;
                 }
             }

@@ -13,8 +13,12 @@ public static class Assets
 {
     private static IModHelper Helper => ModEntry.Help;
     private static string Id => ModEntry.Id;
-    public static void OnReload(object sender, AssetsInvalidatedEventArgs e)
+    public static void OnInvalidate(object sender, AssetsInvalidatedEventArgs e)
     {
+        //don't reload if on title screen
+        if (!Context.IsWorldReady)
+            return;
+        
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Data")))
         {
             var objectData = Helper.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
@@ -78,6 +82,9 @@ public static class Assets
                 {
                     if(data.Width > 1 || data.Height > 1)
                         continue;
+
+                    //var customFields = data.CustomFields ?? new Dictionary<string, string>();
+                    //customFields.Add(ModKeys.Resource, "true");
                     
                     var objectData = new ObjectData
                     {
@@ -103,42 +110,6 @@ public static class Assets
                     };
                     if(dictionary.Data.TryAdd(itemId, objectData) == false)
                         dictionary.Data[itemId] = objectData;
-                }
-            });
-        }
-        
-        if (e.NameWithoutLocale.IsEquivalentTo("Data/Shops"))
-        {
-            e.Edit(asset =>
-            {
-                var dictionary = asset.AsDictionary<string, ShopData>();
-                foreach (var pair in ModEntry.Shops)
-                {
-                    if(dictionary.Data.TryGetValue(pair.Key, out var shopData) == false)
-                        continue;
-
-                    foreach (var data in shopData.Items)
-                    {
-                        //existing entries are ignored
-                        if (data.CustomFields.ContainsKey(ModKeys.ExtraTradesKey))
-                            continue;
-                        
-                        try
-                        {
-                            //find match
-                            var match = pair.Value.First(p => p.Key.Equals(data.Id, StringComparison.Ordinal)).Value;
-
-                            var raw = match.Aggregate("", (current, trade) => current + $"{trade.QualifiedItemId} {trade.Count} ");
-                            var items = raw.Remove(raw.Length - 1, 1);
-
-                            data.CustomFields.Add(ModKeys.ExtraTradesKey, items);
-
-                        }
-                        catch (Exception _)
-                        {
-                            continue;
-                        }
-                    }
                 }
             });
         }
@@ -190,6 +161,14 @@ public static class Assets
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Drink", true))
         {
             e.LoadFromModFile<Texture2D>("assets/Drink.png", AssetLoadPriority.Low);
+        }
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Grass", true))
+        {
+            e.LoadFromModFile<Texture2D>("assets/Grass.png", AssetLoadPriority.Low);
+        }
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Stump", true))
+        {
+            e.LoadFromModFile<Texture2D>("assets/Stump.png", AssetLoadPriority.Low);
         }
     }
 

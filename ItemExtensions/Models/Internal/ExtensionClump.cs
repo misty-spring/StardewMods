@@ -35,13 +35,22 @@ public static class ExtensionClump
     
     public static ResourceClump Create (string id, Vector2 position, int remainingHealth = -1)
     {
+        ResourceClump clump;
+        
         if (ModEntry.BigClumps.TryGetValue(id, out var data) == false)
         {
-            Log($"Data for {id} not found. (clumps)");
-            return null;
+            Log($"Data for {id} not found (clumps). Creating default resource at {position}");
+            clump = new ResourceClump(600,2,2,position) { 
+                modData =
+                {
+                    { ModKeys.ClumpId, id } 
+                }};
+        }
+        else
+        {
+            clump = Create(id, data, position, remainingHealth);
         }
         
-        var clump = Create(id, data, position, remainingHealth);
         return clump;
     }
 
