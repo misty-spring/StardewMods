@@ -37,7 +37,7 @@ public class ResourceData
     public int Health { get; set; } = 10;
     public string ItemDropped { get; set; }
     public int MinDrops { get; set; } = 1;
-    public int MaxDrops { get; set; } = 1;
+    public int MaxDrops { get; set; }
     public List<ExtraSpawn> ExtraItems { get; set; }
     
     // Type of resource
@@ -45,9 +45,9 @@ public class ResourceData
     /// Debris when destroying item. Can be an ItemId, or one of: coins, wood, stone, bigStone, bigWood, hay, weeds
     /// </summary>
     
-    public string Debris { get; set; } //= "stone";
-    public string BreakingSound { get; set; } //= "stoneCrack";
-    public string Sound { get; set; } //= "hammer";
+    public string Debris { get; set; } = "stone";
+    public string BreakingSound { get; set; } = "stoneCrack";
+    public string Sound { get; set; } = "hammer";
     public int AddHay { get; set; }
     public bool SecretNotes { get; set; } = true;
     public bool Shake { get; set; } = true;
@@ -78,6 +78,9 @@ public class ResourceData
             Log($"Couldn't find texture {Texture} for resource {Name}. Skipping.", LogLevel.Info);
             return false;
         }
+
+        if (MaxDrops < MinDrops)
+            MaxDrops = MinDrops + 1;
         
         if (Width <= 0)
         {

@@ -91,7 +91,7 @@ public class Api : IApi
 
     public bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false) => TrySpawnClump(itemId, position, Utility.fuzzyLocationSearch(locationName), out error, avoidOverlap);
     
-    public bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = false)
+    public bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = true)
     {
         error = null;
         
@@ -109,8 +109,20 @@ public class Api : IApi
             {
                 if (location.IsTileOccupiedBy(position))
                 {
-                    var newPosition = Patches.GameLocationPatches.NearestOpenTile(location, position);
-                    clump.Tile = newPosition;
+                    var width = location.map.DisplayWidth / 64;
+                    var height = location.map.DisplayHeight / 64;
+                    
+                    for (var i = 0; i < 30; i++)
+                    {
+                        var newPosition = new Vector2(
+                            Game1.random.Next(1, width),
+                            Game1.random.Next(1, height));
+                        
+                        if (location.IsTileOccupiedBy(newPosition) || location.IsNoSpawnTile(newPosition) || !location.CanItemBePlacedHere(newPosition))
+                            continue;
+
+                        clump.Tile = newPosition;
+                    }
                 }
             }
             

@@ -422,82 +422,13 @@ public class GameLocationPatches
                     random.Next(randomRect.X, randomRect.X + randomRect.Width),
                     random.Next(randomRect.Y, randomRect.Y + randomRect.Height));
 
-                if (context.Location.IsTileOccupiedBy(position) == false)
+                var cantSpawn = context.Location.IsTileOccupiedBy(result) || context.Location.IsNoSpawnTile(result) || !context.Location.CanItemBePlacedHere(result);
+                
+                if (cantSpawn == false)
                     break;
             }
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// Finds the nearest open tile.
-    /// </summary>
-    /// <param name="location">Location to use for checks.</param>
-    /// <param name="target">Initial position.</param>
-    /// <returns>A tile that is unoccupied.</returns>
-    internal static Vector2 NearestOpenTile(GameLocation location, Vector2 target)
-    {
-        var position = new Vector2();
-        for (var i = 1; i < 30; i++)
-        {
-            var toLeft = new Vector2(target.X - i, target.Y);
-            if (!location.IsTileOccupiedBy(toLeft))
-            {
-                position = toLeft;
-                break;
-            }
-            
-            var toRight = new Vector2(target.X + i, target.Y);
-            if (!location.IsTileOccupiedBy(toRight))
-            {
-                position = toRight;
-                break;
-            }
-            
-            var toUp = new Vector2(target.X, target.Y - i);
-            if (!location.IsTileOccupiedBy(toUp))
-            {
-                position = toUp;
-                break;
-            }
-            
-            var toDown = new Vector2(target.X, target.Y + i);
-            if (!location.IsTileOccupiedBy(toDown))
-            {
-                position = toDown;
-                break;
-            }
-
-            var upperLeft= new Vector2(target.X - i, target.Y - 1);
-            if (!location.IsTileOccupiedBy(upperLeft))
-            {
-                position = upperLeft;
-                break;
-            }
-            
-            var lowerLeft= new Vector2(target.X - i, target.Y + 1);
-            if (!location.IsTileOccupiedBy(lowerLeft))
-            {
-                position = lowerLeft;
-                break;
-            }
-            
-            var upperRight= new Vector2(target.X + i, target.Y - 1);
-            if (!location.IsTileOccupiedBy(upperRight))
-            {
-                position = upperRight;
-                break;
-            }
-            
-            var lowerRight= new Vector2(target.X + i, target.Y + 1);
-            if (!location.IsTileOccupiedBy(lowerRight))
-            {
-                position = lowerRight;
-                break;
-            }
-        }
-
-        return position;
     }
 }

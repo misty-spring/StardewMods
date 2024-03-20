@@ -31,8 +31,8 @@ public partial class ShopMenuPatches
             if (__instance.heldItem != null && __instance.heldItem.QualifiedItemId != thisItem.QualifiedItemId)
                 return true;
             
-            //if it doesn't have extra trades
-            if (!ExtraBySalable.ContainsKey(thisItem))
+            //if neither this trade OR this id is found
+            if (!ExtraBySalable.ContainsKey(thisItem) && !ByQualifiedId.ContainsKey(thisItem.QualifiedItemId))
                 return true;
             
             if (__instance.forSale[index2] != null)

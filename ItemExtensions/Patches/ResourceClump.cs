@@ -38,13 +38,20 @@ public class ResourceClumpPatches
         if (__instance is not ResourceClump r)
             return;
         
+        //if no custom id
         if (r.modData.TryGetValue(ModKeys.ClumpId, out var id) is false) 
+            return;
+
+        //if it has a light Id, assume there's one placed
+        if(r.modData.TryGetValue(ModKeys.LightId, out var lightSourceId))
             return;
         
         //try get light data
         if(r.modData.TryGetValue(ModKeys.LightSize, out var sizeRaw) == false || r.modData.TryGetValue(ModKeys.LightColor, out var rgb) == false || r.modData.TryGetValue(ModKeys.LightTransparency, out var transRaw) == false)
         {
-            Log($"Data for {id} light not found. (clumps)");
+            #if DEBUG
+            Log($"Data for {id} light not found. (onAddedToLocation)");
+            #endif
             return;
         }
         
