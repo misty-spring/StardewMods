@@ -28,7 +28,7 @@ public class MenuPatches
         
         Log($"Applying Harmony patch \"{nameof(MenuPatches)}\": postfixing SDV method \"CharacterCustomization.draw\".");
         harmony.Patch(
-            original: AccessTools.Method(typeof(CharacterCustomization), nameof(CharacterCustomization.draw), new Type[] { typeof(SpriteBatch) }),
+            original: AccessTools.Method(typeof(CharacterCustomization), nameof(CharacterCustomization.draw), new[] { typeof(SpriteBatch) }),
             postfix: new HarmonyMethod(typeof(MenuPatches), nameof(Post_draw)));
 
         Log($"Applying Harmony patch \"{nameof(MenuPatches)}\": postfixing SDV method \"CharacterCustomization.draw\".");
@@ -47,31 +47,22 @@ public class MenuPatches
 
     internal static void Post_draw(CharacterCustomization __instance, SpriteBatch b)
     {
-        if (__instance.source != CharacterCustomization.Source.NewGame)
+        if (__instance.source != CharacterCustomization.Source.NewGame && __instance.source != CharacterCustomization.Source.HostNewFarm && __instance.source != CharacterCustomization.Source.NewFarmhand)
             return;
-        
-        //Log($"bounds: {_islandBtn.bounds}");
 
         //checkbox
         var position = new Vector2(_islandBtn.bounds.X, _islandBtn.bounds.Y);
-        b.Draw(_islandBtn.texture,position,_islandBtn.sourceRect,Color.White,0,Vector2.Zero,4f,SpriteEffects.None,(float) (0.8600000143051147 + (double) _islandBtn.bounds.Y / 20000.0));
+        b.Draw(_islandBtn.texture,position,_islandBtn.sourceRect,Color.White,0,Vector2.Zero,4f,SpriteEffects.None,(float) (0.8600000143051147 + _islandBtn.bounds.Y / 20000.0));
         
         //text
         var whereFrom = new Vector2(_islandBtn.bounds.X + _islandBtn.bounds.Width + 8, _islandBtn.bounds.Y - 12);
         Utility.drawTextWithShadow(b, _islandBtn.label, Game1.smallFont, whereFrom, Game1.textColor);
-/*
-        if (!_islandBtn.drawLabelWithShadow)
-            return;
-        
-        //label
-        var width = _islandBtn.label.Length * 4;
-        IClickableMenu.drawTextureBox(b, (int)whereFrom.X - 16, (int)whereFrom.Y - 16, width,64, Color.White);
-        Utility.drawTextWithShadow(b, _islandBtn.label, Game1.smallFont, whereFrom, Game1.textColor);*/
     }
 
+    // ReSharper disable once UnusedParameter.Local
     private static void Post_receiveLeftClick(CharacterCustomization __instance, int x, int y, bool playSound = true)
     {
-        if (__instance.source != CharacterCustomization.Source.NewGame)
+        if (__instance.source != CharacterCustomization.Source.NewGame && __instance.source != CharacterCustomization.Source.HostNewFarm && __instance.source != CharacterCustomization.Source.NewFarmhand)
             return;
         
         if (!_islandBtn.containsPoint(x, y))
@@ -104,7 +95,7 @@ public class MenuPatches
 
     private static void Post_ResetComponents(CharacterCustomization __instance)
     {
-        if (__instance.source != CharacterCustomization.Source.NewGame)
+        if (__instance.source != CharacterCustomization.Source.NewGame && __instance.source != CharacterCustomization.Source.HostNewFarm && __instance.source != CharacterCustomization.Source.NewFarmhand)
             return;
 
         __instance.skipIntroButton.downNeighborID = _islandBtn.myID;
@@ -118,13 +109,11 @@ public class MenuPatches
             return;
 
         ToggleSkipIntro(__instance, true);
-    }
-
-    private static void Post_performHoverAction(CharacterCustomization __instance, int x, int y)
-    {
-        if (__instance.source != CharacterCustomization.Source.NewGame)
+        
+        if (__instance.source != CharacterCustomization.Source.NewFarmhand)
             return;
-
-        _islandBtn.drawLabelWithShadow = _islandBtn.containsPoint(x, y);
+        
+        Additions.IslandChanges.ChangeGiftLocation();
+        Game1.warpFarmer("IslandSouth", ModEntry.StartingPoint.X, ModEntry.StartingPoint.Y, false);
     }
 }

@@ -48,6 +48,15 @@ public sealed class ModEntry : Mod
         Patches.MonsterPatches.Apply(harmony);
 
         Config = helper.ReadConfig<ModConfig>();
+        
+#if DEBUG
+        helper.ConsoleCommands.Add("printmenu", "prints current menu.", PrintMenu);
+#endif
+    }
+
+    private void PrintMenu(string arg1, string[] arg2)
+    {
+        Monitor.Log(Game1.activeClickableMenu.GetType().ToString(), LogLevel.Info);
     }
 
     private void OnGameLaunched(object sender, GameLaunchedEventArgs e)

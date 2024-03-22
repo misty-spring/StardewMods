@@ -27,7 +27,7 @@ public sealed class ModEntry : Mod
         //changes mod info (and NPCs)
         helper.Events.GameLoop.DayStarted += Day.OnStart;
         helper.Events.GameLoop.DayEnding += Day.OnEnd;
-        helper.Events.GameLoop.TimeChanged += Day.OnTimeChange;
+        helper.Events.GameLoop.TimeChanged += Time.OnChange;
 
         helper.Events.GameLoop.ReturnedToTitle += TitleReturn;
 
@@ -40,7 +40,7 @@ public sealed class ModEntry : Mod
         Id = ModManifest.UniqueID;
 
         var harmony = new Harmony(ModManifest.UniqueID);
-        NPCPatches.Apply(harmony);
+        NpcPatches.Apply(harmony);
         
         #if DEBUG
         helper.ConsoleCommands.Add("printschedule", "Prints current schedule for spouses.", Debugging.Print);
@@ -49,6 +49,7 @@ public sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("getwarps", "Prints all NPC warps in map.", Debugging.GetNpcWarps);
         helper.ConsoleCommands.Add("allwarps", "Prints all warps in map.", Debugging.GetAllWarps);
         helper.ConsoleCommands.Add("ismoving", "Prints all spouse movements.", Debugging.IsMoving);
+        helper.ConsoleCommands.Add("speed", "Prints all spouse addedSpeed and Speed.", Debugging.Speed);
         #endif
         
         GameStateQuery.Register("mistyspring.spousesisland_IslandVisitDay", Information.IslandVisitDay);
@@ -86,14 +87,17 @@ public sealed class ModEntry : Mod
                 return new[] { $"{Config.Devan}" };
             });
 
-            api.RegisterToken(ModManifest, "AllowChildren", () =>
+            api.RegisterToken(ModManifest, "Children", () =>
             {
                 if (!Context.IsWorldReady || !Config.AllowChildren)
                     return Array.Empty<string>();
-                
-                var hasChildBed = Config.UseFurnitureBed == false || (Config.UseFurnitureBed && Beds.HasAnyKidBeds());
 
-                return new[] { $"{hasChildBed}" };
+                var count = $"count:{Game1.player.getChildrenCount()}";
+                //var hasChildBed = Config.UseFurnitureBed == false || (Config.UseFurnitureBed && Beds.HasAnyKidBeds());
+                var bedOn = Config.UseFurnitureBed == false ? $"bed:{Config.Childbedcolor}" : "bed:furniture";
+                var roomOn = (Config.UseFurnitureBed || Config.ChildRoom) ? "room:on" : "room:off";
+
+                return new[] { count, bedOn, roomOn };
             });
 
             api.RegisterToken(ModManifest, "HasChildren", () =>
@@ -150,6 +154,14 @@ public sealed class ModEntry : Mod
             getValue: () => Config.IslandClothes,
             setValue: value => Config.IslandClothes = value
         );
+
+        configMenu.AddBoolOption(
+            mod: ModManifest,
+            name: () => Helper.Translation.Get("config.AvoidRain.name"),
+            tooltip: () => Helper.Translation.Get("config.AvoidRain.description"),
+            getValue: () => Config.AvoidRain,
+            setValue: value => Config.AvoidRain = value
+        );
         
         configMenu.AddTextOption(
             mod: ModManifest,
@@ -190,6 +202,15 @@ public sealed class ModEntry : Mod
                 getValue: () => Config.AllowChildren,
                 setValue: value => Config.AllowChildren = value
             );
+            
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.ChildRoom.name"),
+                tooltip: () => Helper.Translation.Get("config.ChildRoom.description"),
+                getValue: () => Config.ChildRoom,
+                setValue: value => Config.ChildRoom = value 
+            );
+            
             configMenu.AddBoolOption(
                 mod: ModManifest,
                 name: () => Helper.Translation.Get("config.UseFurnitureBed.name"),
@@ -197,6 +218,7 @@ public sealed class ModEntry : Mod
                 getValue: () => Config.UseFurnitureBed,
                 setValue: value => Config.UseFurnitureBed = value 
             );
+            
             if (Config.UseFurnitureBed == false) //if it's not bed furniture: lets you decide the "mod bed" color.
             {
                 configMenu.AddTextOption(

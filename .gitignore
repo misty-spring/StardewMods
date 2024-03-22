@@ -1,3 +1,10 @@
+#files
+**/IContentPatcherAPI.cs
+**/IGenericModConfigMenuApi.cs
+**/ISpaceCoreApi.cs
+**/.sln
+**/*.DotSettings
+
 # file types
 *.tbin
 *.tmx
@@ -10,6 +17,8 @@
 
 # subfolders
 **/bin/*
+**/.idea/*
+**/.vscode/*
 **/.vs/*
 **/obj/*
 **/Properties/*

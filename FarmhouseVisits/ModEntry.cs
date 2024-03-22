@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using FarmVisitors.Datamodels;
 using FarmVisitors.Models;
 using FarmVisitors.Visit;
@@ -76,6 +75,8 @@ public class ModEntry : Mod
         if (configMenu is null)
             return;
 
+        var hasNonDestructive = Help.ModRegistry.IsLoaded("MadaraUchiha.NonDestructiveNPCs");
+
         #region config
         #region main
         // register mod
@@ -142,11 +143,14 @@ public class ModEntry : Mod
         );
 
         //extra customization
-        configMenu.AddPageLink(
-            mod: ModManifest,
-            pageId: "Places",
-            text: () => TL.Get("config.Places.name")
-        );
+        if (hasNonDestructive)
+        {
+            configMenu.AddPageLink(
+                mod: ModManifest,
+                pageId: "Places",
+                text: () => TL.Get("config.Places.name")
+            );
+        }
 
         //extra customization
         configMenu.AddPageLink(
@@ -257,48 +261,55 @@ public class ModEntry : Mod
         );
         #endregion
 
-        #region places
-        configMenu.AddPage(
-            ModManifest,
-            "Places",
-            () => TL.Get("config.Places.name")
+        //if the player doesn't have non destructive, don't allow walking on farm (to avoid destroying their things)
+        if (hasNonDestructive == false)
+        {
+            Config.WalkOnFarm = false;
+            Config.Shed = false;
+            Config.Greenhouse = false;
+        }
+        else
+        {
+            configMenu.AddPage(
+                ModManifest,
+                "Places",
+                () => TL.Get("config.Places.name")
             );
 
-        configMenu.AddParagraph(
-            ModManifest,
-            () => Helper.Translation.Get("config.Places.description")
+            configMenu.AddParagraph(
+                ModManifest,
+                () => Helper.Translation.Get("config.Places.description")
             );
 
-        configMenu.AddBoolOption(
-            mod: ModManifest,
-            name: () => Helper.Translation.Get("config.WalkOnFarm.name"),
-            tooltip: () => Helper.Translation.Get("config.WalkOnFarm.description"),
-            getValue: () => Config.WalkOnFarm,
-            setValue: value => Config.WalkOnFarm = value
-        );
-        /*
-        configMenu.AddBoolOption(
-            ModManifest,
-            getValue: () => Config.AnimalHomes,
-            setValue: value => Config.AnimalHomes = value,
-            name: () => Data.AnimalBuildingsTitle()
-            );*/
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.WalkOnFarm.name"),
+                tooltip: () => Helper.Translation.Get("config.WalkOnFarm.description"),
+                getValue: () => Config.WalkOnFarm,
+                setValue: value => Config.WalkOnFarm = value
+            );
+            /*
+            configMenu.AddBoolOption(
+                ModManifest,
+                getValue: () => Config.AnimalHomes,
+                setValue: value => Config.AnimalHomes = value,
+                name: () => Data.AnimalBuildingsTitle()
+                );*/
 
-        configMenu.AddBoolOption(
-            ModManifest,
-            getValue: () => Config.Greenhouse,
-            setValue: value => Config.Greenhouse = value,
-            name: () => Game1.content.LoadString("Strings/Buildings:Greenhouse_Name")
+            configMenu.AddBoolOption(
+                ModManifest,
+                getValue: () => Config.Greenhouse,
+                setValue: value => Config.Greenhouse = value,
+                name: () => Game1.content.LoadString("Strings/Buildings:Greenhouse_Name")
             );
 
-        configMenu.AddBoolOption(
-            ModManifest,
-            getValue: () => Config.Shed,
-            setValue: value => Config.Shed = value,
-            name: () => Game1.content.LoadString("Strings/Buildings:Shed_Name")
+            configMenu.AddBoolOption(
+                ModManifest,
+                getValue: () => Config.Shed,
+                setValue: value => Config.Shed = value,
+                name: () => Game1.content.LoadString("Strings/Buildings:Shed_Name")
             );
-        #endregion
-
+        }
         #region debug
         configMenu.AddPage(
             mod: ModManifest,
@@ -462,7 +473,7 @@ public class ModEntry : Mod
                     var visit = Game1.getCharacterFromName(pair.Key);
 
                     //whether npc is free or is forced schedule
-                    var canVisit = Values.IsFree(visit, false) || data.Extras.Force;
+                    var canVisit = Values.IsFree(visit, false) || (data.Extras is not null && data.Extras.Force);
 
                     //if must be exact, checks that time matches. if not, checks if you're in time range.
                     var inTimeRange = data.MustBeExact ? e.NewTime.Equals(data.From) : e.NewTime >= data.From && e.NewTime < (data.To - 10);
@@ -476,7 +487,7 @@ public class ModEntry : Mod
                     Visitor = DupeNPC.Duplicate(visit);
                     HasAnyVisitors = true;
 
-                    if (data.Extras.Force)
+                    if (data.Extras is not null & data.Extras.Force)
                     {
                         Monitor.Log($"Adding NPC {Visitor.Name} by force (Force.Enable = {data.Extras.Force})");
 
@@ -517,7 +528,7 @@ public class ModEntry : Mod
 
 
         //if they're going to sleep, return
-        if (Visitor == null || (bool)VContext?.IsGoingToSleep)
+        if (Visitor == null || VContext.IsGoingToSleep)
             return;
 
         //in the future, add dialogue for when characters fall asleep.
@@ -555,7 +566,7 @@ public class ModEntry : Mod
             if (VContext.CustomVisiting)
             {
                 //if there's a mail string, add for tomorrow
-                var mail = VContext.CustomData.Extras.Mail;
+                var mail = VContext.CustomData?.Extras.Mail;
                 if (!string.IsNullOrWhiteSpace(mail))
                 {
                     Game1.player.mailForTomorrow.Add(mail);
@@ -653,12 +664,12 @@ public class ModEntry : Mod
                     endPoint = newtile
                 };
             }
-            else if (Visitor.currentLocation is FarmHouse)
+            else if (Visitor.currentLocation is FarmHouse f)
             {
                 if (Config.Verbose)
                     Log("Current is farmhouse.");
 
-                newtile = (Visitor.currentLocation as FarmHouse).getRandomOpenPointInHouse(Game1.random);
+                newtile = f.getRandomOpenPointInHouse(Game1.random);
                 Visitor.controller = new PathFindController(
                     Visitor,
                     Visitor.currentLocation,

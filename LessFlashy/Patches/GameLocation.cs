@@ -66,9 +66,13 @@ public class GameLocationPatches
 
     private static void Change(List<TemporaryAnimatedSprite> sprites)
     {
+        if (ModEntry.Config.SoftLight == false)
+            return;
+        
         #if DEBUG
         Log("changing");
         #endif
+        
         foreach (var sprite in sprites)
         {
             sprite.flash = false;
