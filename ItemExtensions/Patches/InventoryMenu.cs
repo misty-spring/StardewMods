@@ -1,5 +1,4 @@
 using HarmonyLib;
-using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Netcode;
@@ -7,7 +6,6 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Objects;
-using StardewValley.Triggers;
 using Object = StardewValley.Object;
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 

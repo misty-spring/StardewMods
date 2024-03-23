@@ -1,6 +1,6 @@
 # Mixed Seeds
 
-The mod allows to add mixed seeds. This also includes the "main" seed (the item you're using), but can be excluded.
+The mod allows to create custom mixed seeds
 
 ## Contents
 

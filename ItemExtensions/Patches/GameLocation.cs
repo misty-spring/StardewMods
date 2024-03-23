@@ -5,7 +5,6 @@ using ItemExtensions.Additions;
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Events;
 using ItemExtensions.Models;
-using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;

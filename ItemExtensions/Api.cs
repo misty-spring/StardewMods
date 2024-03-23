@@ -33,6 +33,8 @@ public interface IApi
     /// <param name="target">Item to search behavior for. (Qualified item ID)</param>
     /// <returns>Whether this item has menu behavior for target.</returns>
     bool HasBehavior(string qualifiedItemId, string target);
+
+    bool IsClump(string qualifiedItemId);
     
     bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false);
     
@@ -90,6 +92,8 @@ public class Api : IApi
         var behavior = value.Find(b => b.TargetId == target);
         return behavior != null;
     }
+
+    public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId);
 
     public bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false) => TrySpawnClump(itemId, position, Utility.fuzzyLocationSearch(locationName), out error, avoidOverlap);
     
