@@ -54,8 +54,10 @@ public partial class ObjectPatches
 
             if (t is not null or MeleeWeapon && t.UpgradeLevel < resource.MinToolLevel)
             {
-                location.playSound("clubhit", tileLocation);
-                location.playSound("clank", tileLocation);
+                foreach (var sound in resource.FailSounds)
+                {
+                    location.playSound(sound, tileLocation);
+                }
                 Game1.drawObjectDialogue(string.Format(ModEntry.Help.Translation.Get("CantBreak"), t.DisplayName));
                 Game1.player.jitterStrength = 1f;
                 return;

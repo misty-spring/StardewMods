@@ -69,9 +69,6 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_OnUnequip");
         
         TriggerActionManager.RegisterTrigger($"{Id}_AddedToStack");
-
-        //temQueryResolver.Register($"{Id}_RANDOM_CLUMPS", ItemQueries.RandomClumps);
-        //ItemQueryResolver.Register($"{Id}_ALL_CLUMPS", ItemQueries.AllClumps);
         
         #if DEBUG
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
@@ -167,10 +164,10 @@ public sealed class ModEntry : Mod
 #endif
 
     internal static bool Holding { get; set; }
-    public static Dictionary<string, ResourceData> BigClumps { get; set; } = new();
-    public static Dictionary<string, ItemData> Data { get; set; } = new();
+    public static Dictionary<string, ResourceData> BigClumps { get; internal set; } = new();
+    public static Dictionary<string, ItemData> Data { get; internal set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
-    public static Dictionary<string, ResourceData> Ores { get; set; } = new();
+    public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
 }

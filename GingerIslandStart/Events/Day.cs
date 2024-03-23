@@ -25,7 +25,9 @@ public class Day
         if(!Game1.player.mailReceived.Contains(ModEntry.GiftWarpId))
             IslandChanges.ChangeGiftLocation();
 
-        var recoveryItem = Help.Data.ReadSaveData<ItemSaveData>(RecoveryKey);
+        TryAddQuest();
+        
+    	var recoveryItem = Help.Data.ReadSaveData<ItemSaveData>(RecoveryKey);
         if (recoveryItem != null)
         {
             //depending on farmhouse unlock: set variables to tent OR house location
@@ -64,6 +66,13 @@ public class Day
             return;
 
         Location.WarpToIsland();
+    }
+
+    private static void TryAddQuest()
+    {
+        var farmersWithoutQuest = Game1.getAllFarmers().Where(f => f.hasQuest($"{ModEntry.Id}_StarterQuest") == false && f.mailReceived.Contains(ModEntry.Id)).ToList();
+        foreach (var farmer in farmersWithoutQuest)
+            farmer.addQuest($"{ModEntry.Id}_StarterQuest");
     }
 
     internal static void OnEnd(object sender, DayEndingEventArgs e)

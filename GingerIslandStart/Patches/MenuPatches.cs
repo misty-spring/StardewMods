@@ -115,5 +115,6 @@ public class MenuPatches
         
         Additions.IslandChanges.ChangeGiftLocation();
         Game1.warpFarmer("IslandSouth", ModEntry.StartingPoint.X, ModEntry.StartingPoint.Y, false);
+        Game1.player.addQuest($"{ModEntry.Id}_StarterQuest");
     }
 }

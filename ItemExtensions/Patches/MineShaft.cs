@@ -13,7 +13,7 @@ public class MineShaftPatches
 {
     private static readonly string[] VanillaStones =
     {
-        //copper (751) and iron (290) are fairly replaceable, so they're replaced by default. but because gold and iridium are rarer, they're excluded. the rest of IDs are stones
+        //copper (751) and iron (290) are fairly low-cost, so they're replaced by default. but because gold and iridium are rarer, they're excluded. the rest of IDs are stones
         "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "290", "450", "668", "670", "751", "760", "762"
     };
     internal static List<string> OrderedByChance { get; set; }= new();
@@ -39,7 +39,7 @@ public class MineShaftPatches
         try
         {
             //don't patch anything that's negative
-            if (__instance.mineLevel < 1)
+            if (__instance.mineLevel < 1) //|| __instance.mineLevel % 10 == 0 //possible "reward" levels don't need a check because they won't have stones anyway
                 return;
 
             CheckResourceNodes(__instance);
@@ -136,7 +136,9 @@ public class MineShaftPatches
             //if not spawnable on mines, skip
             if(ore.SpawnableFloors is null || ore.SpawnableFloors.Any() == false)
                 continue;
-            
+
+            var extraforLevel = ore.AdditionalChancePerLevel * mineLevel;
+                
             foreach (var floor in ore.SpawnableFloors)
             {
                 //if it's of style minSpawnLevel-maxSpawnLevel
@@ -148,18 +150,24 @@ public class MineShaftPatches
                         break; //skip
                     
                     //otherwise, add & break loop
-                    all.Add(id, ore.SpawnFrequency);
+                    all.Add(id, ore.SpawnFrequency + extraforLevel);
                     break;
                 }
                 
                 //or if level is explicitly included
                 if(int.TryParse(floor, out var isInt) && isInt == mineLevel)
-                    all.Add(id, ore.SpawnFrequency);
+                    all.Add(id, ore.SpawnFrequency  + extraforLevel);
             }
         }
         var sorted = from entry in all orderby entry.Value select entry;
         
-        var result = (Dictionary<string, double>)sorted.AsEnumerable();
+        var result = new Dictionary<string, double>();
+        foreach (var pair in sorted)
+        {
+            result.Add(pair.Key, pair.Value);
+        }
+
+        return result;
         
         #if DEBUG
         var sb = new StringBuilder();

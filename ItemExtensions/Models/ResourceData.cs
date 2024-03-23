@@ -49,6 +49,8 @@ public class ResourceData
     /// </summary>
     
     public string Debris { get; set; } = "stone";
+
+    public string[] FailSounds { get; set; } = { "clubhit", "clank" };
     public string BreakingSound { get; set; } = "stoneCrack";
     public string Sound { get; set; } = "hammer";
     public int AddHay { get; set; }
@@ -77,15 +79,9 @@ public class ResourceData
     public LightData Light { get; set; } = null;
 
     public OnBehavior OnDestroy { get; set; } = null;
-    /* in a future update, I migth allow to spawn these on mine floors. They might use % to replace stones, but i'd still have to figure out:
-     * 1. the patch
-     * 2. how to even the percentage across all ores/clumps
-     * 3. if it breaks the game
-     *
-     * I'm guessing I can order a list starting from the one with highest chance, and make it so only a max of 50% stones are replaced. that, or set an ore to replace (so the user can decide willingly). Regardless, it'll be a future change
-     */ 
     public string SpawnOnFloors { get; set; } = null;
     public double SpawnFrequency { get; set; } = 0.1;
+    public double AdditionalChancePerLevel { get; set; }
     internal string[] SpawnableFloors;
     
 
@@ -161,7 +157,7 @@ public class ResourceData
 
         try
         {
-            SpawnableFloors = GetFloorsSimplified().ToArray();
+            SpawnableFloors = GetFloors().ToArray();
         }
         catch (Exception e)
         {
@@ -241,7 +237,7 @@ public class ResourceData
         Tool = "vanilla";
     }
     
-    public IEnumerable<string> GetFloorsSimplified()
+    private IEnumerable<string> GetFloors()
     {
         var all = new List<string>();
         //removes spaces and then separates by comma
@@ -258,40 +254,6 @@ public class ResourceData
             }
             
             all.Add(value);
-        }
-
-        return all;
-    }
-    
-    public List<int> GetFloors()
-    {
-        var all = new List<int>();
-        //removes spaces and then separates by comma
-        var parsed = SpawnOnFloors.Replace(" ", "").Replace(',', ' ');
-        var floors = ArgUtility.SplitBySpace(parsed);
-        foreach (var value in floors)
-        {
-            if(string.IsNullOrWhiteSpace(value))
-                continue;
-            
-            if (int.TryParse(value, out var isInt))
-            {
-                all.Add(isInt);
-                continue;
-            }
-
-            if (!value.Contains('-')) 
-                continue;
-            
-            var split = ArgUtility.SplitBySpace(value.Replace('-', ' '));
-                
-            if(split.Length < 2 || int.TryParse(split[0], out var start) == false || int.TryParse(split[1], out var end) == false)
-                continue;
-
-            for (var i = start; i < end; i++)
-            {
-                all.Add(i);
-            }
         }
 
         return all;
