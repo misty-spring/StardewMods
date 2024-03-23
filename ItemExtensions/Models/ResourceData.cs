@@ -83,10 +83,11 @@ public class ResourceData
      * 3. if it breaks the game
      *
      * I'm guessing I can order a list starting from the one with highest chance, and make it so only a max of 50% stones are replaced. that, or set an ore to replace (so the user can decide willingly). Regardless, it'll be a future change
-     * 
-    * public string SpawnOnFloors { get; set; } = null;
-    * public double SpawnFrequency { get; set; }
-    */
+     */ 
+    public string SpawnOnFloors { get; set; } = null;
+    public double SpawnFrequency { get; set; } = 0.1;
+    internal string[] SpawnableFloors;
+    
 
     public bool IsValid(bool skipTextureCheck)
     {
@@ -157,6 +158,17 @@ public class ResourceData
             Log("Resource's dropped item is empty.", LogLevel.Warn);
             Log("The item will still be added, but this may cause issues.");
         }
+
+        try
+        {
+            SpawnableFloors = GetFloorsSimplified().ToArray();
+        }
+        catch (Exception e)
+        {
+            //silent error because it might not happen unless there's no data, i think.
+            Log("Error: {e}", LogLevel.Trace);
+        }
+        
         return true;
     }
 
@@ -228,9 +240,8 @@ public class ResourceData
         Light = null;
         Tool = "vanilla";
     }
-
-    /*
-    public List<string> GetFloorsSimplified()
+    
+    public IEnumerable<string> GetFloorsSimplified()
     {
         var all = new List<string>();
         //removes spaces and then separates by comma
@@ -285,5 +296,4 @@ public class ResourceData
 
         return all;
     }
-    */
 }

@@ -1,3 +1,4 @@
+using System.Text;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -38,16 +39,53 @@ public class MineShaftPatches
         
     }
 
-    private static List<string> GetAllForThisLevel(int mineLevel)
+    private static Dictionary<string, double> GetAllForThisLevel(int mineLevel)
     {
-        var all = new List<string>();
+        var all = new Dictionary<string, double>();
+        //check every ore
         foreach (var (id, ore) in ModEntry.Ores)
         {
-            foreach (var VARIABLE in ore.)
+            //if not spawnable on mines, skip
+            if(ore.SpawnableFloors is null || ore.SpawnableFloors.Any() == false)
+                continue;
+            
+            foreach (var floor in ore.SpawnableFloors)
             {
+                //if it's of style minSpawnLevel-maxSpawnLevel
+                if (floor.Contains('-'))
+                {
+                    var both = floor.Split('-');
+                    //if less than 2 values, initial is bigger than current OR max is less than current
+                    if (both.Length < 2 || int.Parse(both[0]) > mineLevel || int.Parse(both[1]) < mineLevel)
+                        break; //skip
+                    
+                    //otherwise, add & break loop
+                    all.Add(id, ore.SpawnFrequency);
+                    break;
+                }
                 
+                //or if level is explicitly included
+                if(int.TryParse(floor, out var isInt) && isInt == mineLevel)
+                    all.Add(id, ore.SpawnFrequency);
             }
         }
-        return all;
+        var sorted = from entry in all orderby entry.Value select entry;
+        
+        var result = (Dictionary<string, double>)sorted.AsEnumerable();
+        
+        #if DEBUG
+        var sb = new StringBuilder();
+        foreach (var pair in result)
+        {
+            sb.Append("{ ");
+            sb.Append(pair.Key);
+            sb.Append(", ");
+            sb.Append(pair.Value);
+            sb.Append(" }");
+            sb.Append(", ");
+        }
+        Log($"In level {mineLevel}: " + sb);
+        #endif
+        return result;
     }
 }
