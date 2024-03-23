@@ -1,5 +1,4 @@
 using ItemExtensions.Additions;
-using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
@@ -7,7 +6,6 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.TokenizableStrings;
-using StardewValley.Triggers;
 
 namespace ItemExtensions.Events;
 

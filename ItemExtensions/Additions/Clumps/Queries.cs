@@ -1,7 +1,6 @@
 using System.Text;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
-using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;

@@ -1,6 +1,5 @@
 using System.Text;
 using HarmonyLib;
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
@@ -10,7 +9,7 @@ namespace ItemExtensions.Patches;
 
 public class MineShaftPatches
 {
-    private static readonly string[] VanillaOres = {"", ""};
+    private static readonly string[] VanillaStones = {"", ""};
     internal static List<string> OrderedByChance { get; set; }= new();
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -31,12 +30,51 @@ public class MineShaftPatches
     
     private static void Post_populateLevel(MineShaft __instance)
     {
-        //if none are an ore
-        if (__instance.Objects.Values.Any(o => VanillaOres.Contains(o.ItemId)) == false)
-            return;
+        try
+        {
+            //don't patch anything that's negative
+            if (__instance.mineLevel < 1)
+                return;
+            
+            //if none are an ore
+            if (__instance.Objects.Values.Any(o => VanillaStones.Contains(o.ItemId)) == false)
+                return;
 
-        var canApply = GetAllForThisLevel(__instance.mineLevel);
-        
+            //randomly chooses which stones to replace
+            var all = __instance.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
+
+            var canApply = GetAllForThisLevel(__instance.mineLevel);
+            if (canApply is null || canApply.Any() == false)
+                return;
+
+            //for every stone we selected
+            foreach (var stone in all)
+            {
+                //choose a %
+                var nextDouble = Game1.random.NextDouble();
+                foreach (var (id, chance) in canApply)
+                {
+                    //if % isn't caught by this ore, try with next one
+                    if (nextDouble > chance)
+                        continue;
+
+                    //create data for fixed ore
+                    var ore = new Object(id, 1)
+                    {
+                        TileLocation = stone.TileLocation, Location = stone.Location,
+                        MinutesUntilReady = ModEntry.Ores[id].Health
+                    };
+
+                    //replace & break to avoid re-setting
+                    __instance.Objects[stone.TileLocation] = ore;
+                    break;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log($"Error when postfixing populate for level {__instance.mineLevel}: {e}", LogLevel.Error);
+        }
     }
 
     private static Dictionary<string, double> GetAllForThisLevel(int mineLevel)

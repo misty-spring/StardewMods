@@ -1,7 +1,6 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
-using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;

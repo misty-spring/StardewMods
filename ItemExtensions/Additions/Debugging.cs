@@ -1,5 +1,4 @@
 using ItemExtensions.Additions.Clumps;
-using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;

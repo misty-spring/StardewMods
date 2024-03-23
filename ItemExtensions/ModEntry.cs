@@ -45,6 +45,7 @@ public sealed class ModEntry : Mod
         GameLocationPatches.Apply(harmony);
         InventoryPatches.Apply(harmony);
         ItemPatches.Apply(harmony);
+        MineShaftPatches.Apply(harmony);
         ObjectPatches.Apply(harmony);
         ResourceClumpPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
