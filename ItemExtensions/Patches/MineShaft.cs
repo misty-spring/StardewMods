@@ -11,7 +11,11 @@ namespace ItemExtensions.Patches;
 
 public class MineShaftPatches
 {
-    private static readonly string[] VanillaStones = {"", ""};
+    private static readonly string[] VanillaStones =
+    {
+        //copper (751) and iron (290) are fairly replaceable, so they're replaced by default. but because gold and iridium are rarer, they're excluded. the rest of IDs are stones
+        "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "290", "450", "668", "670", "751", "760", "762"
+    };
     internal static List<string> OrderedByChance { get; set; }= new();
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -39,7 +43,10 @@ public class MineShaftPatches
                 return;
 
             CheckResourceNodes(__instance);
-            CheckResourceClumps(__instance);
+            
+            //clumps aren't changed here to avoid issues because the zone is special
+            if(__instance.mineLevel != 77377)
+                CheckResourceClumps(__instance);
         }
         catch (Exception e)
         {
