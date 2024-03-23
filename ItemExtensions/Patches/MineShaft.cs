@@ -1,8 +1,10 @@
 using System.Text;
 using HarmonyLib;
+using ItemExtensions.Additions.Clumps;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -35,41 +37,9 @@ public class MineShaftPatches
             //don't patch anything that's negative
             if (__instance.mineLevel < 1)
                 return;
-            
-            //if none are an ore
-            if (__instance.Objects.Values.Any(o => VanillaStones.Contains(o.ItemId)) == false)
-                return;
 
-            //randomly chooses which stones to replace
-            var all = __instance.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
-
-            var canApply = GetAllForThisLevel(__instance.mineLevel);
-            if (canApply is null || canApply.Any() == false)
-                return;
-
-            //for every stone we selected
-            foreach (var stone in all)
-            {
-                //choose a %
-                var nextDouble = Game1.random.NextDouble();
-                foreach (var (id, chance) in canApply)
-                {
-                    //if % isn't caught by this ore, try with next one
-                    if (nextDouble > chance)
-                        continue;
-
-                    //create data for fixed ore
-                    var ore = new Object(id, 1)
-                    {
-                        TileLocation = stone.TileLocation, Location = stone.Location,
-                        MinutesUntilReady = ModEntry.Ores[id].Health
-                    };
-
-                    //replace & break to avoid re-setting
-                    __instance.Objects[stone.TileLocation] = ore;
-                    break;
-                }
-            }
+            CheckResourceNodes(__instance);
+            CheckResourceClumps(__instance);
         }
         catch (Exception e)
         {
@@ -77,11 +47,84 @@ public class MineShaftPatches
         }
     }
 
-    private static Dictionary<string, double> GetAllForThisLevel(int mineLevel)
+    private static void CheckResourceNodes(MineShaft mineShaft)
+    {
+        //if none are an ore
+        if (mineShaft.Objects.Values.Any(o => VanillaStones.Contains(o.ItemId)) == false)
+            return;
+
+        //randomly chooses which stones to replace
+        var all = mineShaft.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
+
+        var canApply = GetAllForThisLevel(mineShaft.mineLevel);
+        if (canApply is null || canApply.Any() == false)
+            return;
+
+        //for every stone we selected
+        foreach (var stone in all)
+        {
+            //choose a %
+            var nextDouble = Game1.random.NextDouble();
+            foreach (var (id, chance) in canApply)
+            {
+                //if % isn't caught by this ore, try with next one
+                if (nextDouble > chance)
+                    continue;
+
+                //create data for fixed ore
+                var ore = new Object(id, 1)
+                {
+                    TileLocation = stone.TileLocation, 
+                    //Location = stone.Location,
+                    MinutesUntilReady = ModEntry.Ores[id].Health
+                };
+
+                //replace & break to avoid re-setting
+                mineShaft.Objects[stone.TileLocation] = ore;
+                break;
+            }
+        }
+    }
+
+    private static void CheckResourceClumps(MineShaft mineShaft)
+    {
+        //if none are a clump
+        if (mineShaft.terrainFeatures.Values.Any(t => t is ResourceClump == false))
+            return;
+
+        //randomly chooses which stones to replace
+        var all = mineShaft.terrainFeatures.Values.Where(t => t is ResourceClump);
+
+        var canApply = GetAllForThisLevel(mineShaft.mineLevel, true);
+        if (canApply is null || canApply.Any() == false)
+            return;
+
+        //for every stone we selected
+        foreach (var stone in all)
+        {
+            //choose a %
+            var nextDouble = Game1.random.NextDouble();
+            foreach (var (id, chance) in canApply)
+            {
+                //if % isn't caught by this ore, try with next one
+                if (nextDouble > chance)
+                    continue;
+
+                //create data for fixed ore
+                var newClump = ExtensionClump.Create(id, ModEntry.BigClumps[id], stone.Tile);
+
+                //replace & break to avoid re-setting
+                mineShaft.terrainFeatures[stone.Tile] = newClump;
+                break;
+            }
+        }
+    }
+
+    private static Dictionary<string, double> GetAllForThisLevel(int mineLevel, bool isClump = false)
     {
         var all = new Dictionary<string, double>();
         //check every ore
-        foreach (var (id, ore) in ModEntry.Ores)
+        foreach (var (id, ore) in isClump ? ModEntry.BigClumps : ModEntry.Ores)
         {
             //if not spawnable on mines, skip
             if(ore.SpawnableFloors is null || ore.SpawnableFloors.Any() == false)

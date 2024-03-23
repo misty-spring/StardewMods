@@ -18,14 +18,6 @@ public interface IApi
     bool IsResource(string id, out int? health, out string itemDropped);
     
     /// <summary>
-    /// Checks for light data.
-    /// </summary>
-    /// <param name="id">Qualified item ID.</param>
-    /// <param name="light">Light color</param>
-    /// <returns>Whether this item has light data.</returns>
-    bool HasLight(string id, out Color? light);
-    
-    /// <summary>
     /// Checks mod's menu behaviors. If a target isn't provided, it'll search whether any exist.
     /// </summary>
     /// <param name="qualifiedItemId">Qualified item ID.</param>
