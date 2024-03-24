@@ -31,6 +31,8 @@ Custom resources are very extensive, with many customizable fields:
 
 | name         | type                         | Required | description                                               |
 |--------------|------------------------------|----------|-----------------------------------------------------------|
+| Texture      | `string`                     | Yes      | The resource's texture path.                              |
+| SpriteIndex  | `int`                        | Yes      | Index in texture to use.                                  |
 | Width        | `int`                        | Yes      | Resource size.                                            |
 | Height       | `int`                        | Yes      | Resource size.                                            |
 | Health       | `int`                        | Yes      | Hits before breaking\*.                                   |
@@ -56,6 +58,9 @@ For example: copper's health is 3, cinder shards' is 12, and radioactive ores ha
 | AddHay        | `int`                        | No       | Hay to add.                  |
 | SecretNotes   | `bool`                       | No       | If it can drop notes.        |
 
+Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md).
+
+
 ### For ore customization
 | name          | type                         | Required | description                  |
 |---------------|------------------------------|----------|------------------------------|
@@ -64,7 +69,9 @@ For example: copper's health is 3, cinder shards' is 12, and radioactive ores ha
 | Sound         | `string`                     | No       | Sound on hit.                |
 | Shake         | `bool`                       | No       | Whether to shake on hit.     |
 | MinToolLevel  | `int`                        | No       | Minimum level.               |
-| Light         | `LightData`                  | No       | Item light.                  |        
+| Light         | `LightData`                  | No       | Item light.                  |  
+
+Fields for LightData can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md).      
 
 ### For EXP/stats
 
@@ -86,8 +93,6 @@ For example: copper's health is 3, cinder shards' is 12, and radioactive ores ha
 
 ****= Must be comma-separated. For example, "5, 6, 7-9" will spawn it on floors 5, 6, and 7 to 9.
 
-Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md).
-Fields for LightData can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md).
 
 ## Debris
 
@@ -102,12 +107,12 @@ The debris can be one of three types: pre-defined, an object, or custom (advance
 
 \* = These are the "big" versions of stone and wood. On breaking, they'll show an animation of the stump/boulder cracking apart.
 
-You can apply a tint to pre-defined debris. Just set it after the debris type: e.g, `"Debris": "stone lightpurple""`
+You can apply a tint to pre-defined debris. Just set it after the debris type: e.g, `"Debris": "stone lightpurple""`.
 
 ### Item debris
 
 These debris can be any item with qualified Id- it'll be shown in "chunks" like when you eat an item.
-For example: `"Debris":"(O)40"`
+For example: `"Debris":"(O)40"`.
 
 ### Custom animation for debris (advanced)
 
@@ -115,7 +120,7 @@ You can make debris be a custom animation instead. For this, you must set the de
 
 `custom <tint> <texturepath> <x> <y> <width> <height> <frames> [speed] [alphaFade]`
 
-parameters between `<>` are obligatory. Those in `[]` are optional
+parameters between `<>` are obligatory. Those in `[]` are optional.
 
 Example:
 
