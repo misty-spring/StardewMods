@@ -6,7 +6,7 @@
 
 `mistyspring.ItemExtensions_ToolUpgrade <player> <tool> [min] [max] [recursive]`
 
-Checks if the given tool is in the upgrade range. Must be in inventory- if `recursive`, it'll search on chests too.
+Checks if the given tool is in the upgrade range. Must be in inventory, but if `recursive`, it'll search on chests too.
 
 Min defaults to 0, Max defaults to 4 and recursive is default false.
 

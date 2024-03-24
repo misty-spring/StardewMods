@@ -6,8 +6,12 @@ For C# modders: By default, resources are treated as objects. Anything bigger th
 ## Contents
 
 * [Format](#format)
-  * [Required fields](#required-fields)
-  * [Optional fields](#optional-fields)
+  * [Main fields](#main-fields)
+  * [Other fields](#other-fields)
+    * [For item drops](#for-item-drops)
+    * [For ore customization](#for-ore-customization)
+    * [For EXP/stats](#for-expstats)
+    * [Spawning in the mines](#spawning-in-the-mines)
 * [Debris](#debris)
   * [Pre-defined](#pre-defined-debris-types)
   * [Use item texture](#item-debris)
@@ -18,48 +22,67 @@ For C# modders: By default, resources are treated as objects. Anything bigger th
 
 ---
 
-## Format
+# Format
 
-Custom resources are very extensive, but only a few fields are obligatory:
+Custom resources are very extensive, with many customizable fields:
 
-### Required fields
+## Main fields
 
-| name        | type     | Required | description                                               |
-|-------------|----------|----------|-----------------------------------------------------------|
-| Width       | `int`    | Yes      | Resource size.                                            |
-| Height      | `int`    | Yes      | Resource size.                                            |
-| Health      | `int`    | Yes      | Hits before breaking\*.                                   |
-| ItemDropped | `string` | Yes      | Item dropped.                                             |
-| MinDrops    | `int`    | Yes      | Max. amount dropped. If no max is set, always drops this. |
-| Tool        | `string` | Yes      | Tool to use.\**                                           |
+| name         | type                         | Required | description                                               |
+|--------------|------------------------------|----------|-----------------------------------------------------------|
+| Width        | `int`                        | Yes      | Resource size.                                            |
+| Height       | `int`                        | Yes      | Resource size.                                            |
+| Health       | `int`                        | Yes      | Hits before breaking\*.                                   |
+| Tool         | `string`                     | Yes      | Tool to use.\**                                           |
+| ItemDropped  | `string`                     | No       | Item dropped.                                             |
+| MinDrops     | `int`                        | No       | Min. amount dropped. If no max is set, always drops this. |
+| ContextTags  | `List<string>`               | No       | Context tags.                                             |
+| CustomFields | `Dictionary<string, string>` | No       | Custom Fields.                                            |
 
-\* = Every time the player hits, it reduces UpgradeLevel + 1 (e.g iridium pickaxe removes 5 HP).
+
+*= Every time the player hits, it reduces UpgradeLevel + 1 (e.g iridium pickaxe removes 5 HP).
 For example: copper's health is 3, cinder shards' is 12, and radioactive ores have 25.
 
-\** = This can be any tool class (vanilla's classes can be seen in [Data/Tools](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Custom_tools)), "any", or a Weapon type (e.g Hammer, Sword, etc).
+**= This can be any tool class (vanilla's classes can be seen in [Data/Tools](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Custom_tools)), "any", or a Weapon type (e.g. Hammer, Sword, etc.).
 
-### Optional fields
+## Other fields
 
-
+### For item drops
 | name          | type                         | Required | description                  |
 |---------------|------------------------------|----------|------------------------------|
 | MaxDrops      | `int`                        | No       | Max. amount dropped.         |
 | ExtraItems    | `List<ExtraSpawn>`           | No       | Extra items to drop.         |
+| AddHay        | `int`                        | No       | Hay to add.                  |
+| SecretNotes   | `bool`                       | No       | If it can drop notes.        |
+
+### For ore customization
+| name          | type                         | Required | description                  |
+|---------------|------------------------------|----------|------------------------------|
 | Debris        | `string`                     | No       | Debris to show on breaking.  |
 | BreakingSound | `string`                     | No       | Breaking sound.              |
 | Sound         | `string`                     | No       | Sound on hit.                |
-| AddHay        | `int`                        | No       | Hay to add.                  |
-| SecretNotes   | `bool`                       | No       | If it can drop notes.        |
 | Shake         | `bool`                       | No       | Whether to shake on hit.     |
-| CountTowards  | `StatCounter`                | No       | Stat to count towards\*\*\*. |
 | MinToolLevel  | `int`                        | No       | Minimum level.               |
+| Light         | `LightData`                  | No       | Item light.                  |        
+
+### For EXP/stats
+
+| name          | type                         | Required | description                  |
+|---------------|------------------------------|----------|------------------------------|
+| CountTowards  | `StatCounter`                | No       | Stat to count towards\*\*\*. |
 | Exp           | `int`                        | No       | Exp to add on break.         |
 | Skill         | `string`                     | No       | Skill to add EXP for.        |
-| ContextTags   | `List<string>`               | No       | Context tags.                |
-| CustomFields  | `Dictionary<string, string>` | No       | Custom Fields.               |
-| Light         | `LightData`                  | No       | Item light.                  |
 
-\*\** = The possible stats are [here](#adding-to-stats).
+
+*** = The possible stats are [here](#adding-to-stats).
+
+### Spawning in the mines
+| name                     | type                         | Required | description                                           |
+|--------------------------|------------------------------|----------|-------------------------------------------------------|
+| SpawnOnFloors            | `string`                     | No       | Mine floors to spawn in.\*\*\*\*                      |
+| SpawnFrequency           | `double`                     | No       | How likely it is for this ore to appear in the mines. |
+| AdditionalChancePerLevel | `double`                     | No       | Extra chance to spawn per mine level                  |
+****= Must be comma-separated. For example, "5, 6, 7-9" will spawn it on floors 5, 6, and 7 to 9.
 
 Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md).
 Fields for LightData can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md).
