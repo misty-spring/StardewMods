@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
 	  <EnableHarmony>true</EnableHarmony>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +13,11 @@
 
   <ItemGroup>
     <Folder Include="i18n\" />
+  </ItemGroup>
+	
+
+  <ItemGroup>
+    <ProjectReference Include="..\ItemExtensions\ItemExtensions.csproj" />
   </ItemGroup>
 
 </Project>

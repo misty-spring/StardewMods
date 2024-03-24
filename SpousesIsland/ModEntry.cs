@@ -8,7 +8,6 @@ using HarmonyLib;
 using Microsoft.Xna.Framework.Graphics;
 using SpousesIsland.Additions;
 using SpousesIsland.Patches;
-using SpousesIsland.APIs;
 using SpousesIsland.Events;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Characters;
@@ -231,7 +230,7 @@ public sealed class ModEntry : Mod
                 );
                 configMenu.AddImage(
                     mod: ModManifest,
-                    texture: () => ModEntry.Help.ModContent.Load<Texture2D>("assets/KidbedSamples.png"),
+                    texture: () => Help.ModContent.Load<Texture2D>("assets/KidbedSamples.png"),
                     texturePixelArea: null,
                     scale: 1
                 );

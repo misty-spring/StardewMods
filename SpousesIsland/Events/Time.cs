@@ -4,7 +4,6 @@ using SpousesIsland.Additions;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using StardewValley.Pathfinding;
 using static SpousesIsland.ModEntry;
 
 namespace SpousesIsland.Events;
