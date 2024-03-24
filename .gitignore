@@ -13,7 +13,6 @@
 *.sln
 *.sln.DotSettings.user
 *.txt
-*.csproj
 
 # subfolders
 **/bin/*
