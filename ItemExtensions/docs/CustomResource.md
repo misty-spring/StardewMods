@@ -1,6 +1,7 @@
 # Resources
 
 Custom resources can be of two types: Nodes (like ore), or Resource Clumps.
+
 For C# modders: By default, resources are treated as objects. Anything bigger than 1x1 tiles will behave as a Resource Clump.
 
 ## Contents
@@ -82,6 +83,7 @@ For example: copper's health is 3, cinder shards' is 12, and radioactive ores ha
 | SpawnOnFloors            | `string`                     | No       | Mine floors to spawn in.\*\*\*\*                      |
 | SpawnFrequency           | `double`                     | No       | How likely it is for this ore to appear in the mines. |
 | AdditionalChancePerLevel | `double`                     | No       | Extra chance to spawn per mine level                  |
+
 ****= Must be comma-separated. For example, "5, 6, 7-9" will spawn it on floors 5, 6, and 7 to 9.
 
 Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md).
