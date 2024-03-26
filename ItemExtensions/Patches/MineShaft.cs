@@ -156,7 +156,7 @@ public class MineShaftPatches
                     //if it's of style minSpawnLevel-maxSpawnLevel
                     if (floor.Contains('-'))
                     {
-                        var clean = floor.Replace("-2", "\"-2\"");
+                        var clean = floor.Replace("--999", "-\"-999\"");
                         var both = ArgUtility.SplitQuoteAware(clean, '-');
                         //if less than 2 values, or can't parse either as int
                         if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
@@ -164,7 +164,7 @@ public class MineShaftPatches
                             break;
                             
                         //initial is bigger than current OR max is less than current (& end level isn't max)
-                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != 2))
+                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
                             break; //skip
                     
                         //otherwise, add & break loop
@@ -181,7 +181,7 @@ public class MineShaftPatches
                             break;
                             
                         //initial is bigger than current OR max is less than current (& end level isn't max)
-                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != 2))
+                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
                             break; //skip
                     
                         //otherwise, add & break loop
@@ -190,7 +190,7 @@ public class MineShaftPatches
                     }
                 
                     //or if level is explicitly included
-                    if(int.TryParse(floor, out var isInt) && (isInt == -2 || isInt == mineLevel))
+                    if(int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
                         all.Add(id, spawns.SpawnFrequency  + extraforLevel);
                 }
             }

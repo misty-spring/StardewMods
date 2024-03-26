@@ -1,6 +1,7 @@
 # Resources
 
 Custom resources can be of two types: Nodes (like ore), or Resource Clumps.
+
 For C# modders: By default, resources are treated as objects. Anything bigger than 1x1 tiles will behave as a Resource Clump.
 
 ## Contents
@@ -30,6 +31,8 @@ Custom resources are very extensive, with many customizable fields:
 
 | name         | type                         | Required | description                                               |
 |--------------|------------------------------|----------|-----------------------------------------------------------|
+| Texture      | `string`                     | Yes      | The resource's texture path.                              |
+| SpriteIndex  | `int`                        | Yes      | Index in texture to use.                                  |
 | Width        | `int`                        | Yes      | Resource size.                                            |
 | Height       | `int`                        | Yes      | Resource size.                                            |
 | Health       | `int`                        | Yes      | Hits before breaking\*.                                   |
@@ -65,7 +68,8 @@ Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/Stard
 | Sound         | `string`                     | No       | Sound on hit.                |
 | Shake         | `bool`                       | No       | Whether to shake on hit.     |
 | MinToolLevel  | `int`                        | No       | Minimum level.               |
-| Light         | `LightData`                  | No       | Item light.                  |        
+| Light         | `LightData`                  | No       | Item light.                  |  
+
 Fields for LightData can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md).
 
 ### For EXP/stats
@@ -80,22 +84,23 @@ Fields for LightData can be found [here](https://github.com/misty-spring/Stardew
 *** = The possible stats are [here](#adding-to-stats).
 
 ### Spawning in the mines
-| name       | type              | Required | description          |
-|------------|-------------------|----------|----------------------|
-| MineSpawns | `List<MineSpawn>` | No       | List of mine spawns. |
 
+To spawn in mines, use `MineSpawns` (which is a `List<MineSpawn>`):
 
-`MineSpawn`s have these fields:
-- **Floors**: Floors to spawn in. Must be slash separated. For example, "5, 7/9, 13/25" will spawn it on floors 5, 7 to 9, and 13 to 25.
-- **Condition**: A GSQ for these spawns to apply. (optional) Calculated on mine generation.
-- **Type**: Can be: All (always spawns),  Qi (danger mines only), Normal (regular mines only)
-
+| name                     | type     | Required | description                                                                                                                |
+|--------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------|
+| Floors                   | `string` | Yes      | Floors to spawn in. Must be slash separated. For example, "5, 7/9, 13/25" will spawn it on floors 5, 7 to 9, and 13 to 25. |
+| Condition                | `string` | No       | A GSQ for these spawns to apply. (optional) Calculated on mine generation.                                                 |
+| Type                     | `string` | No       | Can be: All (always spawns),  Qi (danger mines only), Normal (regular mines only). Default "All"                           |
+| SpawnFrequency           | `double` | No       | How likely it is for this ore to appear in the mines. 					                                                                |
+| AdditionalChancePerLevel | `double` | No       | Extra chance to spawn per mine level                  					                                                                |
+Note: To spawn until infinite floors, use `"<desired floor>/-999"` E.g., "150/-999".
 
 So, for example:
 ```jsonc
 "MineSpawns":[
   {
-    "Floors": "121/-2", //from skull cavern 1 until infinty
+    "Floors": "121/-999", //from skull cavern 1 until infinty
     "Condition": "PLAYER_HAS_MAIL Current SomeCustomFlag", //optional
     "Type":"Qi" //only if the mine is in hardmode
   }
@@ -115,12 +120,12 @@ The debris can be one of three types: pre-defined, an object, or custom (advance
 
 \* = These are the "big" versions of stone and wood. On breaking, they'll show an animation of the stump/boulder cracking apart.
 
-You can apply a tint to pre-defined debris. Just set it after the debris type: e.g, `"Debris": "stone lightpurple""`
+You can apply a tint to pre-defined debris. Just set it after the debris type: e.g, `"Debris": "stone lightpurple""`.
 
 ### Item debris
 
 These debris can be any item with qualified Id- it'll be shown in "chunks" like when you eat an item.
-For example: `"Debris":"(O)40"`
+For example: `"Debris":"(O)40"`.
 
 ### Custom animation for debris (advanced)
 
@@ -128,7 +133,7 @@ You can make debris be a custom animation instead. For this, you must set the de
 
 `custom <tint> <texturepath> <x> <y> <width> <height> <frames> [speed] [alphaFade]`
 
-parameters between `<>` are obligatory. Those in `[]` are optional
+parameters between `<>` are obligatory. Those in `[]` are optional.
 
 Example:
 
