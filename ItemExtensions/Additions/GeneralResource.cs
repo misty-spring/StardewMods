@@ -61,6 +61,10 @@ public static class GeneralResource
     /// <returns>Whether the aforementioned match. If tool is null (ie bomb), it's always true.</returns>
     internal static bool ToolMatches(Tool tool, ResourceData data)
     {
+        #if DEBUG
+        Log($"Tool: {tool?.GetToolData()?.ClassName}, required: {data.Tool}");
+        #endif
+        
         //bombs call with null tool for Clumps
         if (tool is null)
             return true;
@@ -115,6 +119,9 @@ public static class GeneralResource
         
         //else, compare values
         var className = tool.GetToolData().ClassName;
+#if DEBUG
+        Log($"Tool: {className}, required: {data.Tool}, matches? {className.Equals(data.Tool, IgnoreCase)}");
+#endif
         return className.Equals(data.Tool, IgnoreCase);
     }
 

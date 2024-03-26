@@ -25,7 +25,7 @@ public partial class ObjectPatches
                 return;
             }
 
-            if (!ToolMatches(t, resource))
+            if (ToolMatches(t, resource) == false)
             {
                 if (ShouldShowWrongTool(t,resource) && CanShowMessage)
                 {
@@ -34,6 +34,8 @@ public partial class ObjectPatches
                     CanShowMessage = false;
                     Game1.delayedActions.Add(new DelayedAction(500, Reset));
                 }
+
+                return;
             }
 
             //set vars

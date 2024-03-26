@@ -1,6 +1,7 @@
 using System.Text;
 using HarmonyLib;
 using ItemExtensions.Additions.Clumps;
+using ItemExtensions.Models.Enums;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
@@ -63,7 +64,7 @@ public class MineShaftPatches
         //randomly chooses which stones to replace
         var all = mineShaft.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
 
-        var canApply = GetAllForThisLevel(mineShaft.mineLevel);
+        var canApply = GetAllForThisLevel(mineShaft);
         if (canApply is null || canApply.Any() == false)
             return;
 
@@ -102,7 +103,7 @@ public class MineShaftPatches
         //randomly chooses which stones to replace
         var all = mineShaft.terrainFeatures.Values.Where(t => t is ResourceClump);
 
-        var canApply = GetAllForThisLevel(mineShaft.mineLevel, true);
+        var canApply = GetAllForThisLevel(mineShaft, true);
         if (canApply is null || canApply.Any() == false)
             return;
 
@@ -127,36 +128,71 @@ public class MineShaftPatches
         }
     }
 
-    private static Dictionary<string, double> GetAllForThisLevel(int mineLevel, bool isClump = false)
+    private static Dictionary<string, double> GetAllForThisLevel(MineShaft mine, bool isClump = false)
     {
+        var mineLevel = mine.mineLevel;
         var all = new Dictionary<string, double>();
         //check every ore
         foreach (var (id, ore) in isClump ? ModEntry.BigClumps : ModEntry.Ores)
         {
             //if not spawnable on mines, skip
-            if(ore.SpawnableFloors is null || ore.SpawnableFloors.Any() == false)
+            if(ore.MineSpawns is null || ore.MineSpawns.Any() == false)
                 continue;
 
             var extraforLevel = ore.AdditionalChancePerLevel * mineLevel;
                 
-            foreach (var floor in ore.SpawnableFloors)
+            foreach (var spawns in ore.MineSpawns)
             {
-                //if it's of style minSpawnLevel-maxSpawnLevel
-                if (floor.Contains('-'))
-                {
-                    var both = floor.Split('-');
-                    //if less than 2 values, initial is bigger than current OR max is less than current
-                    if (both.Length < 2 || int.Parse(both[0]) > mineLevel || int.Parse(both[1]) < mineLevel)
-                        break; //skip
-                    
-                    //otherwise, add & break loop
-                    all.Add(id, ore.SpawnFrequency + extraforLevel);
-                    break;
-                }
+                //if qi-only & not qi on, skip
+                if(spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
+                    continue;
                 
-                //or if level is explicitly included
-                if(int.TryParse(floor, out var isInt) && isInt == mineLevel)
-                    all.Add(id, ore.SpawnFrequency  + extraforLevel);
+                //if vanilla-only & qi on, skip
+                if(spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
+                    continue;
+                
+                foreach (var floor in spawns.RealFloors)
+                {
+                    //if it's of style minSpawnLevel-maxSpawnLevel
+                    if (floor.Contains('-'))
+                    {
+                        var clean = floor.Replace("-2", "\"-2\"");
+                        var both = ArgUtility.SplitQuoteAware(clean, '-');
+                        //if less than 2 values, or can't parse either as int
+                        if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
+                            int.TryParse(both[1], out var endLevel) == false)
+                            break;
+                            
+                        //initial is bigger than current OR max is less than current (& end level isn't max)
+                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != 2))
+                            break; //skip
+                    
+                        //otherwise, add & break loop
+                        all.Add(id, ore.SpawnFrequency + extraforLevel);
+                        break;
+                    }
+                    
+                    if (floor.Contains('/'))
+                    {
+                        var both = ArgUtility.SplitQuoteAware(floor, '/');
+                        //if less than 2 values, or can't parse either as int
+                        if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
+                            int.TryParse(both[1], out var endLevel) == false)
+                            break;
+                            
+                        //initial is bigger than current OR max is less than current (& end level isn't max)
+                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != 2))
+                            break; //skip
+                    
+                        //otherwise, add & break loop
+                        all.Add(id, ore.SpawnFrequency + extraforLevel);
+                        break;
+                    }
+                
+                    //or if level is explicitly included
+                    if(int.TryParse(floor, out var isInt) && (isInt == -2 || isInt == mineLevel))
+                        all.Add(id, ore.SpawnFrequency  + extraforLevel);
+                }
             }
         }
         var sorted = from entry in all orderby entry.Value select entry;

@@ -82,7 +82,7 @@ public class ResourceData
     public string SpawnOnFloors { get; set; } = null;
     public double SpawnFrequency { get; set; } = 0.1;
     public double AdditionalChancePerLevel { get; set; }
-    internal string[] SpawnableFloors;
+    internal List<MineSpawn> MineSpawns { get; set; } = new();
     
 
     public bool IsValid(bool skipTextureCheck)
@@ -157,14 +157,27 @@ public class ResourceData
 
         try
         {
-            SpawnableFloors = GetFloors().ToArray();
+            MineSpawns.Add(new MineSpawn(GetFloors(SpawnOnFloors), true));
         }
         catch (Exception e)
         {
             //silent error because it might not happen unless there's no data, i think.
-            Log("Error: {e}", LogLevel.Trace);
+            Log($"Error: {e}");
         }
         
+        foreach (var floorData in MineSpawns)
+        {
+            try
+            {
+                floorData.Parse(GetFloors(floorData.Floors)); 
+                MineSpawns.Add(floorData);
+            }
+            catch (Exception e)
+            {
+                //silent error because it might not happen unless there's no data, i think.
+                Log($"Error: {e}");
+            }
+        }
         return true;
     }
 
@@ -237,11 +250,11 @@ public class ResourceData
         Tool = "vanilla";
     }
     
-    private IEnumerable<string> GetFloors()
+    private IEnumerable<string> GetFloors(string floorData)
     {
         var all = new List<string>();
         //removes spaces and then separates by comma
-        var parsed = SpawnOnFloors.Replace(" ", "").Replace(',', ' ');
+        var parsed = floorData.Replace(" ", "").Replace(',', ' ');
         var floors = ArgUtility.SplitBySpace(parsed);
         foreach (var value in floors)
         {

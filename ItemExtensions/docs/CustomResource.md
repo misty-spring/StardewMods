@@ -77,13 +77,29 @@ For example: copper's health is 3, cinder shards' is 12, and radioactive ores ha
 *** = The possible stats are [here](#adding-to-stats).
 
 ### Spawning in the mines
-| name                     | type                         | Required | description                                           |
-|--------------------------|------------------------------|----------|-------------------------------------------------------|
-| SpawnOnFloors            | `string`                     | No       | Mine floors to spawn in.\*\*\*\*                      |
-| SpawnFrequency           | `double`                     | No       | How likely it is for this ore to appear in the mines. |
-| AdditionalChancePerLevel | `double`                     | No       | Extra chance to spawn per mine level                  |
-****= Must be comma-separated. For example, "5, 6, 7-9" will spawn it on floors 5, 6, and 7 to 9.
+| name                     | type              | Required | description                                           |
+|--------------------------|-------------------|----------|-------------------------------------------------------|
+| SpawnOnFloors            | `string`          | No       | Mine floors to add in. Will always spawn.\*\*\*\*     |
+| SpawnFrequency           | `double`          | No       | How likely it is for this ore to appear in the mines. |
+| AdditionalChancePerLevel | `double`          | No       | Extra chance to spawn per mine level                  |
+| MineSpawns               | `List<MineSpawn>` | No       | List of *conditional* mine spawns.                    |
+****= Must be slash separated. For example, "5, 7/9, 13/25" will spawn it on floors 5, 7 to 9, and 13 to 25.
 
+`MineSpawn`s have these fields:
+- **Floors**: Floors to spawn in. (Same format as `SpawnOnFloors`)
+- **Condition**: A GSQ for these spawns to apply. (optional) Calculated on mine generation.
+- **Type**: Can be: All (always spawns),  Qi (danger mines only), Normal (regular mines only)
+
+So, for example:
+```jsonc
+"MineSpawns":[
+  {
+    "Floors": "121/-2", //from skull cavern 1 until infinty
+    "Condition": "PLAYER_HAS_MAIL Current SomeCustomFlag", //optional
+    "Type":"Qi" //only if the mine is in hardmode
+  }
+]
+```
 Fields for ExtraSpawns can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md).
 Fields for LightData can be found [here](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md).
 

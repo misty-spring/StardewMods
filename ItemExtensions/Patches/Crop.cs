@@ -37,7 +37,7 @@ internal class CropPatches
         {
             if (ModEntry.Seeds.TryGetValue(itemId, out var mixedSeeds) == false)
             {
-                if (Game1.objectData[itemId].CustomFields is null)
+                if (Game1.objectData.TryGetValue(itemId, out var objectData) == false || objectData.CustomFields is null)
                     return;
 
                 if (Game1.objectData[itemId].CustomFields.TryGetValue(ModKeys.MixedSeeds, out var seeds) == false)
