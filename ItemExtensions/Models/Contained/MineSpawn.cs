@@ -17,8 +17,9 @@ public class MineSpawn
     public string Floors { get; set; } = null;
     public MineType Type { get; set; } = MineType.All;
     public string Condition { get; set; } = null;
-    //public bool ExcludeGeneralLevels { get; set; }
     internal string[] RealFloors { get; set; }
+    public double SpawnFrequency { get; set; } = 0.1;
+    public double AdditionalChancePerLevel { get; set; }
 
     public void Parse(IEnumerable<string> floors)
     {

@@ -138,11 +138,11 @@ public class MineShaftPatches
             //if not spawnable on mines, skip
             if(ore.MineSpawns is null || ore.MineSpawns.Any() == false)
                 continue;
-
-            var extraforLevel = ore.AdditionalChancePerLevel * mineLevel;
                 
             foreach (var spawns in ore.MineSpawns)
             {
+                var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
+                
                 //if qi-only & not qi on, skip
                 if(spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
                     continue;
@@ -168,7 +168,7 @@ public class MineShaftPatches
                             break; //skip
                     
                         //otherwise, add & break loop
-                        all.Add(id, ore.SpawnFrequency + extraforLevel);
+                        all.Add(id, spawns.SpawnFrequency + extraforLevel);
                         break;
                     }
                     
@@ -185,13 +185,13 @@ public class MineShaftPatches
                             break; //skip
                     
                         //otherwise, add & break loop
-                        all.Add(id, ore.SpawnFrequency + extraforLevel);
+                        all.Add(id, spawns.SpawnFrequency + extraforLevel);
                         break;
                     }
                 
                     //or if level is explicitly included
                     if(int.TryParse(floor, out var isInt) && (isInt == -2 || isInt == mineLevel))
-                        all.Add(id, ore.SpawnFrequency  + extraforLevel);
+                        all.Add(id, spawns.SpawnFrequency  + extraforLevel);
                 }
             }
         }
