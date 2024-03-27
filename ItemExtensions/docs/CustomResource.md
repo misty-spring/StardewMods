@@ -94,6 +94,7 @@ You can make mine spawns with `MineSpawns` (which is a `List<MineSpawn>`):
 | Type                     | `string` | No       | Can be: All (always spawns),  Qi (danger mines only), Normal (regular mines only). Default "All"                           |
 | SpawnFrequency           | `double` | No       | How likely it is for this ore to appear in the mines. 					                                                                |
 | AdditionalChancePerLevel | `double` | No       | Extra chance to spawn per mine level                  					                                                                |
+
 Note: To spawn until infinite floors, use `"<desired floor>/-999"` E.g., "150/-999".
 
 So, for example:
@@ -101,7 +102,7 @@ So, for example:
 "MineSpawns":[
   {
     "Floors": "121/-999", //from skull cavern 1 until infinty
-    "Condition": "PLAYER_HAS_MAIL Current SomeCustomFlag", //optional
+    "Condition": "PLAYER_HAS_MAIL Current SomeCustomFlag", //optional, only if you want it to use extra conditions
     "Type":"Qi" //only if the mine is in hardmode
   }
 ]
