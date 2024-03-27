@@ -16,8 +16,10 @@ public sealed class ModEntry : Mod
 {
     public override void Entry(IModHelper helper)
     {
+#if DEBUG
         helper.Events.GameLoop.GameLaunched += OnLaunch;
-        
+#endif        
+
         helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
         helper.Events.Multiplayer.PeerContextReceived += OnPeerConnected;
         
@@ -77,44 +79,27 @@ public sealed class ModEntry : Mod
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
-    private static void OnLaunch(object sender, GameLaunchedEventArgs e)
-    {
-#if DEBUG
-        Assets.WriteTemplates();
-#endif
-        /*
-        var platform = Environment.OSVersion.Platform;
-        // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
-        switch (platform) 
-        {
-            case PlatformID.Win32NT:
-            case PlatformID.Win32S:
-            case PlatformID.Win32Windows:
-            case PlatformID.WinCE:
-                Mon.Log("Getting resources for the first time...(Windows only)");
-                GetResources();
-                break;
-            default:
-                return;
-        }*/
-    }
+
+    public override object GetApi() =>new Api();
+    
+    private static void OnLaunch(object sender, GameLaunchedEventArgs e) => Assets.WriteTemplates();
 
     private void OnPeerConnected(object sender, PeerContextReceivedEventArgs e)
     {
-        throw new NotImplementedException();
-    }
-
-
-    public override object GetApi() =>new Api();
-
-    private static void LocaleChanged(object sender, LocaleChangedEventArgs e)
-    {
-        Comma = e.NewLanguage switch
-        {
-            LocalizedContentManager.LanguageCode.ja => "、",
-            LocalizedContentManager.LanguageCode.zh => "，",
-            _ => ", "
-        };
+        if (e.Peer.IsHost == false || e.Peer.HasSmapi == false)
+            return;
+        
+        var farmer = Game1.getFarmer(e.Peer.PlayerID);
+#if DEBUG
+        Mon.Log($"connected ID: {farmer.UniqueMultiplayerID}, own ID: {Game1.player.UniqueMultiplayerID}, match? {farmer.UniqueMultiplayerID == Game1.player.UniqueMultiplayerID}", LogLevel.Info);
+#endif
+        if (farmer != Game1.player)
+            return;
+#if DEBUG
+        Mon.Log("FOUND", LogLevel.Warn);
+#endif
+        
+        GetResources();
     }
 
     /// <summary>
@@ -181,6 +166,16 @@ public sealed class ModEntry : Mod
         Monitor.Log($"Total {Game1.options.actionButton.Length}");
 
         ActionButtons = temp;
+    }
+
+    private static void LocaleChanged(object sender, LocaleChangedEventArgs e)
+    {
+        Comma = e.NewLanguage switch
+        {
+            LocalizedContentManager.LanguageCode.ja => "、",
+            LocalizedContentManager.LanguageCode.zh => "，",
+            _ => ", "
+        };
     }
 
     /// <summary>Buttons used for custom item actions</summary>
