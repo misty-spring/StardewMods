@@ -16,11 +16,11 @@ public sealed class ModEntry : Mod
 {
     public override void Entry(IModHelper helper)
     {
-        #if DEBUG
-        helper.Events.GameLoop.GameLaunched += Assets.WriteTemplates;
-        #endif
+        helper.Events.GameLoop.GameLaunched += OnLaunch;
         
         helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
+        helper.Events.Multiplayer.PeerContextReceived += OnPeerConnected;
+        
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         helper.Events.GameLoop.DayStarted += Day.Started;
         helper.Events.GameLoop.DayEnding += Day.Ending;
@@ -77,6 +77,33 @@ public sealed class ModEntry : Mod
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
+    private static void OnLaunch(object sender, GameLaunchedEventArgs e)
+    {
+#if DEBUG
+        Assets.WriteTemplates();
+#endif
+        /*
+        var platform = Environment.OSVersion.Platform;
+        // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+        switch (platform) 
+        {
+            case PlatformID.Win32NT:
+            case PlatformID.Win32S:
+            case PlatformID.Win32Windows:
+            case PlatformID.WinCE:
+                Mon.Log("Getting resources for the first time...(Windows only)");
+                GetResources();
+                break;
+            default:
+                return;
+        }*/
+    }
+
+    private void OnPeerConnected(object sender, PeerContextReceivedEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
 
     public override object GetApi() =>new Api();
 
@@ -100,12 +127,18 @@ public sealed class ModEntry : Mod
         //return if not on saveparsed
         if (e.NewStage.Equals(LoadStage.SaveParsed) == false)
             return;
-        
+
+        Mon.Log("Getting resources for the first time...");
+        GetResources();
+    }
+
+    private static void GetResources()
+    {
         // get resources
         var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
         Parser.Resources(oreData, true);
         var oc = Ores?.Count ?? 0;
-        Monitor.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
+        Mon.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
     }
 
     /// <summary>

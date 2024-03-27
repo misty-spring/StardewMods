@@ -170,7 +170,7 @@ public static class Assets
         }
     }
 
-    internal static void WriteTemplates(object sender, GameLaunchedEventArgs e)
+    internal static void WriteTemplates()
     {
         if(Helper.Data.ReadJsonFile<ItemData>("Templates/Item/Model.json") is not null)
             return;

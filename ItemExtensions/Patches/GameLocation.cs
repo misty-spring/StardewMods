@@ -84,7 +84,9 @@ public class GameLocationPatches
         var instructionsToInsert = new List<CodeInstruction>();
 
         var index = codes.FindIndex(ci => ci.opcode == OpCodes.Callvirt && ci.operand is MethodInfo { Name: "get_Chance"});
+#if DEBUG
         Log($"index: {index}", LogLevel.Info);
+#endif
         
         var redirectTo = codes.Find(ci => codes.IndexOf(ci) == index + 3);
         var breakAt = codes.Find(ci => ci.opcode == OpCodes.Ldloc_S && ((LocalBuilder)ci.operand).LocalIndex == 11);
@@ -94,11 +96,6 @@ public class GameLocationPatches
         {
             if(codes[i].opcode != OpCodes.Ldloc_S)
                 continue;
-            
-            /* not necessary, because the first ldloc_S + ldfld is also the one we want
-            if(codes[i].OperandIs(13) == false)
-                continue;
-            */
             
             if(codes[i + 1].opcode != OpCodes.Ldfld)
                 continue;
@@ -126,12 +123,6 @@ public class GameLocationPatches
         if (index <= -1) 
             return codes.AsEnumerable();
         
-        #if DEBUG
-        Log($"INDEXED \nname: {codes[index].opcode.Name}, type: {codes[index].opcode.OpCodeType}, operandtype: {codes[index].opcode.OperandType}, \npop: {codes[index].opcode.StackBehaviourPop}, push: {codes[index].opcode.StackBehaviourPush}, \nvalue: {codes[index].opcode.Value}, flowcontrol: {codes[index].opcode.FlowControl}, operand: {codes[index].operand}");
-        Log($"REDIRECT \nname: {redirectTo.opcode.Name}, type: {redirectTo.opcode.OpCodeType}, operandtype: {redirectTo.opcode.OperandType}, \npop: {redirectTo.opcode.StackBehaviourPop}, push: {redirectTo.opcode.StackBehaviourPush}, \nvalue: {redirectTo.opcode.Value}, flowcontrol: {redirectTo.opcode.FlowControl}, operand: {redirectTo.operand}");
-        Log($"BREAK \nname: {breakAt.opcode.Name}, type: {breakAt.opcode.OpCodeType}, operandtype: {breakAt.opcode.OperandType}, \npop: {breakAt.opcode.StackBehaviourPop}, push: {breakAt.opcode.StackBehaviourPush}, \nvalue: {breakAt.opcode.Value}, flowcontrol: {breakAt.opcode.FlowControl}, operand: {breakAt.operand}");
-        #endif
-        
         /* if (TryCustomClump(forage, context, vector2))
          * {
          *      ++this.numberOfSpawnedObjectsOnMap;
@@ -147,16 +138,9 @@ public class GameLocationPatches
         
         //call my code w/ prev args
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(GameLocationPatches), nameof(CheckIfCustomClump))));
-        /*
-        // ??? get result ?
-        //instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 25));
-        //instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 25));*/
 
         //tell where to go if false
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Brfalse, brfalseLabel)); 
-        
-        // ?
-        //instructionsToInsert.Add(new CodeInstruction(OpCodes.Nop));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Brfalse, brfalseLabel));
         
         //if true: +spawnobj
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg, 0)); 

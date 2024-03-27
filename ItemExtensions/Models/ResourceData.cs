@@ -74,15 +74,17 @@ public class ResourceData
     internal int ActualSkill { get; set; } = -1;
 
     // Extra
-    public List<string> ContextTags { get; set; } = null;
-    public Dictionary<string, string> CustomFields { get; set; } = null;
+    public List<string> ContextTags { get; set; } = new();
+    public Dictionary<string, string> CustomFields { get; set; } = new();
     public LightData Light { get; set; } = null;
 
     public OnBehavior OnDestroy { get; set; } = null;
+    //general
     public string SpawnOnFloors { get; set; } = null;
     public double SpawnFrequency { get; set; } = 0.1;
     public double AdditionalChancePerLevel { get; set; }
-    internal List<MineSpawn> MineSpawns { get; set; } = null;
+    //conditional
+    internal List<MineSpawn> MineSpawns { get; set; } = new();
     
 
     public bool IsValid(bool skipTextureCheck)
