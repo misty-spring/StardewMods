@@ -85,7 +85,7 @@ Fields for LightData can be found [here](https://github.com/misty-spring/Stardew
 
 ### Spawning in the mines
 
-To spawn in mines, use `MineSpawns` (which is a `List<MineSpawn>`):
+You can make mine spawns with `MineSpawns` (which is a `List<MineSpawn>`):
 
 | name                     | type     | Required | description                                                                                                                |
 |--------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------|

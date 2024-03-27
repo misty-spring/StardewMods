@@ -13,6 +13,8 @@ internal class CropPatches
 #else
     private const LogLevel Level =  LogLevel.Trace;
 #endif
+
+    internal static string Cached { get; set; }
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
 
@@ -33,10 +35,21 @@ internal class CropPatches
     /// <param name="__result">The unqualified seed ID to use.</param>
     public static void Post_ResolveSeedId(string itemId, GameLocation location, ref string __result)
     {
+        if (Cached != null)
+        {
+            __result = Cached;
+            return;
+        }
+        #if DEBUG
+        Log($"CALLED ({itemId})");
+        #endif
         try
         {
             if (ModEntry.Seeds.TryGetValue(itemId, out var mixedSeeds) == false)
             {
+#if DEBUG
+                Log($"No data in ModSeeds for {itemId}, checking object custom fields");
+#endif
                 if (Game1.objectData.TryGetValue(itemId, out var objectData) == false || objectData.CustomFields is null)
                     return;
 
@@ -49,9 +62,36 @@ internal class CropPatches
 
                 foreach (var id in splitBySpace)
                 {
-                    //if season is allowed, has crops anytime OR in greenhouse
-                    if (Game1.cropData[id].Seasons.Contains(Game1.season) || HasCropsAnytime || (Game1.season == Season.Winter && location.IsGreenhouse))
-                        allFields.Add(id);
+                    //if not in season:
+                    if (Game1.cropData.TryGetValue(id, out var cropData) == false || cropData.Seasons.Contains(Game1.season) == false)
+                    {
+                        //if no cropAnytime mod
+                        if(HasCropsAnytime == false) 
+                            continue;
+                    
+                        //if outdoors
+                        if (location.IsOutdoors)
+                            continue;
+                    }
+#if DEBUG
+                    Log($"Adding seed id {id}");
+#endif
+                    switch (id)
+                    {
+                        case "$vanilla_flowers":
+                            allFields.AddRange(GetVanillaFlowersForSeason(Game1.season));
+                            break;
+                        case "$vanilla_crops":
+                            allFields.AddRange(GetVanillaCropsForSeason(Game1.season));
+                            break;
+                        case "$vanilla_seeds":
+                            allFields.AddRange(GetVanillaFlowersForSeason(Game1.season));
+                            allFields.AddRange(GetVanillaCropsForSeason(Game1.season));
+                            break;
+                        default:
+                            allFields.Add(id);
+                            break;
+                    }
                 }
 
                 //also add the "main" seed
@@ -63,6 +103,7 @@ internal class CropPatches
                 var fromField = Game1.random.ChooseFrom(allFields);
 
                 Log($"Choosing seed {fromField}");
+                Cached = fromField;
                 __result = fromField;
 
                 return;
@@ -72,23 +113,47 @@ internal class CropPatches
 
             foreach (var seedData in mixedSeeds)
             {
+#if DEBUG
+                Log($"Checking seed id {seedData.ItemId}");
+#endif
                 if (!string.IsNullOrWhiteSpace(seedData.Condition) &&
                     GameStateQuery.CheckConditions(seedData.Condition, location, Game1.player) == false)
                     continue;
 
-                /* the seed will be skipped if all of these are valid:
-                 * not in season
-                 * winter and not in greenhouse
-                 * doesn't have CropsAnytime
-                 * is outdoors and NOT in island context
-                 */
-                if (Game1.cropData[seedData.ItemId].Seasons.Contains(Game1.season) == false && (Game1.season == Season.Winter && !location.IsGreenhouse) && HasCropsAnytime == false && (Game1.player.currentLocation.IsOutdoors && Game1.player.currentLocation.InIslandContext() == false))
-                    continue;
+                //if not in season:
+                if (Game1.cropData.TryGetValue(seedData.ItemId, out var cropData) == false || cropData.Seasons.Contains(Game1.season) == false)
+                {
+                    //if no cropAnytime mod
+                    if(HasCropsAnytime == false) 
+                        continue;
+                    
+                    //if outdoors
+                    if (location.IsOutdoors)
+                        continue;
+                }
 
+#if DEBUG
+                Log($"Adding seed id {seedData.ItemId} by {seedData.Weight}");
+#endif
                 //add as many times as weight. e.g, weight 1 gets added once
                 for (var i = 0; i < seedData.Weight; i++)
                 {
-                    all.Add(seedData.ItemId);
+                    switch (seedData.ItemId)
+                    {
+                        case "$vanilla_flowers":
+                            all.AddRange(GetVanillaFlowersForSeason(Game1.season));
+                            break;
+                        case "$vanilla_crops":
+                            all.AddRange(GetVanillaCropsForSeason(Game1.season));
+                            break;
+                        case "$vanilla_seeds":
+                            all.AddRange(GetVanillaFlowersForSeason(Game1.season));
+                            all.AddRange(GetVanillaCropsForSeason(Game1.season));
+                            break;
+                        default:
+                            all.Add(seedData.ItemId);
+                            break;
+                    }
                 }
             }
 
@@ -120,6 +185,7 @@ internal class CropPatches
             
             var chosen = Game1.random.ChooseFrom(all);
             Log($"Choosing seed {chosen}");
+            Cached = chosen;
             __result = chosen;
         }
         catch (Exception e)

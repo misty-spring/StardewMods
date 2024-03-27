@@ -7,11 +7,13 @@ public class MineSpawn
     public MineSpawn()
     {
     }
-    
-    public MineSpawn(IEnumerable<string> floors, bool main)
+
+    public MineSpawn(IEnumerable<string> floors, double spawnFrequency, double additionalChancePerLevel, bool main)
     {
         Type = main ? MineType.General : MineType.All;
         RealFloors = floors as string[];
+        SpawnFrequency = spawnFrequency;
+        AdditionalChancePerLevel = additionalChancePerLevel;
     }
 
     public string Floors { get; set; } = null;

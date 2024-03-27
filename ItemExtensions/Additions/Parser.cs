@@ -128,7 +128,7 @@ public static class Parser
         ModEntry.Seeds = new Dictionary<string, List<MixedSeedData>>();
         foreach(var pair in seeds)
         {
-            Log($"Checking {pair.Key} data...");
+            Log($"Checking {pair.Key} data...", LogLevel.Debug);
 
             var validSeeds = new List<MixedSeedData>();
             var hasAllSeeds = true;

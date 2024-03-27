@@ -43,6 +43,7 @@ public sealed class ModEntry : Mod
         CropPatches.Apply(harmony);
         FarmerPatches.Apply(harmony);
         GameLocationPatches.Apply(harmony);
+        HoeDirtPatches.Apply(harmony);
         InventoryPatches.Apply(harmony);
         ItemPatches.Apply(harmony);
         MineShaftPatches.Apply(harmony);

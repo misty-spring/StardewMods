@@ -82,7 +82,7 @@ public class ResourceData
     public string SpawnOnFloors { get; set; } = null;
     public double SpawnFrequency { get; set; } = 0.1;
     public double AdditionalChancePerLevel { get; set; }
-    internal List<MineSpawn> MineSpawns { get; set; } = new();
+    internal List<MineSpawn> MineSpawns { get; set; } = null;
     
 
     public bool IsValid(bool skipTextureCheck)
@@ -157,7 +157,8 @@ public class ResourceData
 
         try
         {
-            MineSpawns.Add(new MineSpawn(GetFloors(SpawnOnFloors), true));
+            if(!string.IsNullOrWhiteSpace(SpawnOnFloors))
+                MineSpawns.Add(new MineSpawn(GetFloors(SpawnOnFloors), SpawnFrequency, AdditionalChancePerLevel, true));
         }
         catch (Exception e)
         {
@@ -169,6 +170,9 @@ public class ResourceData
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(floorData.Floors))
+                    continue;
+                
                 floorData.Parse(GetFloors(floorData.Floors)); 
                 MineSpawns.Add(floorData);
             }

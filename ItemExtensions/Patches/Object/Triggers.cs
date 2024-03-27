@@ -31,6 +31,10 @@ public partial class ObjectPatches
     {
         try
         {
+#if DEBUG
+            Log($"Clearing cached seed...(last held item {who.mostRecentlyGrabbedItem?.QualifiedItemId})");
+#endif
+            CropPatches.Cached = null;
             ModEntry.Holding = false;
             TriggerActionManager.Raise($"{ModEntry.Id}_OnStopHolding");
         }

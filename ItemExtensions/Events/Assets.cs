@@ -14,6 +14,12 @@ public static class Assets
     private static string Id => ModEntry.Id;
     public static void OnInvalidate(object sender, AssetsInvalidatedEventArgs e)
     {
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals("Data/Crops")))
+        {
+            var objectData = Helper.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
+            Parser.ObjectData(objectData);
+        }
+        
         //don't reload if on title screen
         if (!Context.IsWorldReady)
             return;
