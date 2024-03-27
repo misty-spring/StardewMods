@@ -22,10 +22,10 @@ public class ResourceData
     
     // Required
     public string Name { get; set; }
-    public string DisplayName { get; set; }
-    public string Description { get; set; }
-    public string Texture { get; set; }
-    public int SpriteIndex { get; set; } = -1;
+    public string DisplayName { get; set; } = "[LocalizedText Strings\\Objects:Stone_Name]";
+    public string Description { get; set; } = "[LocalizedText Strings\\Objects:Stone_Description]";
+    public string Texture { get; set; } = "Maps/springobjects";
+    public int SpriteIndex { get; set; } = 0;
     
     // Region
     public int Width { get; set; } = 1;
@@ -41,7 +41,7 @@ public class ResourceData
     public string ItemDropped { get; set; }
     public int MinDrops { get; set; } = 1;
     public int MaxDrops { get; set; }
-    public List<ExtraSpawn> ExtraItems { get; set; }
+    public List<ExtraSpawn> ExtraItems { get; set; } = new();
     
     // Type of resource
     /// <summary>
@@ -63,14 +63,15 @@ public class ResourceData
     /// </summary>
     public string Tool { get; set; } = "Pickaxe";
 
-    public NotifyForTool? SayWrongTool { get; set; } = null;
+    public NotifyForTool? SayWrongTool { get; set; }
     /// <summary>
     /// Minimum upgrade tool should have. If a weapon, the minimum number is checked. 
     /// ("number": 10% of average damage)
     /// </summary>
     public int MinToolLevel { get; set; }
-    public int Exp { get; set; }
-    public string Skill { get; set; }
+
+    public int Exp { get; set; } = 5;
+    public string Skill { get; set; } = "mining";
     internal int ActualSkill { get; set; } = -1;
 
     // Extra
