@@ -19,9 +19,8 @@ namespace ItemExtensions.Models;
 /// </summary>
 /// <see cref="CachedTriggerAction"/>
 /// <see cref="StardewValley.Menus.GameMenu"/>
-public class MenuBehavior : IWorldChangeData, ISpawnItemData
+public class MenuBehavior : IWorldChangeData
 {
-    private int _quality;
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
     public string TargetId { get; set; } //qualified item ID
@@ -66,31 +65,6 @@ public class MenuBehavior : IWorldChangeData, ISpawnItemData
     public string RemoveQuest { get; set; }
     public string RemoveSpecialOrder { get; set; }
     public List<string> AddFlags { get; set; } = new();
-    
-    //from ispawnitemdata
-    public string ItemId { get; set; }
-    public List<string> RandomItemId { get; set; } = new();
-    public int? MaxItems { get; set; }
-    public int MinStack { get; set; }
-    public int MaxStack { get; set; }
-
-    int ISpawnItemData.Quality
-    {
-        get => _quality;
-        set => _quality = value;
-    }
-
-    public string ObjectInternalName { get; set; }
-    public string ObjectDisplayName { get; set; }
-    public int ToolUpgradeLevel { get; set; }
-    public bool IsRecipe { get; set; }
-    public List<QuantityModifier> StackModifiers { get; set; } = new();
-    public QuantityModifier.QuantityModifierMode StackModifierMode { get; set; }
-    public List<QuantityModifier> QualityModifiers { get; set; } = new();
-    public QuantityModifier.QuantityModifierMode QualityModifierMode { get; set; }
-    public Dictionary<string, string> ModData { get; set; } = new();
-    public string PerItemCondition { get; set; }
-    public ItemQuerySearchMode Filter { get; set; }
 
     public MenuBehavior()
     {}
@@ -135,9 +109,6 @@ public class MenuBehavior : IWorldChangeData, ISpawnItemData
         }
         
         o = this;
-        
-        if(string.IsNullOrWhiteSpace(TargetId) == false)
-            ItemId = ReplaceBy;
         
         return true;
     }
