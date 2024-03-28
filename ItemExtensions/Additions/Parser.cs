@@ -89,6 +89,11 @@ public static class Parser
 
     public static void Resources(Dictionary<string, ResourceData> clumps, bool skipTextureCheck = false)
     {
+        Log($"Beginning to parse data. (Raw entries: {clumps?.Count ?? 0})");
+
+        if (clumps is null)
+            return;
+        
         ModEntry.Ores = new Dictionary<string, ResourceData>();
         ModEntry.BigClumps = new Dictionary<string, ResourceData>();
         foreach(var (id, data) in clumps)
@@ -117,7 +122,10 @@ public static class Parser
             else
                 ModEntry.Ores.Add(id, data);
         }
+        
+        Log($"Loaded {ModEntry.Ores?.Count ?? 0} custom nodes, and {ModEntry.BigClumps?.Count ?? 0} resource clumps.", LogLevel.Debug);
 
+        Log("Invalidating asset 'Data/Objects'...");
         ModEntry.Help.GameContent.InvalidateCache("Data/Objects");
     }
 

@@ -54,7 +54,7 @@ public class ResourceClumpPatches
                 r.modData.TryGetValue(ModKeys.LightTransparency, out var transRaw) == false)
             {
 #if DEBUG
-                Log($"Data for {id} light not found. (onAddedToLocation)", LogLevel.Trace);
+                ModEntry.Mon.VerboseLog($"Data for {id} light not found. (onAddedToLocation)");
 #endif
                 return;
             }

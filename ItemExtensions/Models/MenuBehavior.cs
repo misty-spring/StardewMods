@@ -3,6 +3,8 @@ using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.GameData;
+using StardewValley.Internal;
 using StardewValley.Triggers;
 
 // ReSharper disable FieldCanBeMadeReadOnly.Global
@@ -17,8 +19,9 @@ namespace ItemExtensions.Models;
 /// </summary>
 /// <see cref="CachedTriggerAction"/>
 /// <see cref="StardewValley.Menus.GameMenu"/>
-public class MenuBehavior : IWorldChangeData
+public class MenuBehavior : IWorldChangeData, ISpawnItemData
 {
+    private int _quality;
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
     public string TargetId { get; set; } //qualified item ID
@@ -40,28 +43,54 @@ public class MenuBehavior : IWorldChangeData
     internal double ActualPrice { get; set; }
     internal Modifier PriceModifier { get; set; }
     
+    //from iworldchange
     public string Health { get; set; }
     public string Stamina { get; set; }
     
-    public Dictionary<string, int> AddItems { get; set; }
-    public Dictionary<string, int> RemoveItems { get; set; }
+    public Dictionary<string, int> AddItems { get; set; } = new();
+    public Dictionary<string, int> RemoveItems { get; set; } = new();
     
     public string PlayMusic { get; set; }
     public string PlaySound { get; set; }
     
     public string TriggerAction { get; set; }
-    public string[] RemoveFlags { get; set; }
+    public List<string> RemoveFlags { get; set; } = new();
     public string Conditions { get; set; }
-    
-    public List<string> AddContextTags { get; set; }
-    public List<string> RemoveContextTags { get; set; }
+
+    public List<string> AddContextTags { get; set; } = new();
+    public List<string> RemoveContextTags { get; set; } = new();
     
     public string AddQuest { get; set; }
     public string AddSpecialOrder { get; set; }
     
     public string RemoveQuest { get; set; }
     public string RemoveSpecialOrder { get; set; }
-    public string[] AddFlags { get; set; }
+    public List<string> AddFlags { get; set; } = new();
+    
+    //from ispawnitemdata
+    public string ItemId { get; set; }
+    public List<string> RandomItemId { get; set; } = new();
+    public int? MaxItems { get; set; }
+    public int MinStack { get; set; }
+    public int MaxStack { get; set; }
+
+    int ISpawnItemData.Quality
+    {
+        get => _quality;
+        set => _quality = value;
+    }
+
+    public string ObjectInternalName { get; set; }
+    public string ObjectDisplayName { get; set; }
+    public int ToolUpgradeLevel { get; set; }
+    public bool IsRecipe { get; set; }
+    public List<QuantityModifier> StackModifiers { get; set; } = new();
+    public QuantityModifier.QuantityModifierMode StackModifierMode { get; set; }
+    public List<QuantityModifier> QualityModifiers { get; set; } = new();
+    public QuantityModifier.QuantityModifierMode QualityModifierMode { get; set; }
+    public Dictionary<string, string> ModData { get; set; } = new();
+    public string PerItemCondition { get; set; }
+    public ItemQuerySearchMode Filter { get; set; }
 
     public MenuBehavior()
     {}
@@ -96,7 +125,7 @@ public class MenuBehavior : IWorldChangeData
             o = null;
             return false;
         }
-        
+
         var target = ItemRegistry.GetDataOrErrorItem(TargetId);
         if (target.DisplayName == ItemRegistry.GetErrorItemName())
         {
@@ -106,6 +135,10 @@ public class MenuBehavior : IWorldChangeData
         }
         
         o = this;
+        
+        if(string.IsNullOrWhiteSpace(TargetId) == false)
+            ItemId = ReplaceBy;
+        
         return true;
     }
     

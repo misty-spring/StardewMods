@@ -1,7 +1,9 @@
 using System.Text;
+using System.Xml.Schema;
 using HarmonyLib;
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models.Enums;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
@@ -40,7 +42,7 @@ public class MineShaftPatches
         try
         {
             //don't patch anything that's negative
-            if (__instance.mineLevel < 1) //|| __instance.mineLevel % 10 == 0 //possible "reward" levels don't need a check because they won't have stones anyway
+            if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0)
                 return;
 
             CheckResourceNodes(__instance);
@@ -48,6 +50,43 @@ public class MineShaftPatches
             //clumps aren't changed here to avoid issues because the zone is special
             if(__instance.mineLevel != 77377)
                 CheckResourceClumps(__instance);
+            else
+            {
+                var canApply = GetAllForThisLevel(__instance, true);
+                if (canApply is null || canApply.Any() == false)
+                    return;
+
+                foreach (var( id, chance) in canApply)
+                {
+                    if(Game1.random.NextDouble() > chance)
+                        continue;
+                    
+                    for (var i = 0; i < 10; i++)
+                    {
+                        var placeable = true;
+                        var tile = __instance.getRandomTile();
+                        for (var j = 1; j < ModEntry.BigClumps[id].Width; j++)
+                        {
+                            for (var k = 1; k < ModEntry.BigClumps[id].Height; k++)
+                            {
+                                if(__instance.isTileClearForMineObjects(tile + new Vector2(j,k)))
+                                    continue;
+                                
+                                placeable = false;
+                                break;
+                            }
+
+                            if (!placeable)
+                                break;
+                        }
+                        if(!placeable)
+                            continue;
+
+                        __instance.resourceClumps.Add(ExtensionClump.Create(id, ModEntry.BigClumps[id],tile));
+                        break;
+                    }
+                }
+            }
         }
         catch (Exception e)
         {
@@ -75,6 +114,9 @@ public class MineShaftPatches
             var nextDouble = Game1.random.NextDouble();
             foreach (var (id, chance) in canApply)
             {
+#if DEBUG
+                Log($"Chance: {nextDouble} for {id}");
+#endif
                 //if % isn't caught by this ore, try with next one
                 if (nextDouble > chance)
                     continue;
@@ -114,6 +156,9 @@ public class MineShaftPatches
             var nextDouble = Game1.random.NextDouble();
             foreach (var (id, chance) in canApply)
             {
+#if DEBUG
+                Log($"Chance: {nextDouble} for {id}");
+#endif
                 //if % isn't caught by this ore, try with next one
                 if (nextDouble > chance)
                     continue;
@@ -136,11 +181,17 @@ public class MineShaftPatches
         foreach (var (id, ore) in isClump ? ModEntry.BigClumps : ModEntry.Ores)
         {
             //if not spawnable on mines, skip
-            if(ore.MineSpawns is null || ore.MineSpawns.Any() == false)
+            if(ore.RealSpawnData is null || ore.RealSpawnData.Any() == false)
                 continue;
                 
-            foreach (var spawns in ore.MineSpawns)
+            foreach (var spawns in ore.RealSpawnData)
             {
+#if DEBUG
+                Log($"{spawns?.RealFloors.Count} in {id}");
+#endif
+                if (spawns?.RealFloors is null)
+                    continue;
+                
                 var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
                 
                 //if qi-only & not qi on, skip
@@ -153,25 +204,13 @@ public class MineShaftPatches
                 
                 foreach (var floor in spawns.RealFloors)
                 {
+#if DEBUG
+                    Log($"Data: {floor}");
+#endif
+                    if (string.IsNullOrWhiteSpace(floor))
+                        continue;
+                    
                     //if it's of style minSpawnLevel-maxSpawnLevel
-                    if (floor.Contains('-'))
-                    {
-                        var clean = floor.Replace("--999", "-\"-999\"");
-                        var both = ArgUtility.SplitQuoteAware(clean, '-');
-                        //if less than 2 values, or can't parse either as int
-                        if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
-                            int.TryParse(both[1], out var endLevel) == false)
-                            break;
-                            
-                        //initial is bigger than current OR max is less than current (& end level isn't max)
-                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
-                            break; //skip
-                    
-                        //otherwise, add & break loop
-                        all.Add(id, spawns.SpawnFrequency + extraforLevel);
-                        break;
-                    }
-                    
                     if (floor.Contains('/'))
                     {
                         var both = ArgUtility.SplitQuoteAware(floor, '/');
@@ -180,6 +219,9 @@ public class MineShaftPatches
                             int.TryParse(both[1], out var endLevel) == false)
                             break;
                             
+#if DEBUG
+                        Log($"Level range: {startLevel} to {endLevel}");
+#endif
                         //initial is bigger than current OR max is less than current (& end level isn't max)
                         if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
                             break; //skip
@@ -201,6 +243,9 @@ public class MineShaftPatches
         foreach (var pair in sorted)
         {
             result.Add(pair.Key, pair.Value);
+#if DEBUG
+            Log($"Added {pair.Key} to list ({pair.Value})");
+#endif
         }
 
         return result;

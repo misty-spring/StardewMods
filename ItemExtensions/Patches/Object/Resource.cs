@@ -83,7 +83,15 @@ public partial class ObjectPatches
                 temporaryAnimatedSprite.CopyAppearanceFromItemId(__instance.QualifiedItemId);
                 Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);
                 //dust
-                location.TemporarySprites.Add(new TemporaryAnimatedSprite("TileSheets\\animations", new Microsoft.Xna.Framework.Rectangle(0, 1600, 64, 128), 80f, 8, 9999, new Vector2(19f, 27f) * 64f + new Vector2(32f, -16f), flicker: false, flipped: true, 0.1792f, 0f, Color.White, 1f, 0f, 0f, 0f));
+                var dust = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 1600, 64, 128), tilePositionToTry * 64f+ new Vector2(0f, -64f), __instance.Flipped, 0.01f, Color.White)
+                {
+                    layerDepth = 0.1792f,
+                    totalNumberOfLoops = 1,
+                    currentNumberOfLoops = 1,
+                    interval = 80f,
+                    animationLength = 8
+                };
+                Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, dust);
                 
                 //do drops & destroy
                 CheckDrops(resource, location, tileLocation, t);

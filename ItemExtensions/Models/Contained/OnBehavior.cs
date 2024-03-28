@@ -34,8 +34,8 @@ public class OnBehavior : IWorldChangeData
     
     public Dictionary<string, int> AddItems { get; set; } = null;
     public Dictionary<string, int> RemoveItems { get; set; } = null;
-    public string[] AddFlags { get; set; } = null;
-    public string[] RemoveFlags { get; set; }
+    public List<string> AddFlags { get; set; } = null;
+    public List<string> RemoveFlags { get; set; }
 
     public List<MonsterSpawnData> SpawnMonsters { get; set; } = null;
 }

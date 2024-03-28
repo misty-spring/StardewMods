@@ -1,9 +1,12 @@
 using HarmonyLib;
+using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Netcode;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Extensions;
+using StardewValley.Internal;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using Object = StardewValley.Object;
@@ -99,36 +102,40 @@ public static class InventoryPatches
                     break;
                 }
 
-                if (!string.IsNullOrWhiteSpace(data.ReplaceBy))
+                if (!string.IsNullOrWhiteSpace(data.ReplaceBy) || (data.RandomItemId != null && data.RandomItemId.Any()))
                 {
                     Log($"Replacing {affectedItem.QualifiedItemId} for {data.ReplaceBy}.");
                     var indexOf = __instance.actualInventory.IndexOf(affectedItem);
                     if (data.RemoveAmount <= 0)
                     {
-                        var newItem = ItemRegistry.Create(data.ReplaceBy, data.RetainAmount ? affectedItem.Stack : 1,
-                            data.RetainQuality ? affectedItem.Quality : 0);
+                        var newItem = ItemRegistry.Create(data.ReplaceBy, data.RetainAmount ? affectedItem.Stack : 1, data.RetainQuality ? affectedItem.Quality : 0);
                         __instance.actualInventory[indexOf] = newItem;
                     }
                     else
                     {
                         /* e.g: stack of 8, remove 3 per created
-                     *
-                     * (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount
-                     * (8 - (8 % 3)) / 3
-                     * (8 - 2) / 3
-                     * 6 / 3
-                     * 2
-                     *
-                     * if we have 8 and need 3 per conversion, we can make 2 max.
-                     * if affected stack is smaller than max, make stack count. else, maxpossible is set
-                     */
+                         *
+                         * (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount
+                         * (8 - (8 % 3)) / 3
+                         * (8 - 2) / 3
+                         * 6 / 3
+                         * 2
+                         *
+                         * if we have 8 and need 3 per conversion, we can make 2 max.
+                         * if affected stack is smaller than max, make stack count. else, maxpossible is set
+                         */
                         var maxToCreate = (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount;
                         var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack : maxToCreate;
                         var newItem = ItemRegistry.Create(data.ReplaceBy, actualCreateCount,
                             data.RetainQuality ? affectedItem.Quality : 0);
 
-                        Log(
-                            $"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");
+                        //if there's a perItemCondition, solve
+                        if (string.IsNullOrWhiteSpace(data.PerItemCondition) == false)
+                        {
+                            newItem = GetQueryItem(data) ?? newItem;
+                        }
+
+                        Log($"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");
 
                         //if stack is the same, replace.
                         if (affectedItem.Stack == actualCreateCount)
@@ -289,5 +296,18 @@ public static class InventoryPatches
         {
             Log($"Error: {e}", LogLevel.Error);
         }
+    }
+
+    private static Item GetQueryItem(MenuBehavior data)
+    {
+        var context = new ItemQueryContext(Game1.player.currentLocation, Game1.player, Game1.random);
+        var solvedQuery = ItemQueryResolver.TryResolve(data, context);
+        if (solvedQuery.Count > 0 && solvedQuery.FirstOrDefault() != null)
+        {
+            var firstOrDefault = Game1.random.ChooseFrom(solvedQuery);
+            return firstOrDefault.Item as Item;
+        }
+
+        return null;
     }
 }

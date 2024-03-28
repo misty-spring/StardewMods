@@ -20,8 +20,8 @@ public interface IWorldChangeData
     string RemoveQuest { get; set; }
     string RemoveSpecialOrder { get; set; }
     
-    string[] AddFlags { get; set; }
-    string[] RemoveFlags { get; set; }
+    List<string> AddFlags { get; set; }
+    List<string> RemoveFlags { get; set; }
     
     string Conditions { get; set; }
     string TriggerAction { get; set; }

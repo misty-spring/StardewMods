@@ -1,3 +1,4 @@
+using System.Text;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework.Graphics;
@@ -63,7 +64,7 @@ public class ResourceData
     /// </summary>
     public string Tool { get; set; } = "Pickaxe";
 
-    public NotifyForTool? SayWrongTool { get; set; }
+    public NotifyForTool? SayWrongTool { get; set; } = NotifyForTool.None;
     /// <summary>
     /// Minimum upgrade tool should have. If a weapon, the minimum number is checked. 
     /// ("number": 10% of average damage)
@@ -85,11 +86,20 @@ public class ResourceData
     public double SpawnFrequency { get; set; } = 0.1;
     public double AdditionalChancePerLevel { get; set; }
     //conditional
-    internal List<MineSpawn> MineSpawns { get; set; } = new();
+    public List<MineSpawn> MineSpawns { get; set; } = new();
+    //conditional
+    internal List<MineSpawn> RealSpawnData { get; set; } = new();
     
 
     public bool IsValid(bool skipTextureCheck)
     {
+        //fix possible nulls because I messed up and they were null in previous templates
+        RealSpawnData ??= new List<MineSpawn>();
+        CustomFields ??= new Dictionary<string, string>();
+        ContextTags ??= new List<string>();
+        ExtraItems ??= new List<ExtraSpawn>();
+        
+        //now do actual check
         if (!skipTextureCheck && Game1.content.DoesAssetExist<Texture2D>(Texture) == false)
         {
             Log($"Couldn't find texture {Texture} for resource {Name}. Skipping.", LogLevel.Info);
@@ -160,7 +170,7 @@ public class ResourceData
         try
         {
             if(!string.IsNullOrWhiteSpace(SpawnOnFloors))
-                MineSpawns.Add(new MineSpawn(GetFloors(SpawnOnFloors), SpawnFrequency, AdditionalChancePerLevel, true));
+                RealSpawnData.Add(new MineSpawn(GetFloors(SpawnOnFloors), SpawnFrequency, AdditionalChancePerLevel, true));
         }
         catch (Exception e)
         {
@@ -176,7 +186,7 @@ public class ResourceData
                     continue;
                 
                 floorData.Parse(GetFloors(floorData.Floors)); 
-                MineSpawns.Add(floorData);
+                RealSpawnData.Add(floorData);
             }
             catch (Exception e)
             {
@@ -184,6 +194,7 @@ public class ResourceData
                 Log($"Error: {e}");
             }
         }
+        
         return true;
     }
 
@@ -245,13 +256,13 @@ public class ResourceData
         SecretNotes = false;
         Shake = false;
         CountTowards = StatCounter.None;
-        SayWrongTool = null;
+        SayWrongTool = NotifyForTool.None;
         MinToolLevel = -1;
         Exp = 0;
         Skill = null;
         ActualSkill = -1;
-        ContextTags = null;
-        CustomFields = null;
+        ContextTags = new();
+        CustomFields = new();
         Light = null;
         Tool = "vanilla";
     }
@@ -260,8 +271,10 @@ public class ResourceData
     {
         var all = new List<string>();
         //removes spaces and then separates by comma
-        var parsed = floorData.Replace(" ", "").Replace(',', ' ');
-        var floors = ArgUtility.SplitBySpace(parsed);
+        var allFloors = new StringBuilder(floorData);
+        allFloors.Replace(" ", ""); 
+        allFloors.Replace(',', ' ');
+        var floors = ArgUtility.SplitBySpace(allFloors.ToString());
         foreach (var value in floors)
         {
             if(string.IsNullOrWhiteSpace(value))
@@ -269,6 +282,16 @@ public class ResourceData
             
             if (int.TryParse(value, out var isInt) && isInt < 1)
             {
+                continue;
+            }
+            
+            if (value.Contains('-'))
+            {
+                var multipleFloors = new StringBuilder(value);
+                multipleFloors.Replace('-', '/');
+                multipleFloors.Replace("//999", "/-999");
+                
+                all.Add(multipleFloors.ToString());
                 continue;
             }
             

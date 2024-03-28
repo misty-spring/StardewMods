@@ -5,7 +5,6 @@ using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Patches;
 using StardewModdingAPI;
-using StardewModdingAPI.Enums;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Triggers;
@@ -17,11 +16,8 @@ public sealed class ModEntry : Mod
     public override void Entry(IModHelper helper)
     {
         helper.Events.GameLoop.GameLaunched += OnLaunch;
-
-        helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
-        helper.Events.Multiplayer.PeerContextReceived += OnPeerConnected;
-        
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+        
         helper.Events.GameLoop.DayStarted += Day.Started;
         helper.Events.GameLoop.DayEnding += Day.Ending;
         
@@ -83,51 +79,12 @@ public sealed class ModEntry : Mod
 
     private static void OnLaunch(object sender, GameLaunchedEventArgs e)
     {
-        //i have no clue why some players STILL get an error with clumps, so i'm loading those on game launch, they don't require player data anyway
-        GetResources();
-        Assets.WriteTemplates();
-    }
-
-    private void OnPeerConnected(object sender, PeerContextReceivedEventArgs e)
-    {
-        if (e.Peer.IsHost == false || e.Peer.HasSmapi == false)
-            return;
-        
-        var farmer = Game1.getFarmer(e.Peer.PlayerID);
-#if DEBUG
-        Mon.Log($"connected ID: {farmer.UniqueMultiplayerID}, own ID: {Game1.player.UniqueMultiplayerID}, match? {farmer.UniqueMultiplayerID == Game1.player.UniqueMultiplayerID}", LogLevel.Info);
-#endif
-        if (farmer != Game1.player)
-            return;
-#if DEBUG
-        Mon.Log("FOUND", LogLevel.Warn);
-#endif
-        
-        GetResources();
-    }
-
-    /// <summary>
-    /// Because forage is created early on, custom resources are loaded at SaveParsed.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void LoadStageChanged(object sender, LoadStageChangedEventArgs e)
-    {
-        //return if not on saveparsed
-        if (e.NewStage.Equals(LoadStage.SaveParsed) == false)
-            return;
-
-        Mon.Log("Getting resources for the first time...");
-        GetResources();
-    }
-
-    private static void GetResources()
-    {
-        // get resources
+        Mon.Log("Getting resources for the first time...", Level);
         var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
         Parser.Resources(oreData, true);
-        var oc = Ores?.Count ?? 0;
-        Mon.Log($"Loaded {oc} custom resources, and {BigClumps.Count} resource clumps.", LogLevel.Debug);
+#if DEBUG
+        Assets.WriteTemplates();
+#endif
     }
 
     /// <summary>
@@ -183,7 +140,7 @@ public sealed class ModEntry : Mod
     }
 
     /// <summary>Buttons used for custom item actions</summary>
-    internal static List<SButton> ActionButtons { get; set; }
+    internal static List<SButton> ActionButtons { get; private set; }
 
     public static string Id { get; set; }
     internal static string Comma { get; private set; } = ", ";

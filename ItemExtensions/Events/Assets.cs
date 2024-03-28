@@ -14,15 +14,22 @@ public static class Assets
     private static string Id => ModEntry.Id;
     public static void OnInvalidate(object sender, AssetsInvalidatedEventArgs e)
     {
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals("Data/Crops")))
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Resources")))
         {
-            var objectData = Helper.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
-            Parser.ObjectData(objectData);
+            var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
+            Parser.Resources(clumps);
         }
         
         //don't reload if on title screen
         if (!Context.IsWorldReady)
             return;
+        
+        /*
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals("Data/Crops")))
+        {
+            var objectData = Helper.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
+            Parser.ObjectData(objectData);
+        }*/
         
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Data")))
         {
@@ -50,17 +57,18 @@ public static class Assets
             var seeds = Helper.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
             Parser.MixedSeeds(seeds);
         }
-        
-        
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Resources")))
-        {
-            var clumps = Helper.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
-            Parser.Resources(clumps);
-        }
     }
 
     public static void OnRequest(object sender, AssetRequestedEventArgs e)
     {
+        //resources
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Resources", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, ResourceData>(),
+                AssetLoadPriority.Low);
+        }
+
         if (e.NameWithoutLocale.IsEquivalentTo("Strings/UI"))
         {
             e.Edit(asset =>
@@ -147,15 +155,6 @@ public static class Assets
                 () => new Dictionary<string, List<MixedSeedData>>(),
                 AssetLoadPriority.Low);
         }
-        
-        //resources
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Resources", true))
-        {
-            e.LoadFrom(
-                () => new Dictionary<string, ResourceData>(),
-                AssetLoadPriority.Low);
-        }
-
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Drink", true))
         {
             e.LoadFromModFile<Texture2D>("assets/Drink.png", AssetLoadPriority.Low);

@@ -178,11 +178,21 @@ public class Debugging
         };
         
         var tilePositionToTry = o.TileLocation;
-        var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 150f, 1, 3, new Vector2(tilePositionToTry.X * 64f, tilePositionToTry.Y * 64f), false, o.Flipped)
+        var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 150f, 1, 3, tilePositionToTry * 64f, false, o.Flipped)
         {
             alphaFade = 0.01f
         };
         temporaryAnimatedSprite.CopyAppearanceFromItemId(o.QualifiedItemId);
         Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);
+
+        var dust = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 1600, 64, 128), tilePositionToTry * 64f+ new Vector2(0f, -64f), o.Flipped, 0.01f, Color.White)
+        {
+            layerDepth = 0.1792f,
+            totalNumberOfLoops = 1,
+            currentNumberOfLoops = 1,
+            interval = 80f,
+            animationLength = 8
+        };
+        Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, dust);
     }
 }
