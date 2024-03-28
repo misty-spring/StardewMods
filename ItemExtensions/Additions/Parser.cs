@@ -104,13 +104,11 @@ public static class Parser
             //check it's not vanilla
             if (int.TryParse(id, out var asInt))
             {
-                //if it's a vanilla ID, ignore
-                if (asInt < 1000)
+                //if it's a vanilla ID and not ore, ignore
+                if (asInt < 1000 && GeneralResource.VanillaIds.Contains(asInt) == false)
                     continue;
                 
-                //if vanilla resource, trim
-                if (GeneralResource.VanillaIds.Contains(asInt))
-                    data.Trim(asInt);
+                data.Trim(asInt);
             }
             
             //add depending on size

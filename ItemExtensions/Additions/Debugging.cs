@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
+using Object = StardewValley.Object;
 
 namespace ItemExtensions.Additions;
 
@@ -156,5 +157,32 @@ public class Debugging
     private static Dictionary<string, List<ISalable>> GetAllShopExtras()
     {
         throw new NotImplementedException();
+    }
+
+    public static void DoTas(string arg1, string[] arg2)
+    {
+        if (!Context.IsWorldReady)
+        {
+            return;
+        }
+
+        Game1.delayedActions.Add(new DelayedAction(1000, BroadcastTest));
+    }
+
+    private static void BroadcastTest()
+    {
+        Log("BROADCASTING");
+        var o = new Object("14", 1)
+        {
+            TileLocation = new Vector2(Game1.player.Tile.X, Game1.player.Tile.Y + 1)
+        };
+        
+        var tilePositionToTry = o.TileLocation;
+        var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 150f, 1, 3, new Vector2(tilePositionToTry.X * 64f, tilePositionToTry.Y * 64f), false, o.Flipped)
+        {
+            alphaFade = 0.01f
+        };
+        temporaryAnimatedSprite.CopyAppearanceFromItemId(o.QualifiedItemId);
+        Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Tools;
@@ -72,6 +73,19 @@ public partial class ObjectPatches
 
             if (__instance.MinutesUntilReady <= 0.0)
             {
+                //shown regardless of animation
+                //resource fade
+                var tilePositionToTry = __instance.TileLocation;
+                var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 150f, 1, 3, new Vector2(tilePositionToTry.X * 64f, tilePositionToTry.Y * 64f), false, __instance.Flipped)
+                {
+                    alphaFade = 0.01f
+                };
+                temporaryAnimatedSprite.CopyAppearanceFromItemId(__instance.QualifiedItemId);
+                Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);
+                //dust
+                location.TemporarySprites.Add(new TemporaryAnimatedSprite("TileSheets\\animations", new Microsoft.Xna.Framework.Rectangle(0, 1600, 64, 128), 80f, 8, 9999, new Vector2(19f, 27f) * 64f + new Vector2(32f, -16f), flicker: false, flipped: true, 0.1792f, 0f, Color.White, 1f, 0f, 0f, 0f));
+                
+                //do drops & destroy
                 CheckDrops(resource, location, tileLocation, t);
                 Destroy(__instance);
 

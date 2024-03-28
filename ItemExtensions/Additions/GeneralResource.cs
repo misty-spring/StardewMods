@@ -116,6 +116,11 @@ public static class GeneralResource
 
             return weaponType == w.type.Value;
         }
+
+        if (tool is Pickaxe && data.Tool.Equals("pick", IgnoreCase))
+        {
+            return true;
+        }
         
         //else, compare values
         var className = tool.GetToolData().ClassName;
@@ -169,6 +174,21 @@ public static class GeneralResource
             switch (debrisName.ToLower())
             {
                 //default of debris
+                case "iridium":
+                    Game1.createRadialDebris(Game1.currentLocation, 10, xTile, yTile, Game1.random.Next(2, 4), false, color: color);
+                    break;
+                case "gold":
+                    Game1.createRadialDebris(Game1.currentLocation, 6, xTile, yTile, Game1.random.Next(2, 4), false, color: color);
+                    break;
+                case "iron":
+                    Game1.createRadialDebris(Game1.currentLocation, 2, xTile, yTile, Game1.random.Next(2, 4), false, color: color);
+                    break;
+                case "copper":
+                    Game1.createRadialDebris(Game1.currentLocation, 0, xTile, yTile, Game1.random.Next(2, 4), false, color: color);
+                    break;
+                case "coal":
+                    Game1.createRadialDebris(Game1.currentLocation, 4, xTile, yTile, Game1.random.Next(2, 4), false, color: color);
+                    break;
                 case "coins":
                     Game1.createRadialDebris(Game1.currentLocation, 8, xTile, yTile, Game1.random.Next(2, 7), false, color: color);
                     break;

@@ -19,7 +19,7 @@ public class MineSpawn
     public string Floors { get; set; } = null;
     public MineType Type { get; set; } = MineType.All;
     public string Condition { get; set; } = null;
-    internal string[] RealFloors { get; set; }
+    internal string[] RealFloors { get; set; } = Array.Empty<string>();
     public double SpawnFrequency { get; set; } = 0.1;
     public double AdditionalChancePerLevel { get; set; }
 

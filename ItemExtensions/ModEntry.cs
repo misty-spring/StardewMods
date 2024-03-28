@@ -16,9 +16,7 @@ public sealed class ModEntry : Mod
 {
     public override void Entry(IModHelper helper)
     {
-#if DEBUG
         helper.Events.GameLoop.GameLaunched += OnLaunch;
-#endif        
 
         helper.Events.Specialized.LoadStageChanged += LoadStageChanged;
         helper.Events.Multiplayer.PeerContextReceived += OnPeerConnected;
@@ -76,13 +74,19 @@ public sealed class ModEntry : Mod
         #if DEBUG
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
         helper.ConsoleCommands.Add("dump", "Exports ItemExtension's internal data", Debugging.Dump);
+        helper.ConsoleCommands.Add("tas", "Tests animatedsprite", Debugging.DoTas);
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
 
     public override object GetApi() =>new Api();
-    
-    private static void OnLaunch(object sender, GameLaunchedEventArgs e) => Assets.WriteTemplates();
+
+    private static void OnLaunch(object sender, GameLaunchedEventArgs e)
+    {
+        //i have no clue why some players STILL get an error with clumps, so i'm loading those on game launch, they don't require player data anyway
+        GetResources();
+        Assets.WriteTemplates();
+    }
 
     private void OnPeerConnected(object sender, PeerContextReceivedEventArgs e)
     {
