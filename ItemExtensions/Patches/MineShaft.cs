@@ -6,6 +6,7 @@ using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
@@ -112,27 +113,25 @@ public class MineShaftPatches
         {
             //choose a %
             var nextDouble = Game1.random.NextDouble();
-            foreach (var (id, chance) in canApply)
-            {
 #if DEBUG
-                Log($"Chance: {nextDouble} for {id}");
+            Log($"Chance: {nextDouble} for stone at {stone.TileLocation}");
 #endif
-                //if % isn't caught by this ore, try with next one
-                if (nextDouble > chance)
-                    continue;
+            var sorted = GetAllForThisDouble(nextDouble, canApply);
 
-                //create data for fixed ore
-                var ore = new Object(id, 1)
-                {
-                    TileLocation = stone.TileLocation, 
-                    //Location = stone.Location,
-                    MinutesUntilReady = ModEntry.Ores[id].Health
-                };
+            //shouldn't happen but a safe check is a safe check
+            if (sorted.Any() == false)
+                continue;
+            
+            var id = Game1.random.ChooseFrom(sorted);
+            var ore = new Object(id, 1)
+            {
+                TileLocation = stone.TileLocation, 
+                //Location = stone.Location,
+                MinutesUntilReady = ModEntry.Ores[id].Health
+            };
 
-                //replace & break to avoid re-setting
-                mineShaft.Objects[stone.TileLocation] = ore;
-                break;
-            }
+            //replace & break to avoid re-setting
+            mineShaft.Objects[stone.TileLocation] = ore;
         }
     }
 
@@ -154,25 +153,94 @@ public class MineShaftPatches
         {
             //choose a %
             var nextDouble = Game1.random.NextDouble();
-            foreach (var (id, chance) in canApply)
-            {
+            var sorted = GetAllForThisDouble(nextDouble, canApply);
+
+            //shouldn't happen but a safe check is a safe check
+            if (sorted.Any() == false)
+                continue;
+            
+            var clump = Game1.random.ChooseFrom(sorted);
 #if DEBUG
-                Log($"Chance: {nextDouble} for {id}");
+            Log($"Chance: {nextDouble}. Chose {clump}");
 #endif
-                //if % isn't caught by this ore, try with next one
-                if (nextDouble > chance)
-                    continue;
+            var newClump = ExtensionClump.Create(clump, ModEntry.BigClumps[clump], stone.Tile);
 
-                //create data for fixed ore
-                var newClump = ExtensionClump.Create(id, ModEntry.BigClumps[id], stone.Tile);
-
-                //replace & break to avoid re-setting
-                mineShaft.terrainFeatures[stone.Tile] = newClump;
-                break;
-            }
+            //replace & break to avoid re-setting
+            mineShaft.terrainFeatures[stone.Tile] = newClump;
         }
     }
 
+    /// <summary>
+    /// Grabs all ores that match a random double. (E.g, all with a chance bigger than 0.x, starting from smallest)
+    /// </summary>
+    /// <param name="randomDouble"></param>
+    /// <param name="canApply"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    private static IList<string> GetAllForThisDouble(double randomDouble, Dictionary<string, double> canApply)
+    {
+        try
+        {
+            var validResources = new Dictionary<string, double>();
+            foreach (var (id, chance) in canApply)
+            {
+                //e.g. if randomDouble is 0.56 and this ore's chance is 0.3, it'll be skipped
+                if (randomDouble > chance)
+                    continue;
+                validResources.Add(id, chance);
+            }
+
+            if (validResources.Any() == false)
+                return ArraySegment<string>.Empty;
+
+            //sorts by smallest to biggest
+            var sorted = from entry in validResources orderby entry.Value select entry;
+            //turns sorted to list. we do this instead of calculating directly because IOrdered has no indexOf, and I'm too exhausted to think of something better (perhaps optimize in the future)
+            var convertedSorted = new List<string>();
+            foreach (var pair in sorted)
+            {
+                convertedSorted.Add(pair.Key);
+#if DEBUG
+            Log($"Added {pair.Key} to sorted list ({pair.Value})");
+#endif
+            }
+
+            var result = new List<string>();
+            for (var i = 0; i < convertedSorted.Count; i++)
+            {
+                result.Add(convertedSorted[i]);
+                if (i + 1 >= convertedSorted.Count)
+                    break;
+                
+                var current = convertedSorted[i];
+                var next = convertedSorted[i + 1];
+#if DEBUG
+                Log($"Added node with {convertedSorted[i]} chance to list.");
+#endif
+
+                //if next one has higher %
+                //because doubles are always a little off, we do a comparison of difference
+                if (Math.Abs(validResources[next] - validResources[current]) > 0.0000001)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+        catch (Exception e)
+        {
+            Log($"Error while sorting spawn chances: {e}.\n  Will be skipped.", LogLevel.Warn);
+            return new List<string>();
+        }
+    }
+
+    /// <summary>
+    /// Gets all allowed ores for this level.
+    /// </summary>
+    /// <param name="mine">The mine</param>
+    /// <param name="isClump">Whether to grab clumps instead of nodes</param>
+    /// <returns>An unsorted list with all available spawns.</returns>
     private static Dictionary<string, double> GetAllForThisLevel(MineShaft mine, bool isClump = false)
     {
         var mineLevel = mine.mineLevel;
@@ -245,25 +313,13 @@ public class MineShaftPatches
             }
             catch (Exception e)
             {
-                Log($"Error while parsing mine level for {id}: {e}\nThis specific ore will be skipped.", LogLevel.Warn);
+                Log($"Error while parsing mine level for {id}: {e}\n  This specific ore will be skipped.", LogLevel.Warn);
             }
         }
-        var sorted = from entry in all orderby entry.Value select entry;
-        
-        var result = new Dictionary<string, double>();
-        foreach (var pair in sorted)
-        {
-            result.Add(pair.Key, pair.Value);
-#if DEBUG
-            Log($"Added {pair.Key} to list ({pair.Value})");
-#endif
-        }
-
-        return result;
         
         #if DEBUG
         var sb = new StringBuilder();
-        foreach (var pair in result)
+        foreach (var pair in all)
         {
             sb.Append("{ ");
             sb.Append(pair.Key);
@@ -274,6 +330,6 @@ public class MineShaftPatches
         }
         Log($"In level {mineLevel}: " + sb);
         #endif
-        return result;
+        return all;
     }
 }

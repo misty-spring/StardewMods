@@ -474,9 +474,9 @@ public static class GeneralResource
 
     private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)
     {
-        var chance = Game1.random.NextDouble();
         foreach (var item in data)
         {
+            var chance = Game1.random.NextDouble();
             if(GameStateQuery.CheckConditions(item.Condition, location, who) == false)
                 continue;
                 
