@@ -180,61 +180,72 @@ public class MineShaftPatches
         //check every ore
         foreach (var (id, ore) in isClump ? ModEntry.BigClumps : ModEntry.Ores)
         {
-            //if not spawnable on mines, skip
-            if(ore.RealSpawnData is null || ore.RealSpawnData.Any() == false)
-                continue;
-                
-            foreach (var spawns in ore.RealSpawnData)
+            try
             {
-#if DEBUG
-                Log($"{spawns?.RealFloors.Count} in {id}");
-#endif
-                if (spawns?.RealFloors is null)
+                //if not spawnable on mines, skip
+                if (ore.RealSpawnData is null || ore.RealSpawnData.Any() == false)
                     continue;
-                
-                var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
-                
-                //if qi-only & not qi on, skip
-                if(spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
-                    continue;
-                
-                //if vanilla-only & qi on, skip
-                if(spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
-                    continue;
-                
-                foreach (var floor in spawns.RealFloors)
+
+                foreach (var spawns in ore.RealSpawnData)
                 {
-#if DEBUG
-                    Log($"Data: {floor}");
-#endif
-                    if (string.IsNullOrWhiteSpace(floor))
+                    //if GSQ exists & not valid
+                    if (string.IsNullOrWhiteSpace(spawns.Condition) == false &&
+                        GameStateQuery.CheckConditions(spawns.Condition) == false)
                         continue;
-                    
-                    //if it's of style minSpawnLevel-maxSpawnLevel
-                    if (floor.Contains('/'))
-                    {
-                        var both = ArgUtility.SplitQuoteAware(floor, '/');
-                        //if less than 2 values, or can't parse either as int
-                        if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
-                            int.TryParse(both[1], out var endLevel) == false)
-                            break;
-                            
 #if DEBUG
-                        Log($"Level range: {startLevel} to {endLevel}");
+                    Log($"{spawns?.RealFloors.Count} in {id}");
 #endif
-                        //initial is bigger than current OR max is less than current (& end level isn't max)
-                        if(startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
-                            break; //skip
-                    
-                        //otherwise, add & break loop
-                        all.Add(id, spawns.SpawnFrequency + extraforLevel);
-                        break;
+                    if (spawns?.RealFloors is null)
+                        continue;
+
+                    var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
+
+                    //if qi-only & not qi on, skip
+                    if (spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
+                        continue;
+
+                    //if vanilla-only & qi on, skip
+                    if (spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
+                        continue;
+
+                    foreach (var floor in spawns.RealFloors)
+                    {
+#if DEBUG
+                        Log($"Data: {floor}");
+#endif
+                        if (string.IsNullOrWhiteSpace(floor))
+                            continue;
+
+                        //if it's of style minSpawnLevel-maxSpawnLevel
+                        if (floor.Contains('/'))
+                        {
+                            var both = ArgUtility.SplitQuoteAware(floor, '/');
+                            //if less than 2 values, or can't parse either as int
+                            if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
+                                int.TryParse(both[1], out var endLevel) == false)
+                                break;
+
+#if DEBUG
+                            Log($"Level range: {startLevel} to {endLevel}");
+#endif
+                            //initial is bigger than current OR max is less than current (& end level isn't max)
+                            if (startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
+                                break; //skip
+
+                            //otherwise, add & break loop
+                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                            break;
+                        }
+
+                        //or if level is explicitly included
+                        if (int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
+                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
                     }
-                
-                    //or if level is explicitly included
-                    if(int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
-                        all.Add(id, spawns.SpawnFrequency  + extraforLevel);
                 }
+            }
+            catch (Exception e)
+            {
+                Log($"Error while parsing mine level for {id}: {e}\nThis specific ore will be skipped.", LogLevel.Warn);
             }
         }
         var sorted = from entry in all orderby entry.Value select entry;

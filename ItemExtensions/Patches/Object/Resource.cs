@@ -76,12 +76,13 @@ public partial class ObjectPatches
                 //shown regardless of animation
                 //resource fade
                 var tilePositionToTry = __instance.TileLocation;
-                var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 150f, 1, 3, new Vector2(tilePositionToTry.X * 64f, tilePositionToTry.Y * 64f), false, __instance.Flipped)
+                /*
+                var temporaryAnimatedSprite = new TemporaryAnimatedSprite(0, 50f, 1, 3, new Vector2(tilePositionToTry.X * 64f, tilePositionToTry.Y * 64f), false, __instance.Flipped)
                 {
                     alphaFade = 0.01f
                 };
                 temporaryAnimatedSprite.CopyAppearanceFromItemId(__instance.QualifiedItemId);
-                Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);
+                Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, temporaryAnimatedSprite);*/
                 //dust
                 var dust = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 1600, 64, 128), tilePositionToTry * 64f+ new Vector2(0f, -64f), __instance.Flipped, 0.01f, Color.White)
                 {

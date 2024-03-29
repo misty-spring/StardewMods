@@ -70,9 +70,9 @@ public sealed class ModEntry : Mod
         #if DEBUG
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
         helper.ConsoleCommands.Add("dump", "Exports ItemExtension's internal data", Debugging.Dump);
-        helper.ConsoleCommands.Add("tas", "Tests animatedsprite", Debugging.DoTas);
+        helper.ConsoleCommands.Add("tas", "Tests animated sprite", Debugging.DoTas);
         #endif
-        helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed modpacks. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
+        helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed mod packs. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
     }
 
     public override object GetApi() =>new Api();
@@ -140,7 +140,7 @@ public sealed class ModEntry : Mod
     }
 
     /// <summary>Buttons used for custom item actions</summary>
-    internal static List<SButton> ActionButtons { get; private set; }
+    internal static List<SButton> ActionButtons { get; private set; } = new();
 
     public static string Id { get; set; }
     internal static string Comma { get; private set; } = ", ";
