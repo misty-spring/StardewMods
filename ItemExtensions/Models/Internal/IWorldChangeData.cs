@@ -133,8 +133,7 @@ public interface IWorldChangeData
         
         if (int.TryParse(howMuch, out var justNumbers))
         {
-            result = justNumbers <= 0 ? 1 : justNumbers;
-            return result;
+            return justNumbers + value;
         }
 
         var split = howMuch.Split(' ');

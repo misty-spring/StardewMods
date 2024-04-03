@@ -318,6 +318,10 @@ public static class GeneralResource
         if (resource.OnDestroy != null)
         {
             IWorldChangeData.Solve(resource.OnDestroy);
+            if (!string.IsNullOrWhiteSpace(resource.OnDestroy.ChangeMoney))
+            {
+                Game1.player.Money = IWorldChangeData.ChangeValues(resource.OnDestroy.ChangeMoney, Game1.player.Money, Game1.player.Money);
+            }
             var monsters = resource.OnDestroy.SpawnMonsters;
             if (monsters is not null)
             {

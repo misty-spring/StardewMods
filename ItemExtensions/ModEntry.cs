@@ -46,6 +46,7 @@ public sealed class ModEntry : Mod
         ObjectPatches.Apply(harmony);
         ResourceClumpPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
+        ToolPatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
             NpcPatches.Apply(harmony);
