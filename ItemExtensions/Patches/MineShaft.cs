@@ -1,5 +1,4 @@
 using System.Text;
-using System.Xml.Schema;
 using HarmonyLib;
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models.Enums;
@@ -9,6 +8,8 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
+using xTile.Tiles;
+using static ItemExtensions.Additions.Sorter;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -132,6 +133,31 @@ public class MineShaftPatches
 
             //replace & break to avoid re-setting
             mineShaft.Objects[stone.TileLocation] = ore;
+
+            //check ladder
+            if (mineShaft.tileBeneathLadder == ore.TileLocation)
+            {
+#if DEBUG
+                Log($"Changing tile...(old {mineShaft.tileBeneathLadder})");
+#endif
+                var tile = Vector2.Zero;
+                var canReplace = false;
+                for (var i = 0; i < mineShaft.Objects.Length; i++)
+                {
+                    tile = mineShaft.getRandomTile();
+                    if (mineShaft.getObjectAtTile((int)tile.X, (int)tile.Y) is null)
+                        continue;
+
+                    canReplace = true;
+                    break;
+                }
+                
+                if(canReplace)
+                    mineShaft.tileBeneathLadder = tile;
+#if DEBUG
+                Log($"Tile changed to {mineShaft.tileBeneathLadder}.");
+#endif
+            }
         }
     }
 
@@ -167,71 +193,6 @@ public class MineShaftPatches
 
             //replace & break to avoid re-setting
             mineShaft.terrainFeatures[stone.Tile] = newClump;
-        }
-    }
-
-    /// <summary>
-    /// Grabs all ores that match a random double. (E.g, all with a chance bigger than 0.x, starting from smallest)
-    /// </summary>
-    /// <param name="randomDouble"></param>
-    /// <param name="canApply"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    private static IList<string> GetAllForThisDouble(double randomDouble, Dictionary<string, double> canApply)
-    {
-        try
-        {
-            var validResources = new Dictionary<string, double>();
-            foreach (var (id, chance) in canApply)
-            {
-                //e.g. if randomDouble is 0.56 and this ore's chance is 0.3, it'll be skipped
-                if (randomDouble > chance)
-                    continue;
-                validResources.Add(id, chance);
-            }
-
-            if (validResources.Any() == false)
-                return ArraySegment<string>.Empty;
-
-            //sorts by smallest to biggest
-            var sorted = from entry in validResources orderby entry.Value select entry;
-            //turns sorted to list. we do this instead of calculating directly because IOrdered has no indexOf, and I'm too exhausted to think of something better (perhaps optimize in the future)
-            var convertedSorted = new List<string>();
-            foreach (var pair in sorted)
-            {
-                convertedSorted.Add(pair.Key);
-#if DEBUG
-            Log($"Added {pair.Key} to sorted list ({pair.Value})");
-#endif
-            }
-
-            var result = new List<string>();
-            for (var i = 0; i < convertedSorted.Count; i++)
-            {
-                result.Add(convertedSorted[i]);
-                if (i + 1 >= convertedSorted.Count)
-                    break;
-                
-                var current = convertedSorted[i];
-                var next = convertedSorted[i + 1];
-#if DEBUG
-                Log($"Added node with {convertedSorted[i]} chance to list.");
-#endif
-
-                //if next one has higher %
-                //because doubles are always a little off, we do a comparison of difference
-                if (Math.Abs(validResources[next] - validResources[current]) > 0.0000001)
-                {
-                    break;
-                }
-            }
-
-            return result;
-        }
-        catch (Exception e)
-        {
-            Log($"Error while sorting spawn chances: {e}.\n  Will be skipped.", LogLevel.Warn);
-            return new List<string>();
         }
     }
 

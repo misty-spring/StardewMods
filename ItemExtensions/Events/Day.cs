@@ -63,15 +63,40 @@ public class Day
         
         bool LoadCustomClumps(GameLocation arg)
         {
+            string removeAfter = null;
+            var howLong = 0;
+            var needsRemovalCheck = arg?.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out removeAfter);
+            
+            if (needsRemovalCheck)
+                int.TryParse(removeAfter, out howLong);
+            
+            var removalQueue = new List<ResourceClump>();
+            
             foreach (var resource in arg.resourceClumps)
             {
                 //if not custom
                 if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
                     continue;
-                    
+
+                if (needsRemovalCheck && resource.modData.TryGetValue(ModKeys.Days, out var daysSoFar) &&
+                    int.TryParse(daysSoFar, out var days))
+                {
+                    if (howLong <= days)
+                    {
+                        removalQueue.Add(resource);
+                        continue;
+                    }
+                }
+                
                 clumps.Add(resource);
             }
 
+            //remove all that have more days than allowed
+            foreach (var resourceClump in removalQueue)
+            {
+                arg.resourceClumps.Remove(resourceClump);
+            }
+            
             return true;
         }
     }

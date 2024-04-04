@@ -1,6 +1,7 @@
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework;
 using StardewValley;
 
@@ -8,6 +9,13 @@ namespace ItemExtensions;
 
 public interface IApi
 {
+    /// <summary>
+    /// Checks for resource data with the Stone type.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    bool IsStone(string id);
+    
     /// <summary>
     /// Checks for resource data in the mod.
     /// </summary>
@@ -37,6 +45,17 @@ public interface IApi
 //remove all of this ↓ when copying to your mod
 public class Api : IApi
 {
+    public bool IsStone(string id)
+    {
+        if (!ModEntry.Ores.TryGetValue(id, out var resource))
+            return false;
+
+        if (resource is null || resource == new ResourceData())
+            return false;
+
+        return resource.Type == CustomResourceType.Stone;
+    }
+
     public bool IsResource(string id, out int? health, out string itemDropped)
     {
         health = null;

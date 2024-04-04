@@ -23,6 +23,7 @@ public class ResourceData
     
     // Required
     public string Name { get; set; }
+    public CustomResourceType Type { get; set; } = CustomResourceType.Stone;
     public string DisplayName { get; set; } = "[LocalizedText Strings\\Objects:Stone_Name]";
     public string Description { get; set; } = "[LocalizedText Strings\\Objects:Stone_Description]";
     public string Texture { get; set; } = "Maps/springobjects";

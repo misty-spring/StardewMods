@@ -3,8 +3,6 @@ using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.GameData;
-using StardewValley.Internal;
 using StardewValley.Triggers;
 
 // ReSharper disable FieldCanBeMadeReadOnly.Global

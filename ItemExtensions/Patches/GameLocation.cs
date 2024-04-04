@@ -382,6 +382,11 @@ public class GameLocationPatches
                     clump.Tile = newPosition;
                 }
             }
+
+            if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out var removeAfter))
+            {
+                clump.modData.Add(ModKeys.Days, "0");
+            }
             
             context.Location.resourceClumps.Add(clump);
         }

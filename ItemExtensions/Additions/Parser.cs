@@ -1,6 +1,7 @@
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using StardewModdingAPI;
+using StardewValley;
 
 namespace ItemExtensions.Additions;
 
@@ -162,6 +163,24 @@ public static class Parser
                 continue;
             else
                 ModEntry.Seeds.Add(pair.Key, validSeeds);
+        }
+    }
+
+    public static void Panning(Dictionary<string, ExtraSpawn> panData)
+    {
+        ModEntry.Panning = new List<ExtraSpawn>();
+        foreach(var pair in panData)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            //checks id
+            if (string.IsNullOrWhiteSpace(pair.Value.ItemId) && (pair.Value.RandomItemId is null || pair.Value.RandomItemId.Any() == false))
+            {
+                Log($"Panning item with key '{pair.Key}' doesn't have an item ID. Skipping", LogLevel.Info);
+                continue;
+            }
+            
+            ModEntry.Panning.Add(pair.Value);
         }
     }
 }
