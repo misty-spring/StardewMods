@@ -4,10 +4,11 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.TerrainFeatures;
+using Object = StardewValley.Object;
 
 namespace ItemExtensions.Events;
 
-public class Day
+public static class Day
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -27,6 +28,7 @@ public class Day
         List<ResourceClump> clumps = new();
         
         Utility.ForEachLocation(LoadCustomClumps, true, true);
+        Utility.ForEachLocation(CheckNodeDuration, true, true);
 
         foreach (var resource in clumps)
         {
@@ -99,6 +101,47 @@ public class Day
             
             return true;
         }
+    }
+
+    private static bool CheckNodeDuration(GameLocation arg)
+    {
+        if (arg is null)
+            return true;
+        
+        string removeAfter = null;
+        var howLong = 0;
+        var needsRemovalCheck = arg?.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out removeAfter);
+            
+        if (needsRemovalCheck)
+            int.TryParse(removeAfter, out howLong);
+            
+        var removalQueue = new List<Object>();
+        
+        foreach (var obj in arg.Objects.Values)
+        {
+            if (obj.modData is null)
+                continue;
+            
+            if (obj.modData.TryGetValue(ModKeys.IsFtm, out var ftm) && bool.Parse(ftm))
+                continue;
+            
+            if (needsRemovalCheck && obj.modData.TryGetValue(ModKeys.Days, out var daysSoFar) &&
+                int.TryParse(daysSoFar, out var days))
+            {
+                if (howLong <= days)
+                {
+                    removalQueue.Add(obj); ;
+                }
+            }
+        }
+
+        //remove all that have more days than allowed
+        foreach (var obj2 in removalQueue)
+        {
+            arg.Objects.Remove(obj2.TileLocation);
+        }
+
+        return true;
     }
 
     /// <summary>

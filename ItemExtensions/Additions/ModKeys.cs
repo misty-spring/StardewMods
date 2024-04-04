@@ -27,10 +27,13 @@ public static class ModKeys
     public const string SpawnRect = "mistyspring.ItemExtensions/ClumpSpawnRect";
     /// <summary> By default, clumps avoid spawning over other items. If for whichever reason the user wants to disable it: add this key with value "false" to location's CustomFields </summary>
     public const string AvoidOverlap = "mistyspring.ItemExtensions/AvoidOverlap";
+    
+    //for removal
     /// <summary> By default, resources stay forever. This removes them on day start if applicable.</summary>
     public const string RemoveAfterDays = "mistyspring.ItemExtensions/RemoveAfterDays";
     /// <summary> Counts days for clumps. </summary>
     public const string Days = "mistyspring.ItemExtensions/Days";
+    public const string IsFtm = "mistyspring.ItemExtensions/IsFTM";
     
     //for custom clump actions
     /// <summary> Resource Clump's Id, for custom behavior and drops. </summary>

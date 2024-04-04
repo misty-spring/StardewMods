@@ -48,11 +48,14 @@ public sealed class ModEntry : Mod
         ResourceClumpPatches.Apply(harmony);
         ShopMenuPatches.Apply(harmony);
         
-        if(helper.ModRegistry.Get("Pathoschild.TractorMod") is not null)
-            TractorMod.Apply(harmony);
+        if(helper.ModRegistry.Get("Esca.FarmTypeManager") is not null)
+            FarmTypeManagerPatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is not null)
             NpcPatches.Apply(harmony);
+        
+        if(helper.ModRegistry.Get("Pathoschild.TractorMod") is not null)
+            TractorModPatches.Apply(harmony);
         
         //GSQ
         GameStateQuery.Register($"{Id}_ToolUpgrade", Queries.ToolUpgrade);

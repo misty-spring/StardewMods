@@ -7,7 +7,7 @@ using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
 
-public class TractorMod
+public class TractorModPatches
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -31,11 +31,11 @@ public class TractorMod
                 Log($"Method not found. ({toolType}Attachment:Apply)", LogLevel.Warn);
                 continue;
             }        
-            Log($"Applying Harmony patch \"{nameof(TractorMod)}\": postfixing mod method \"Pathoschild.Stardew.TractorMod.Framework.Attachments.{toolType}Attachment.Apply\".");
+            Log($"Applying Harmony patch \"{nameof(TractorModPatches)}\": postfixing mod method \"Pathoschild.Stardew.TractorMod.Framework.Attachments.{toolType}Attachment.Apply\".");
         
             harmony.Patch(
                 original: tractorToolMethod,
-                postfix: new HarmonyMethod(typeof(TractorMod), nameof(Post_OnActivated))
+                postfix: new HarmonyMethod(typeof(TractorModPatches), nameof(Post_OnActivated))
             );
         }
     }
