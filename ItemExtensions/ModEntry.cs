@@ -134,7 +134,7 @@ public sealed class ModEntry : Mod
             temp.Add(b.ToSButton());
             Monitor.Log("Button: " + b);
         }
-        Monitor.Log($"Total {Game1.options.actionButton.Length}");
+        Monitor.Log($"Total {Game1.options.actionButton?.Length ?? 0}");
 
         ActionButtons = temp;
     }
