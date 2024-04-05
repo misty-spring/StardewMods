@@ -31,7 +31,7 @@ public class MixedSeedData
         
         if (items.ContainsKey(ItemId) == false)
         {
-            Log("Seed doesn't seem to exist in-game. (Logged for debugging purposes)", LogLevel.Debug);
+            Log("Seed doesn't seem to exist in-game. (Logged for debugging purposes)");
         }
 
         return true;

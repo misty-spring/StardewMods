@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using SpousesIsland.Additions;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Pathfinding;
 using static SpousesIsland.ModEntry;
 
 namespace SpousesIsland.Events;
@@ -76,7 +78,6 @@ public static class Time
             return;
         }
         
-        /*
         if (e.NewTime % 20 == 0) //200
         {
             foreach (var character in ValidSpouses)
@@ -102,7 +103,7 @@ public static class Time
                         NPCSchedule = true
                     };
             }
-        }*/
+        }
 
         if (!DevanExists) 
             return;

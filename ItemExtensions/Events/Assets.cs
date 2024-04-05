@@ -140,7 +140,10 @@ public static class Assets
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/MenuActions", true))
         {
             e.LoadFrom(
-                () => new Dictionary<string, List<MenuBehavior>>(),
+                () => new Dictionary<string, List<MenuBehavior>>
+                {
+                    { "None", new() }
+                },
                 AssetLoadPriority.Low);
         }
         

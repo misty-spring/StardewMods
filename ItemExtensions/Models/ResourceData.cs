@@ -166,7 +166,7 @@ public class ResourceData
 
         if (string.IsNullOrWhiteSpace(ItemDropped))
         {
-            Log("Resource's dropped item is empty. The resource will still be added, but keep this in mind when debugging your content pack.", LogLevel.Debug);
+            Log("Resource's dropped item is empty. The resource will still be added, but keep this in mind when debugging your content pack.");
         }
 
         try

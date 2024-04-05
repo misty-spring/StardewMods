@@ -376,7 +376,7 @@ public class GameLocationPatches
                 if (cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap))
                     avoidOverlap = bool.Parse(overlap);
 
-                if (hasRect)
+                if (hasRect && !string.IsNullOrWhiteSpace(rawRect))
                 {
                     var newPosition = CheckPosition(context, position, rawRect, avoidOverlap);
                     clump.Tile = newPosition;
@@ -407,53 +407,65 @@ public class GameLocationPatches
     /// <returns></returns>
     private static Vector2 CheckPosition(ItemQueryContext context, Vector2 position, string rawRect, bool avoidOverlap)
     {
-        var result = position;
-        
-        //can either be "x y w h" for single one, or for multiple "\"x y w h\" \"x y w h\""
-        var split = ArgUtility.SplitBySpaceQuoteAware(rawRect);
-        var rects = new List<Rectangle>();
-        //if multiple, parse each. otherwise parse single one
-        if (split[0].Contains(' '))
+        try
         {
-            foreach (var raw in split)
+            var result = position;
+
+            //can either be "x y w h" for single one, or for multiple "\"x y w h\" \"x y w h\""
+            var split = ArgUtility.SplitBySpaceQuoteAware(rawRect);
+            var rects = new List<Rectangle>();
+            //if multiple, parse each. otherwise parse single one
+            if (split[0].Contains(' '))
             {
-                var args = ArgUtility.SplitBySpace(raw);
-                rects.Add(new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]), int.Parse(args[3])));
+                foreach (var raw in split)
+                {
+                    var args = ArgUtility.SplitBySpace(raw);
+                    rects.Add(new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]),
+                        int.Parse(args[3])));
+                }
             }
-        }
-        else
-        {
-            rects.Add(new Rectangle(int.Parse(split[0]), int.Parse(split[1]), int.Parse(split[2]), int.Parse(split[3])));
-        }
+            else
+            {
+                rects.Add(new Rectangle(int.Parse(split[0]), int.Parse(split[1]), int.Parse(split[2]),
+                    int.Parse(split[3])));
+            }
 
-        //if point isn't in allowed rect, set to a random point in any
-        if (rects.Any(r => r.Contains(position))) 
-            return result;
-        
-        var random = context.Random ?? Game1.random;
-        var randomRect = random.ChooseFrom(rects);
+            //if point isn't in allowed rect, set to a random point in any
+            if (rects.Any(r => r.Contains(position)))
+                return result;
 
-        if (!avoidOverlap)
-        {
-            result = new Vector2(
-                random.Next(randomRect.X, randomRect.X + randomRect.Width),
-                random.Next(randomRect.Y, randomRect.Y + randomRect.Height));
-        }
-        else
-        {
-            for (var i = 0; i < 30; i++)
+            var random = context.Random ?? Game1.random;
+            var randomRect = random.ChooseFrom(rects);
+
+            if (!avoidOverlap)
             {
                 result = new Vector2(
                     random.Next(randomRect.X, randomRect.X + randomRect.Width),
                     random.Next(randomRect.Y, randomRect.Y + randomRect.Height));
-
-                var cantSpawn = context.Location.IsTileOccupiedBy(result) || context.Location.IsNoSpawnTile(result) || !context.Location.CanItemBePlacedHere(result);
-                
-                if (cantSpawn == false)
-                    break;
             }
-        }
+            else
+            {
+                for (var i = 0; i < 30; i++)
+                {
+                    result = new Vector2(
+                        random.Next(randomRect.X, randomRect.X + randomRect.Width),
+                        random.Next(randomRect.Y, randomRect.Y + randomRect.Height));
 
-        return result;
+                    var cantSpawn = context.Location.IsTileOccupiedBy(result) ||
+                                    context.Location.IsNoSpawnTile(result) ||
+                                    !context.Location.CanItemBePlacedHere(result);
+
+                    if (cantSpawn == false)
+                        break;
+                }
+            }
+
+            return result;
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}.\n     Will use original position", LogLevel.Warn);
+            return position;
+        }
     }
 }

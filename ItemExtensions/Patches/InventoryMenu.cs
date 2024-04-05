@@ -1,4 +1,5 @@
 using HarmonyLib;
+using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using Netcode;
@@ -47,15 +48,24 @@ public static class InventoryPatches
     {
         try
         {
+            if (__result != null)
+            {
+#if DEBUG
+                Log($"\nPosition: {x}, {y}\nChecking item {__result.DisplayName} ({__result?.QualifiedItemId})\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
+#endif
+                CallWithoutItem(__instance, ref __result, x, y);
+                return;
+            }
+            
             var affectedItem = __instance.getItemAt(x, y);
             var heldItem = toAddTo;
 
-            /*#if DEBUG
-            Log($"\nPosition: {x}, {y}\nHeld item: {heldItem?.QualifiedItemId} ({heldItem?.DisplayName}), Affected item: {affectedItem?.QualifiedItemId}\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n", LogLevel.Debug);
-        #endif*/
-
             if (affectedItem == null || heldItem == null)
                 return;
+
+#if DEBUG
+            Log($"\nPosition: {x}, {y}\nHeld item: {heldItem?.QualifiedItemId} ({heldItem?.DisplayName}), Affected item: {affectedItem?.QualifiedItemId}\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
+#endif
 
             if (onlyCheckToolAttachments)
                 return;
@@ -166,124 +176,15 @@ public static class InventoryPatches
                     }
                 }
 
-                if (data.AddContextTags.Count > 0)
-                {
-                    var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
-                    var value = tags.GetValue();
+                TryContextTags(data, affectedItem);
+                
+                TryModData(data, affectedItem);
 
-                    foreach (var tag in data.AddContextTags)
-                    {
-                        Log($"Attempting to add tag {tag}");
-                        value.Add(tag);
-                    }
+                TryQualityChange(data, affectedItem);
 
-                    tags.SetValue(value);
-                }
+                TryPriceChange(data, affectedItem);
 
-                if (data.RemoveContextTags.Count > 0)
-                {
-                    var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
-                    var value = tags.GetValue();
-
-                    foreach (var tag in data.RemoveContextTags)
-                    {
-                        Log($"Attempting to remove tag {tag}");
-                        value.Remove(tag);
-                    }
-
-                    tags.SetValue(value);
-                }
-
-                if (data.AddModData.Count > 0)
-                {
-                    foreach (var p in data.AddModData)
-                    {
-                        Log($"Attempting to add mod data \"{p.Key}\":\"{p.Value}\"");
-                        if (!affectedItem.modData.TryAdd(p.Key, p.Value))
-                            affectedItem.modData[p.Key] = p.Value;
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(data.QualityChange))
-                {
-                    Log($"Changing quality: modifier {data.QualityModifier}, int {data.ActualQuality}");
-                    switch (data.QualityModifier)
-                    {
-                        case Modifier.Set when data.ActualQuality is >= 0 and <= 4:
-                            affectedItem.Quality = data.ActualQuality;
-                            if (affectedItem.Quality == 3)
-                                affectedItem.Quality = 4;
-                            break;
-                        case Modifier.Sum when affectedItem.Quality < 4:
-                            affectedItem.Quality++;
-                            if (affectedItem.Quality == 3)
-                                affectedItem.Quality = 4;
-                            break;
-                        case Modifier.Substract when affectedItem.Quality > 0:
-                            affectedItem.Quality--;
-                            if (affectedItem.Quality == 3)
-                                affectedItem.Quality = 2;
-                            break;
-                        //not considered for quality
-                        case Modifier.Divide:
-                        case Modifier.Multiply:
-                        case Modifier.Percentage:
-                        default:
-                            break;
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(data.PriceChange) && affectedItem is Object or Ring or Boots)
-                {
-                    Log($"Changing price: modifier {data.PriceModifier}, int {data.ActualPrice}");
-                    Item obj = affectedItem switch
-                    {
-                        Object o => o,
-                        Ring r => r,
-                        Boots b => b,
-                        _ => throw new ArgumentOutOfRangeException(affectedItem.GetType().ToString())
-                    };
-
-                    var reflectedField = ModEntry.Help.Reflection.GetField<NetInt>(obj, "price");
-                    var netPrice = reflectedField.GetValue();
-                    var price = (double)netPrice.Value;
-
-                    switch (data.PriceModifier)
-                    {
-                        case Modifier.Set when data.ActualPrice >= 0:
-                            price = data.ActualPrice;
-                            break;
-                        case Modifier.Sum:
-                            price += data.ActualPrice;
-                            break;
-                        case Modifier.Substract:
-                            price -= data.ActualPrice;
-                            if (price < 0)
-                                price = 0;
-                            break;
-                        case Modifier.Divide:
-                            price /= data.ActualPrice;
-                            break;
-                        case Modifier.Multiply:
-                            price *= data.ActualPrice;
-                            break;
-                        case Modifier.Percentage:
-                            price /= data.ActualPrice / 100;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(data.PriceModifier),
-                                "Value isn't an allowed one.");
-                    }
-
-                    netPrice.Set((int)price);
-                    reflectedField.SetValue(netPrice);
-                }
-
-                if (data.TextureIndex >= 0)
-                {
-                    Log($"Changing texture index to {data.TextureIndex}");
-                    affectedItem.ParentSheetIndex = data.TextureIndex;
-                }
+                TryTextureChange(data.TextureIndex, affectedItem);
 
                 break;
             }
@@ -292,5 +193,205 @@ public static class InventoryPatches
         {
             Log($"Error: {e}", LogLevel.Error);
         }
+    }
+
+    private static void CallWithoutItem(InventoryMenu menu, ref Item target, int x, int y)
+    {
+        if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+            return;
+        
+        // ReSharper disable once PossibleNullReferenceException
+        if (!ModEntry.MenuActions.TryGetValue("None", out var options))
+            return;
+        
+        Log("Found conversion data for item.");
+
+        //search for ID
+        foreach (var data in options)
+        {
+            //if not id, keep searching
+            if (data.TargetId != target.QualifiedItemId)
+                continue;
+
+            //if conditions don't match
+            if (!string.IsNullOrWhiteSpace(data.Conditions) && !GameStateQuery.CheckConditions(data.Conditions))
+            {
+                Log($"Conditions for {data.TargetId} don't match.");
+                break;
+            }
+
+            //solve basic data
+            IWorldChangeData.Solve(data);
+            
+            //check if item should be replaced. this ignores the Remove field, because we're holding no item
+            if (data.RandomItemId.Any() || !string.IsNullOrWhiteSpace(data.ReplaceBy))
+            {
+                Log($"Replacing {target.QualifiedItemId} for {data.ReplaceBy}.");
+                var indexOf = menu.actualInventory.IndexOf(target);
+                    
+                //if there's a random item list, it'll be preferred over normal Id
+                var whichItem = data.RandomItemId.Any() ? Game1.random.ChooseFrom(data.RandomItemId) : data.ReplaceBy;
+
+                if (whichItem.Equals("Remove", StringComparison.OrdinalIgnoreCase))
+                {
+                    if(data.RemoveAmount > 0)
+                    {}
+                    else
+                    {
+                        menu.actualInventory[indexOf] = null;
+                    }
+                }
+                else
+                {
+                    var newItem = ItemRegistry.Create(whichItem, data.RetainAmount ? target.Stack : 1,
+                        data.RetainQuality ? target.Quality : 0);
+                    menu.actualInventory[indexOf] = newItem;
+                }
+            }
+
+                //check for changes in these fields
+            TryContextTags(data, target);
+            TryModData(data, target);
+            TryQualityChange(data, target);
+            TryPriceChange(data, target);
+            TryTextureChange(data.TextureIndex, target);
+
+            menu.leftClick(x, y, target, false);
+            break;
+        }
+    }
+
+    private static void TryContextTags(MenuBehavior data, Item affectedItem)
+    {
+        if (data.AddContextTags.Count > 0)
+        {
+            var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
+            var value = tags.GetValue();
+
+            foreach (var tag in data.AddContextTags)
+            {
+                Log($"Attempting to add tag {tag}");
+                value.Add(tag);
+            }
+
+            tags.SetValue(value);
+        }
+
+        if (data.RemoveContextTags.Count > 0)
+        {
+            var tags = ModEntry.Help.Reflection.GetField<HashSet<string>>(affectedItem, "_contextTags");
+            var value = tags.GetValue();
+
+            foreach (var tag in data.RemoveContextTags)
+            {
+                Log($"Attempting to remove tag {tag}");
+                value.Remove(tag);
+            }
+
+            tags.SetValue(value);
+        }
+    }
+    
+    private static void TryModData(MenuBehavior data, Item affectedItem)
+    {
+        if (data.AddModData is null || data.AddModData.Count <= 0) 
+            return;
+        
+        foreach (var p in data.AddModData)
+        {
+            Log($"Attempting to add mod data \"{p.Key}\":\"{p.Value}\"");
+            if (!affectedItem.modData.TryAdd(p.Key, p.Value))
+                affectedItem.modData[p.Key] = p.Value;
+        }
+    }
+
+    private static void TryQualityChange(MenuBehavior data, Item affectedItem)
+    {
+        if (string.IsNullOrWhiteSpace(data.QualityChange)) 
+            return;
+        
+        Log($"Changing quality: modifier {data.QualityModifier}, int {data.ActualQuality}");
+        switch (data.QualityModifier)
+        {
+            case Modifier.Set when data.ActualQuality is >= 0 and <= 4:
+                affectedItem.Quality = data.ActualQuality;
+                if (affectedItem.Quality == 3)
+                    affectedItem.Quality = 4;
+                break;
+            case Modifier.Sum when affectedItem.Quality < 4:
+                affectedItem.Quality++;
+                if (affectedItem.Quality == 3)
+                    affectedItem.Quality = 4;
+                break;
+            case Modifier.Substract when affectedItem.Quality > 0:
+                affectedItem.Quality--;
+                if (affectedItem.Quality == 3)
+                    affectedItem.Quality = 2;
+                break;
+            //not considered for quality
+            case Modifier.Divide:
+            case Modifier.Multiply:
+            case Modifier.Percentage:
+            default:
+                break;
+        }
+    }
+
+    private static void TryPriceChange(MenuBehavior data, Item affectedItem)
+    {
+        if (string.IsNullOrWhiteSpace(data.PriceChange) || affectedItem is not (Object or Ring or Boots)) 
+            return;
+        
+        Log($"Changing price: modifier {data.PriceModifier}, int {data.ActualPrice}");
+        Item obj = affectedItem switch
+        {
+            Object o => o,
+            Ring r => r,
+            Boots b => b,
+            _ => throw new ArgumentOutOfRangeException(affectedItem.GetType().ToString())
+        };
+
+        var reflectedField = ModEntry.Help.Reflection.GetField<NetInt>(obj, "price");
+        var netPrice = reflectedField.GetValue();
+        var price = (double)netPrice.Value;
+
+        switch (data.PriceModifier)
+        {
+            case Modifier.Set when data.ActualPrice >= 0:
+                price = data.ActualPrice;
+                break;
+            case Modifier.Sum:
+                price += data.ActualPrice;
+                break;
+            case Modifier.Substract:
+                price -= data.ActualPrice;
+                if (price < 0)
+                    price = 0;
+                break;
+            case Modifier.Divide:
+                price /= data.ActualPrice;
+                break;
+            case Modifier.Multiply:
+                price *= data.ActualPrice;
+                break;
+            case Modifier.Percentage:
+                price /= data.ActualPrice / 100;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(data.PriceModifier),
+                    "Value isn't an allowed one.");
+        }
+
+        netPrice.Set((int)price);
+        reflectedField.SetValue(netPrice);
+    }
+
+    private static void TryTextureChange(int index, Item affectedItem)
+    {
+        if (index < 0) 
+            return;
+        
+        Log($"Changing texture index to {index}");
+        affectedItem.ParentSheetIndex = index;
     }
 }

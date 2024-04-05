@@ -124,7 +124,7 @@ public static class Parser
                 ModEntry.Ores.Add(id, data);
         }
         
-        Log($"Loaded {ModEntry.Ores?.Count ?? 0} custom nodes, and {ModEntry.BigClumps?.Count ?? 0} resource clumps.", LogLevel.Debug);
+        Log($"Loaded {ModEntry.Ores?.Count ?? 0} custom nodes, and {ModEntry.BigClumps?.Count ?? 0} resource clumps.");
 
         Log("Invalidating asset 'Data/Objects'...");
         ModEntry.Help.GameContent.InvalidateCache("Data/Objects");
@@ -135,7 +135,7 @@ public static class Parser
         ModEntry.Seeds = new Dictionary<string, List<MixedSeedData>>();
         foreach(var pair in seeds)
         {
-            Log($"Checking {pair.Key} data...", LogLevel.Debug);
+            Log($"Checking {pair.Key} data...");
 
             var validSeeds = new List<MixedSeedData>();
             var hasAllSeeds = true;
