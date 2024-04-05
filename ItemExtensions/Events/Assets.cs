@@ -1,6 +1,7 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -26,7 +27,7 @@ public static class Assets
         
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Panning")))
         {
-            var panData = Helper.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Panning");
+            var panData = Helper.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
             Parser.Panning(panData);
         }
         
@@ -155,7 +156,7 @@ public static class Assets
         if(e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Panning", true))
         {
             e.LoadFrom(
-                () => new Dictionary<string, ExtraSpawn>(),
+                () => new Dictionary<string, PanningData>(),
                 AssetLoadPriority.Low);
         }
         

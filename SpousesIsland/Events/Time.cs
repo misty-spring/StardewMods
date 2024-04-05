@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using SpousesIsland.Additions;
-using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using static SpousesIsland.ModEntry;

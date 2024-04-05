@@ -1,7 +1,7 @@
 using ItemExtensions.Models;
-using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
+using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;

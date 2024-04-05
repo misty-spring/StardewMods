@@ -1,7 +1,7 @@
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using StardewModdingAPI;
-using StardewValley;
 
 namespace ItemExtensions.Additions;
 
@@ -166,9 +166,9 @@ public static class Parser
         }
     }
 
-    public static void Panning(Dictionary<string, ExtraSpawn> panData)
+    public static void Panning(Dictionary<string, PanningData> panData)
     {
-        ModEntry.Panning = new List<ExtraSpawn>();
+        ModEntry.Panning = new List<PanningData>();
         foreach(var pair in panData)
         {
             Log($"Checking {pair.Key} data...");

@@ -30,7 +30,8 @@ public static class ModKeys
     
     //for removal
     /// <summary> By default, resources stay forever. This removes them on day start if applicable.</summary>
-    public const string RemoveAfterDays = "mistyspring.ItemExtensions/RemoveAfterDays";
+    public const string ClumpRemovalDays = "mistyspring.ItemExtensions/ClumpRemovalDays";
+    public const string NodeRemovalDays = "mistyspring.ItemExtensions/NodeRemovalDays";
     /// <summary> Counts days for clumps. </summary>
     public const string Days = "mistyspring.ItemExtensions/Days";
     public const string IsFtm = "mistyspring.ItemExtensions/IsFTM";

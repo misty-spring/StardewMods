@@ -4,6 +4,7 @@ using ItemExtensions.Models.Internal;
 using Netcode;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Extensions;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using Object = StardewValley.Object;
@@ -99,14 +100,17 @@ public static class InventoryPatches
                     break;
                 }
 
-                if (!string.IsNullOrWhiteSpace(data.ReplaceBy))
+                if (data.RandomItemId.Any() || !string.IsNullOrWhiteSpace(data.ReplaceBy))
                 {
                     Log($"Replacing {affectedItem.QualifiedItemId} for {data.ReplaceBy}.");
                     var indexOf = __instance.actualInventory.IndexOf(affectedItem);
+                    
+                    //if there's a random item list, it'll be preferred over normal Id
+                    var whichItem = data.RandomItemId.Any() ? Game1.random.ChooseFrom(data.RandomItemId) : data.ReplaceBy;
+                    
                     if (data.RemoveAmount <= 0)
                     {
-                        var newItem = ItemRegistry.Create(data.ReplaceBy, data.RetainAmount ? affectedItem.Stack : 1,
-                            data.RetainQuality ? affectedItem.Quality : 0);
+                        var newItem = ItemRegistry.Create(whichItem, data.RetainAmount ? affectedItem.Stack : 1, data.RetainQuality ? affectedItem.Quality : 0);
                         __instance.actualInventory[indexOf] = newItem;
                     }
                     else
@@ -124,7 +128,7 @@ public static class InventoryPatches
                      */
                         var maxToCreate = (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount;
                         var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack : maxToCreate;
-                        var newItem = ItemRegistry.Create(data.ReplaceBy, actualCreateCount,
+                        var newItem = ItemRegistry.Create(whichItem, actualCreateCount,
                             data.RetainQuality ? affectedItem.Quality : 0);
 
                         Log($"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");

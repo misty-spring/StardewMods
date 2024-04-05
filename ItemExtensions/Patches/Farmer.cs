@@ -1,6 +1,7 @@
 using HarmonyLib;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;

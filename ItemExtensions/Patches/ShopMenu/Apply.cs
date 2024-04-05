@@ -1,6 +1,6 @@
 using System.Text;
 using HarmonyLib;
-using ItemExtensions.Models;
+using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;

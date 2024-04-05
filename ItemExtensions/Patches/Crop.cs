@@ -1,3 +1,4 @@
+using System.Text;
 using HarmonyLib;
 using ItemExtensions.Additions;
 using StardewModdingAPI;
@@ -46,6 +47,7 @@ internal class CropPatches
         #endif
         try
         {
+            //if there's no mod data, do by custom fields
             if (ModEntry.Seeds.TryGetValue(itemId, out var mixedSeeds) == false)
             {
 #if DEBUG
@@ -63,19 +65,18 @@ internal class CropPatches
 
                 foreach (var id in splitBySpace)
                 {
-                    //if not found:
-                    if (Game1.cropData.TryGetValue(id, out var cropData) == false)
-                        continue;
-                    
-                    //if not in season:
-                    if(cropData.Seasons.Contains(Game1.season) == false)
+                    if (id.StartsWith('$') == false)
                     {
-                        //if no cropAnytime mod
-                        if(HasCropsAnytime == false) 
+                        if (Game1.cropData.TryGetValue(id, out var cropData) == false)
+                        {
+#if DEBUG
+                            Log($"No crop data found. ({id})", LogLevel.Warn);
+#endif
                             continue;
+                        }
                     
-                        //if outdoors and NOT island
-                        if (location.IsOutdoors && location.InIslandContext() == false)
+                        //if not in season, no Anytime mod, and outdoors NOT island
+                        if(cropData.Seasons.Contains(Game1.season) == false && HasCropsAnytime == false && location.IsOutdoors && location.InIslandContext() == false)
                             continue;
                     }
 #if DEBUG
@@ -116,6 +117,7 @@ internal class CropPatches
 
             var all = new List<string>();
 
+            //if mod data was found
             foreach (var seedData in mixedSeeds)
             {
 #if DEBUG
@@ -123,27 +125,30 @@ internal class CropPatches
 #endif
                 if (!string.IsNullOrWhiteSpace(seedData.Condition) &&
                     GameStateQuery.CheckConditions(seedData.Condition, location, Game1.player) == false)
+                {
+#if DEBUG
+                    Log($"Conditions don't match. ({seedData.ItemId})");
+#endif
                     continue;
-
+                }
                 
                 //if not found:
-                if (Game1.cropData.TryGetValue(seedData.ItemId, out var cropData) == false)
-                    continue;
-                    
-                //if not in season:
-                if(cropData.Seasons.Contains(Game1.season) == false)
+                if (seedData.ItemId.StartsWith('$') == false)
                 {
-                    //if no cropAnytime mod
-                    if(HasCropsAnytime == false) 
+                    if (Game1.cropData.TryGetValue(seedData.ItemId, out var cropData) == false)
+                    {
+#if DEBUG
+                        Log($"No crop data found. ({seedData.ItemId})", LogLevel.Warn);
+#endif
                         continue;
+                    }
                     
-                    //if outdoors and NOT island
-                    if (location.IsOutdoors && location.InIslandContext() == false)
+                    //if not in season, no Anytime mod, and outdoors NOT island
+                    if(cropData.Seasons.Contains(Game1.season) == false && HasCropsAnytime == false && location.IsOutdoors && location.InIslandContext() == false)
                         continue;
                 }
-
 #if DEBUG
-                Log($"Adding seed id {seedData.ItemId} by {seedData.Weight}");
+                Log($"Adding seed id {seedData.ItemId} by {seedData.Weight}", LogLevel.Trace);
 #endif
                 //add as many times as weight. e.g, weight 1 gets added once
                 for (var i = 0; i < seedData.Weight; i++)
@@ -187,6 +192,15 @@ internal class CropPatches
                 all.AddRange(GetVanillaCropsForSeason(location.GetSeason(), location));
             }
 
+#if DEBUG
+            var allData = new StringBuilder();
+            foreach (var str in all)
+            {
+                allData.Append(str);
+                allData.Append(", ");
+            }
+            Log($"All: {allData}");
+#endif
             //if there's none in Add, fallback to random crop (shouldn't happen but still)
             if (all.Count <= 0 || all.Any() == false)
             {

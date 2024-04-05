@@ -3,6 +3,7 @@ using ItemExtensions.Additions;
 using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using ItemExtensions.Patches;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -122,7 +123,7 @@ public sealed class ModEntry : Mod
         Monitor.Log($"Loaded {Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
         
         //get mixed seeds
-        var panData = Help.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Panning");
+        var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
         Parser.Panning(panData);
         Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
         
@@ -168,6 +169,6 @@ public sealed class ModEntry : Mod
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
-    public static List<ExtraSpawn> Panning { get; internal set; } = new();
+    public static List<PanningData> Panning { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
 }

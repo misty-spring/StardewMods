@@ -1,6 +1,6 @@
 using ItemExtensions.Models.Contained;
 
-namespace ItemExtensions.Models;
+namespace ItemExtensions.Models.Items;
 
 public class ItemData
 {

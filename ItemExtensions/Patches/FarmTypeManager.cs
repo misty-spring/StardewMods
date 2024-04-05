@@ -17,12 +17,12 @@ public class FarmTypeManagerPatches
 
     internal static void Apply(Harmony harmony)
     { 
-        var spawnForageMethod = AccessTools.Method("FarmTypeManager.ModEntry.Utility:SpawnForage",
+        var spawnForageMethod = AccessTools.Method("FarmTypeManager.ModEntry+Utility:SpawnForage",
             new[] { typeof(string),typeof(GameLocation),typeof(Vector2),typeof(bool) });
 
         if (spawnForageMethod is null) //if the method isn't found, return
         {
-            Log($"Method not found. (FarmTypeManager.ModEntry.Utility:SpawnForage)", LogLevel.Warn);
+            Log($"Method not found. (FarmTypeManager.ModEntry+Utility:SpawnForage)", LogLevel.Warn);
             return;
         }        
         Log($"Applying Harmony patch \"{nameof(FarmTypeManagerPatches)}\": postfixing mod method \"FarmTypeManager.ModEntry.Utility:SpawnForage\".");

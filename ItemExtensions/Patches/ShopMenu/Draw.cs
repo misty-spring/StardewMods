@@ -1,5 +1,5 @@
 using System.Text;
-using ItemExtensions.Models;
+using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;

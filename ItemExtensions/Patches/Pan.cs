@@ -26,7 +26,7 @@ public class PanPatches
         );
     }
     
-    public static void Post_getPanItems(GameLocation location, Farmer who, List<Item> __result)
+    public static void Post_getPanItems(Pan __instance, GameLocation location, Farmer who, List<Item> __result)
     {
         try
         {
@@ -34,6 +34,9 @@ public class PanPatches
 
             foreach (var data in ModEntry.Panning)
             {
+                if(__instance.UpgradeLevel < data.MinUpgrade || (data.MaxUpgrade > 0 && __instance.UpgradeLevel > data.MaxUpgrade))
+                    continue;
+                
                 if (data.Chance < Game1.random.NextDouble())
                     continue;
 

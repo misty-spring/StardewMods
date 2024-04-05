@@ -8,7 +8,6 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
-using xTile.Tiles;
 using static ItemExtensions.Additions.Sorter;
 using Object = StardewValley.Object;
 

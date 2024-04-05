@@ -67,7 +67,7 @@ public static class Day
         {
             string removeAfter = null;
             var howLong = 0;
-            var needsRemovalCheck = arg?.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out removeAfter);
+            var needsRemovalCheck = arg?.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out removeAfter);
             
             if (needsRemovalCheck)
                 int.TryParse(removeAfter, out howLong);
@@ -103,20 +103,38 @@ public static class Day
         }
     }
 
+    /// <summary>
+    /// For each location, check forage duration.
+    /// </summary>
+    /// <param name="arg"></param>
+    /// <returns>Whether to keep iterating code, or stop.</returns>
     private static bool CheckNodeDuration(GameLocation arg)
     {
         if (arg is null)
             return true;
         
         string removeAfter = null;
-        var howLong = 0;
-        var needsRemovalCheck = arg?.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out removeAfter);
+        int howLong;
+        var needsRemovalCheck = arg.GetData()?.CustomFields != null && arg.GetData().CustomFields.TryGetValue(ModKeys.NodeRemovalDays, out removeAfter);
             
+        //if there's property, parse. otherwise ignore location
         if (needsRemovalCheck)
-            int.TryParse(removeAfter, out howLong);
+        {
+            //if couldn't parse days
+            if (int.TryParse(removeAfter, out howLong) == false)
+            {
+                Log($"Couldn'y parse NodeRemovalDays property for location {arg.DisplayName} ({arg.NameOrUniqueName}). Skipping", LogLevel.Info);
+                return true;
+            }
+        }
+        else
+        {
+            return true;
+        }
             
         var removalQueue = new List<Object>();
         
+        //for each object, do check
         foreach (var obj in arg.Objects.Values)
         {
             if (obj.modData is null)
@@ -124,15 +142,14 @@ public static class Day
             
             if (obj.modData.TryGetValue(ModKeys.IsFtm, out var ftm) && bool.Parse(ftm))
                 continue;
+
+            if (obj.modData.TryGetValue(ModKeys.Days, out var daysSoFar) == false || int.TryParse(daysSoFar, out var days) == false) 
+                continue;
             
-            if (needsRemovalCheck && obj.modData.TryGetValue(ModKeys.Days, out var daysSoFar) &&
-                int.TryParse(daysSoFar, out var days))
-            {
-                if (howLong <= days)
-                {
-                    removalQueue.Add(obj); ;
-                }
-            }
+            if (howLong > days) 
+                continue;
+            
+            removalQueue.Add(obj); ;
         }
 
         //remove all that have more days than allowed

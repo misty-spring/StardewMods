@@ -1,6 +1,5 @@
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models;
-using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework;
 using StardewValley;
@@ -69,25 +68,6 @@ public class Api : IApi
         
         health = resource.Health;
         itemDropped = resource.ItemDropped;
-        return true;
-    }
-
-    public bool HasLight(string id, out Color? light)
-    {
-        light = null;
-        
-        if (!ModEntry.Data.TryGetValue(id, out var data))
-            return false;
-
-        if (data.Light is null || data.Light == new LightData())
-            return false;
-
-        var l = data.Light;
-        
-        //prioritize hex- if null, use RGB
-        light = !string.IsNullOrWhiteSpace(l.Hex) ? Utility.StringToColor(l.Hex) : new Color(l.R, l.G, l.B);
-        light *= l.Transparency;
-        
         return true;
     }
 

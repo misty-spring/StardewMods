@@ -1,4 +1,4 @@
-using ItemExtensions.Models;
+using ItemExtensions.Models.Internal;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;

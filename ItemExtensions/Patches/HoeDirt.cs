@@ -30,9 +30,7 @@ public class HoeDirtPatches
 
     private static void Post_plant(string itemId, Farmer who, bool isFertilizer)
     {
-        #if DEBUG
         Log($"Clearing seed cache...(last item {itemId})");
-        #endif
         CropPatches.Cached = null;
     }
 }

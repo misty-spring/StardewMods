@@ -22,6 +22,7 @@ public class MenuBehavior : IWorldChangeData
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
     
     public string TargetId { get; set; } //qualified item ID
+    public List<string> RandomItemId { get; set; } = new();
     public int RemoveAmount { get; set; }
     
     public string ReplaceBy { get; set; } //qualified item ID

@@ -383,7 +383,7 @@ public class GameLocationPatches
                 }
             }
 
-            if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.RemoveAfterDays, out var removeAfter))
+            if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out var removeAfter))
             {
                 clump.modData.Add(ModKeys.Days, "0");
             }
