@@ -85,13 +85,28 @@ public static class Day
                 if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
                     continue;
 
-                if (needsRemovalCheck && resource.modData.TryGetValue(ModKeys.Days, out var daysSoFar) &&
-                    int.TryParse(daysSoFar, out var days))
+                if (needsRemovalCheck)
                 {
-                    if (howLong <= days)
+                    if(resource.modData.TryGetValue(ModKeys.Days, out var daysSoFar) &&
+                        int.TryParse(daysSoFar, out var days))
                     {
-                        removalQueue.Add(resource);
-                        continue;
+                        if (howLong <= days)
+                        {
+                            removalQueue.Add(resource);
+                            continue;
+                        }
+                    }
+                    else if (resource.modData.ContainsKey("DONT_CHECK_DAYS") == false)
+                    {
+                        if (World.TryGetClumpData(resource, out var id, out _))
+                        {
+                            Log("Found data for clump...adding ID");
+                            resource.modData.Add(ModKeys.ClumpId, id);
+                        }
+                        else
+                        {
+                            resource.modData.Add("DONT_CHECK_DAYS", "true");
+                        }
                     }
                 }
                 
