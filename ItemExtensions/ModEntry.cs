@@ -26,7 +26,6 @@ public sealed class ModEntry : Mod
         helper.Events.Content.AssetsInvalidated += Assets.OnInvalidate;
         
         helper.Events.Input.ButtonPressed += ActionButton.Pressed;
-        //helper.Events.World.TerrainFeatureListChanged += World.TerrainChanged;
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
         helper.Events.Content.LocaleChanged += LocaleChanged;
