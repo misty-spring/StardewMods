@@ -11,6 +11,7 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.GameData.Locations;
 using StardewValley.Internal;
+using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -26,6 +27,13 @@ public class GameLocationPatches
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
     internal static void Apply(Harmony harmony)
     {
+        Log($"Applying Harmony patch \"{nameof(GameLocationPatches)}\": postfixing SDV method \"GameLocation.explode\".");
+        
+        harmony.Patch(
+            original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.damageMonster), new[]{ typeof(Rectangle), typeof(int), typeof(int), typeof(bool), typeof(Farmer), typeof(bool)}),
+            postfix: new HarmonyMethod(typeof(GameLocationPatches), nameof(Post_damageMonster))
+        );
+        
         Log($"Applying Harmony patch \"{nameof(GameLocationPatches)}\": postfixing SDV method \"GameLocation.spawnObjects\".");
         
         harmony.Patch(
@@ -39,6 +47,95 @@ public class GameLocationPatches
             original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.spawnObjects)),
             transpiler: new HarmonyMethod(typeof(GameLocationPatches), nameof(Transpiler))
         );
+    }
+
+    /// <summary>
+    /// Sort-of hacky way of damaging clumps. Postfix this specific damageMonster as it's called by explosion
+    /// </summary>
+    /// <param name="__instance"></param>
+    /// <param name="areaOfEffect"></param>
+    /// <param name="minDamage"></param>
+    /// <param name="maxDamage">Max possible damage.</param>
+    /// <param name="isBomb">Whether the damage comes from a bomb.</param>
+    /// <param name="who"></param>
+    /// <param name="isProjectile"></param>
+    private static void Post_damageMonster(GameLocation __instance, Rectangle areaOfEffect, int minDamage, int maxDamage, bool isBomb,
+        Farmer who, bool isProjectile = false)
+    {
+        if (isBomb == false)
+            return;
+
+        var dmg = Game1.random.Next(minDamage, maxDamage);
+        
+        if (dmg > 8)
+            dmg /= 4;
+        
+        #if DEBUG
+        Log($"Calling clump damage code with dmg {dmg}. Rectangle bounds: {areaOfEffect.X}, {areaOfEffect.Y}, {areaOfEffect.Width}, {areaOfEffect.Height}");
+        #endif
+
+        var realRect = new Rectangle(areaOfEffect.X / 64, areaOfEffect.Y / 64, areaOfEffect.Width / 64,
+            areaOfEffect.Height / 64);
+        CheckClumpDamage(__instance, realRect, dmg);
+    }
+    
+    private static void CheckClumpDamage(GameLocation gameLocation, Rectangle rectangle, int damage_amount = -1)
+    {
+        var alreadyChecked = new List<ResourceClump>();
+        var toRemove = new List<ResourceClump>();
+        
+        foreach (var clump in gameLocation.resourceClumps)
+        {
+            if(alreadyChecked.Contains(clump))
+                continue;
+#if DEBUG
+            Log($"Checking clump at {clump.Tile}");
+#endif
+            if (rectangle.Contains(clump.Tile) == false)
+            {
+#if DEBUG
+                Log($"Clump not in range.");
+#endif
+                continue;
+            }
+            
+            if(clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
+            {
+#if DEBUG
+                Log($"Clump has no id.");
+#endif
+                continue;
+            }
+            
+            if (ModEntry.BigClumps.TryGetValue(id, out var resource) == false)
+            {
+#if DEBUG
+                Log($"Clump ID not found in files.");
+#endif
+                continue;
+            }
+
+            if (resource.ImmuneToBombs)
+            {
+#if DEBUG
+                Log($"Clump is immune to bombs.");
+#endif
+                continue;
+            }
+
+            clump.performToolAction(null, damage_amount, clump.Tile);
+
+            if (clump.health.Value <= 0)
+                toRemove.Add(clump);
+            
+            alreadyChecked.Add(clump);
+        }
+
+        foreach (var removal in toRemove)
+        {
+            var location = removal.Location;
+            location.resourceClumps.Remove(removal);
+        }
     }
 
     /// <summary>
@@ -280,6 +377,11 @@ public class GameLocationPatches
             //if no random is clump
             if (!isAnyRandomAClump)
             {
+                if (string.IsNullOrWhiteSpace(forage?.ItemId))
+                {
+                    return false;
+                }
+                
                 //prioritize clump
                 TryPlaceCustomClump(forage.ItemId, context, vector2);
                 return true;
@@ -363,37 +465,34 @@ public class GameLocationPatches
         #endif
 
         var clump = ExtensionClump.Create(clumpId, position);
+        
+        if (clump is null)
+            return;
+        
         var cf = context.Location.GetData().CustomFields;
 
-        try
+        if (cf is not null)
         {
-            if (cf is not null)
-            {
-                var hasRect = cf.TryGetValue(ModKeys.SpawnRect, out var rawRect);
+            var hasRect = cf.TryGetValue(ModKeys.SpawnRect, out var rawRect);
                 
-                //default true, but can be set off, idk why
-                var avoidOverlap = true;
-                if (cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap))
-                    avoidOverlap = bool.Parse(overlap);
+            //default true, but can be set off, idk why
+            var avoidOverlap = true;
+            if (cf.TryGetValue(ModKeys.AvoidOverlap, out var overlap))
+                avoidOverlap = bool.Parse(overlap);
 
-                if (hasRect && !string.IsNullOrWhiteSpace(rawRect))
-                {
-                    var newPosition = CheckPosition(context, position, rawRect, avoidOverlap);
-                    clump.Tile = newPosition;
-                }
-            }
-
-            if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out var removeAfter))
+            if (hasRect && !string.IsNullOrWhiteSpace(rawRect))
             {
-                clump.modData.Add(ModKeys.Days, "0");
+                var newPosition = CheckPosition(context, position, rawRect, avoidOverlap);
+                clump.Tile = newPosition;
             }
-            
-            context.Location.resourceClumps.Add(clump);
         }
-        catch (Exception ex)
+
+        if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out var removeAfter))
         {
-            Log($"Error: {ex}", LogLevel.Error);
+            clump.modData.Add(ModKeys.Days, "0");
         }
+            
+        context.Location.resourceClumps.Add(clump);
     }
 
     /// <summary>

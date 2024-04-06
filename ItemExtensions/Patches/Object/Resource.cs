@@ -147,6 +147,9 @@ public partial class ObjectPatches
             if (resource == null)
                 return;
 
+            if (resource.ImmuneToBombs)
+                return;
+            
             //var sheetName = ItemRegistry.GetData(data.ItemDropped).TextureName;
             var where = __instance.Location;
             var tile = __instance.TileLocation;

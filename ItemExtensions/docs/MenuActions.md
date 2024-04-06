@@ -31,7 +31,7 @@ If your held item has "custom behavior" for the clicked one, it'll be called.
 
 ## How to use
 
-Edit `mistyspring.dynamicdialogues/ItemActions`, the key is the item to use, and the list has every item with custom behavior.
+Edit `Mods/mistyspring.dynamicdialogues/ItemActions`, the key is the item to use, and the list has every item with custom behavior.
 
 ## Example
 
@@ -43,7 +43,7 @@ This will happen for all eggs in the stack. It will also play a fire sound.
 ```
 {
     "Action": "EditData",
-    "Target": "mistyspring.ItemExtensions/ItemActions",
+    "Target": "Mods/mistyspring.ItemExtensions/ItemActions",
     "Entries": {
         "(W)9": [
             {

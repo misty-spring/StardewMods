@@ -59,6 +59,11 @@ public static class Day
             
             resource.parentSheetIndex.Set(data.SpriteIndex);
             resource.loadSprite();
+
+            if (resource.modData.TryGetValue(ModKeys.Days, out var dayString) && int.TryParse(dayString, out var days))
+            {
+                resource.modData[ModKeys.Days] = $"{days + 1}";
+            }
         }
 
         return;
@@ -145,6 +150,8 @@ public static class Day
 
             if (obj.modData.TryGetValue(ModKeys.Days, out var daysSoFar) == false || int.TryParse(daysSoFar, out var days) == false) 
                 continue;
+            
+            obj.modData[ModKeys.Days] = $"{days + 1}";
             
             if (howLong > days) 
                 continue;

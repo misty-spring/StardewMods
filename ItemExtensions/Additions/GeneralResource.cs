@@ -402,7 +402,7 @@ public static class GeneralResource
 
         if (resource.ExtraItems != null && resource.ExtraItems.Any())
         {
-            TryExtraDrops(resource.ExtraItems, location, t.getLastFarmerToUse(), tileLocation);
+            TryExtraDrops(resource.ExtraItems, location, who, tileLocation);
         }
 
         if(!string.IsNullOrWhiteSpace(resource.BreakingSound))
@@ -414,7 +414,7 @@ public static class GeneralResource
         }
         
         if(resource.ActualSkill >= 0)
-            t.getLastFarmerToUse().gainExperience(resource.ActualSkill, resource.Exp);
+            who.gainExperience(resource.ActualSkill, resource.Exp);
 
         if (resource.CountTowards is not StatCounter.None)
             AddStats(resource.CountTowards);
@@ -594,7 +594,18 @@ public static class GeneralResource
             return damage;
         }
         //otherwise, return calculation
-        return (int)Math.Max(1f, (tool.UpgradeLevel + 1) * 0.75f);
+        var dmg = (int)Math.Max(1f, (tool.UpgradeLevel + 1) * 0.75f);
+        
+        if (tool is Pickaxe p)
+        {
+            dmg += p.additionalPower.Value;
+        }
+        if (tool is Axe a)
+        {
+            dmg += a.additionalPower.Value;
+        }
+
+        return dmg;
     }
 
     public static bool IsVanilla(string id)

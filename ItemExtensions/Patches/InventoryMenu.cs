@@ -48,20 +48,22 @@ public static class InventoryPatches
     {
         try
         {
-            if (__result != null)
-            {
-#if DEBUG
-                Log($"\nPosition: {x}, {y}\nChecking item {__result.DisplayName} ({__result?.QualifiedItemId})\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
-#endif
-                CallWithoutItem(__instance, ref __result, x, y);
-                return;
-            }
-            
             var affectedItem = __instance.getItemAt(x, y);
             var heldItem = toAddTo;
 
+            //if there's no using item OR target item
             if (affectedItem == null || heldItem == null)
+            {
+                //if mouse grabbed something
+                if (__result != null)
+                {
+#if DEBUG
+                Log($"\nPosition: {x}, {y}\nChecking item {__result.DisplayName} ({__result?.QualifiedItemId})\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
+#endif
+                    CallWithoutItem(__instance, ref __result, x, y);
+                }
                 return;
+            }
 
 #if DEBUG
             Log($"\nPosition: {x}, {y}\nHeld item: {heldItem?.QualifiedItemId} ({heldItem?.DisplayName}), Affected item: {affectedItem?.QualifiedItemId}\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
@@ -204,7 +206,7 @@ public static class InventoryPatches
         if (!ModEntry.MenuActions.TryGetValue("None", out var options))
             return;
         
-        Log("Found conversion data for item.");
+        Log("Found conversion data for item. (Mouse/empty action)");
 
         //search for ID
         foreach (var data in options)

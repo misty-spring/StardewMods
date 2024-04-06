@@ -67,6 +67,7 @@ public class ResourceData
     public string Tool { get; set; } = "Pickaxe";
 
     public NotifyForTool? SayWrongTool { get; set; } = NotifyForTool.None;
+    public bool ImmuneToBombs { get; set; }
     /// <summary>
     /// Minimum upgrade tool should have. If a weapon, the minimum number is checked. 
     /// ("number": 10% of average damage)
@@ -91,7 +92,7 @@ public class ResourceData
     public List<MineSpawn> MineSpawns { get; set; } = new();
     //conditional
     internal List<MineSpawn> RealSpawnData { get; set; } = new();
-    
+
 
     public bool IsValid(bool skipTextureCheck)
     {
