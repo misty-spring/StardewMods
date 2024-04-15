@@ -285,7 +285,6 @@ public class GameLocationPatches
     /// <returns>Whether the spawn was a clump.</returns>
     public static bool CheckIfCustomClump(SpawnForageData forage, ItemQueryContext context, Vector2 vector2)
     {
-        //var log = ModEntry.Help.Reflection.GetField<IGameLogger>(typeof(Game1), "log").GetValue();
         #if DEBUG
         Log($"Called transpiled code for {forage?.Id}");
         #endif
@@ -471,7 +470,7 @@ public class GameLocationPatches
         
         var cf = context.Location.GetData().CustomFields;
 
-        if (cf is not null)
+        if (cf is not null && cf.Any())
         {
             var hasRect = cf.TryGetValue(ModKeys.SpawnRect, out var rawRect);
                 
@@ -487,12 +486,12 @@ public class GameLocationPatches
             }
         }
 
-        if (context.Location.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out var removeAfter))
+        if (context.Location?.GetData()?.CustomFields != null && context.Location.GetData().CustomFields.TryGetValue(ModKeys.ClumpRemovalDays, out _))
         {
             clump.modData.Add(ModKeys.Days, "0");
         }
             
-        context.Location.resourceClumps.Add(clump);
+        context.Location?.resourceClumps?.Add(clump);
     }
 
     /// <summary>
@@ -500,37 +499,55 @@ public class GameLocationPatches
     /// This might be heavy on resources, so it's recommended to just use FTM instead.
     /// </summary>
     /// <param name="context">Spawn context.</param>
-    /// <param name="position">Current position.</param>
+    /// <param name="defaultPosition">Current position.</param>
     /// <param name="rawRect">Spawn zone, unparsed.</param>
     /// <param name="avoidOverlap">If to avoid placing on a tile with content.</param>
     /// <returns></returns>
-    private static Vector2 CheckPosition(ItemQueryContext context, Vector2 position, string rawRect, bool avoidOverlap)
+    private static Vector2 CheckPosition(ItemQueryContext context, Vector2 defaultPosition, string rawRect, bool avoidOverlap)
     {
+        if (string.IsNullOrWhiteSpace(rawRect))
+            return defaultPosition;
+        
         try
         {
-            var result = position;
+            var result = defaultPosition;
 
             //can either be "x y w h" for single one, or for multiple "\"x y w h\" \"x y w h\""
             var split = ArgUtility.SplitBySpaceQuoteAware(rawRect);
+            
+            if (split is null || split.Length < 1)
+                return defaultPosition;
+            
             var rects = new List<Rectangle>();
             //if multiple, parse each. otherwise parse single one
-            if (split[0].Contains(' '))
+            if (split[0].Contains(' ')) // it'd only have a space if there's quote split
             {
                 foreach (var raw in split)
                 {
+                    if (string.IsNullOrWhiteSpace(raw))
+                        return defaultPosition;
+                    
                     var args = ArgUtility.SplitBySpace(raw);
-                    rects.Add(new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]),
-                        int.Parse(args[3])));
+            
+                    if (args is null || args.Length < 4)
+                        return defaultPosition;
+                    
+                    rects.Add(new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]), int.Parse(args[3])));
                 }
             }
             else
             {
-                rects.Add(new Rectangle(int.Parse(split[0]), int.Parse(split[1]), int.Parse(split[2]),
-                    int.Parse(split[3])));
+                if (split.Length < 4)
+                    return defaultPosition;
+                
+                rects.Add(new Rectangle(int.Parse(split[0]), int.Parse(split[1]), int.Parse(split[2]), int.Parse(split[3])));
             }
 
+            if (rects.Count <= 0 || rects.Any() == false)
+                return defaultPosition;
+            
             //if point isn't in allowed rect, set to a random point in any
-            if (rects.Any(r => r.Contains(position)))
+            if (rects.Any(r => r.Contains(defaultPosition)))
                 return result;
 
             var random = context.Random ?? Game1.random;
@@ -564,7 +581,7 @@ public class GameLocationPatches
         catch (Exception e)
         {
             Log($"Error: {e}.\n     Will use original position", LogLevel.Warn);
-            return position;
+            return defaultPosition;
         }
     }
 }

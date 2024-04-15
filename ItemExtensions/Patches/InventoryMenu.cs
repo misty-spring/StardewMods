@@ -1,3 +1,4 @@
+using System.Text;
 using HarmonyLib;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
@@ -73,7 +74,37 @@ public static class InventoryPatches
                 return;
 
             if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+            {
+                var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/ItemActions/{heldItem.QualifiedItemId}");
+                
+                if (particularMenuData is null)
+                    return;
+
+                foreach (var data in particularMenuData)
+                {
+                    if (data.Value.Parse(out var rightInfo))
+                    {
+                        var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, rightInfo, out var shouldNullSpecific);
+                        
+                        if (shouldNullSpecific)
+                            __result = null;
+
+                        if (shouldBreak == false)
+                            continue;
+                        
+                        Log($"Finished applying action {data.Key} for item.");
+                        break;
+                    }
+                    else
+                    {
+                        var sb = new StringBuilder("There was an error while validating ");
+                        sb.Append(data.Key ?? "this action");
+                        sb.Append(". Skipping... (Make sure the format is valid)");
+                        Log(sb.ToString(), LogLevel.Info);
+                    }
+                }
                 return;
+            }
 
 
             // ReSharper disable once PossibleNullReferenceException
@@ -84,117 +115,138 @@ public static class InventoryPatches
 
             foreach (var data in options)
             {
-                if (data.TargetId != affectedItem.QualifiedItemId)
-                    continue;
+                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, out var shouldNullSpecific);
+                        
+                if (shouldNullSpecific)
+                    __result = null;
 
-                if (!string.IsNullOrWhiteSpace(data.Conditions) && !GameStateQuery.CheckConditions(data.Conditions))
-                {
-                    Log($"Conditions for {data.TargetId} don't match.");
+                if (shouldBreak)
                     break;
-                }
-
-                IWorldChangeData.Solve(data);
-                
-                //removeamount is PER item to avoid cheating
-                if (heldItem.Stack < data.RemoveAmount)
-                {
-                    Log($"Minimum to remove from {data.TargetId} isn't avaiable.");
-                    break;
-                }
-
-                //if we can't convert entire stack AND no more spaces, return
-                if (heldItem.Stack < data.RemoveAmount * affectedItem.Stack && Game1.player.freeSpotsInInventory() == 0)
-                {
-                    Game1.showRedMessageUsingLoadString("Strings/StringsFromCSFiles:BlueprintsMenu.cs.10002");
-                    Game1.playSound("cancel");
-
-                    Log("No spaces avaiable in inventory. Can't partially convert stack.");
-                    break;
-                }
-
-                if (data.RandomItemId.Any() || !string.IsNullOrWhiteSpace(data.ReplaceBy))
-                {
-                    Log($"Replacing {affectedItem.QualifiedItemId} for {data.ReplaceBy}.");
-                    var indexOf = __instance.actualInventory.IndexOf(affectedItem);
-                    
-                    //if there's a random item list, it'll be preferred over normal Id
-                    var whichItem = data.RandomItemId.Any() ? Game1.random.ChooseFrom(data.RandomItemId) : data.ReplaceBy;
-                    
-                    if (data.RemoveAmount <= 0)
-                    {
-                        var newItem = ItemRegistry.Create(whichItem, data.RetainAmount ? affectedItem.Stack : 1, data.RetainQuality ? affectedItem.Quality : 0);
-                        __instance.actualInventory[indexOf] = newItem;
-                    }
-                    else
-                    {
-                        /* e.g: stack of 8, remove 3 per created
-                     *
-                     * (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount
-                     * (8 - (8 % 3)) / 3
-                     * (8 - 2) / 3
-                     * 6 / 3
-                     * 2
-                     *
-                     * if we have 8 and need 3 per conversion, we can make 2 max.
-                     * if affected stack is smaller than max, make stack count. else, maxpossible is set
-                     */
-                        var maxToCreate = (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount;
-                        var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack : maxToCreate;
-                        var newItem = ItemRegistry.Create(whichItem, actualCreateCount,
-                            data.RetainQuality ? affectedItem.Quality : 0);
-
-                        Log($"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({data.RemoveAmount} per change).");
-
-                        //if stack is the same, replace.
-                        if (affectedItem.Stack == actualCreateCount)
-                            __instance.actualInventory[indexOf] = newItem;
-                        else
-                        {
-                            __instance.actualInventory[indexOf]
-                                .ConsumeStack(actualCreateCount); //Stack -= newItem.Stack;
-                            Game1.player.addItemByMenuIfNecessary(newItem);
-                        }
-
-                        Log($"Removing {data.RemoveAmount} for each converted item.");
-                        var consumed = actualCreateCount * data.RemoveAmount;
-
-                        Log($"New stack will be {heldItem.Stack - consumed} ...");
-
-                        //either reduce count OR remove item
-                        if (heldItem.Stack - consumed > 0)
-                        {
-                            heldItem.ConsumeStack(consumed);
-                        }
-                        else
-                        {
-                            //__instance.actualInventory.Remove(heldItem); //not part of inventory so this won't work
-                            //heldItem.Stack = 0;
-                            __result = null;
-                        }
-
-                        //this is to avoid copying new values on a preexisting item (that isnt supposed to be changed)
-                        Log($"New affected item will be {newItem.QualifiedItemId} ({newItem.DisplayName}).");
-                        affectedItem = newItem;
-                    }
-                }
-
-                TryContextTags(data, affectedItem);
-                
-                TryModData(data, affectedItem);
-
-                TryQualityChange(data, affectedItem);
-
-                TryPriceChange(data, affectedItem);
-
-                TryTextureChange(data.TextureIndex, affectedItem);
-
-                break;
             }
         }
         catch (Exception e)
         {
             Log($"Error: {e}", LogLevel.Error);
         }
+    }
+
+    /// <summary>
+    /// Checks for a menu action.
+    /// </summary>
+    /// <param name="menu"></param>
+    /// <param name="heldItem"></param>
+    /// <param name="affectedItem"></param>
+    /// <param name="behavior"></param>
+    /// <param name="shouldNullResult"></param>
+    /// <returns>Whether to continue iterating.</returns>
+    private static bool CheckMenuActions(ref InventoryMenu menu, ref Item heldItem, ref Item affectedItem, MenuBehavior behavior, out bool shouldNullResult)
+    {
+        shouldNullResult = false;
+
+        if (behavior.TargetId != affectedItem.QualifiedItemId)
+        {
+            return true;
+        }
+            
+        if (!string.IsNullOrWhiteSpace(behavior.Conditions) && !GameStateQuery.CheckConditions(behavior.Conditions))
+        {
+            Log($"Conditions for {behavior.TargetId} don't match.");
+            return true;
+        }
+
+        IWorldChangeData.Solve(behavior);
+                
+        //removeamount is PER item to avoid cheating
+        if (heldItem.Stack < behavior.RemoveAmount)
+        {
+            Log($"Minimum to remove from {behavior.TargetId} isn't available.");
+            return true;
+        }
+
+        //if we can't convert entire stack AND no more spaces, return
+        if (heldItem.Stack < behavior.RemoveAmount * affectedItem.Stack && Game1.player.freeSpotsInInventory() == 0)
+        {
+            Game1.showRedMessageUsingLoadString("Strings/StringsFromCSFiles:BlueprintsMenu.cs.10002");
+            Game1.playSound("cancel");
+
+            Log("No spaces avaiable in inventory. Can't partially convert stack.");
+            return false;
+        }
+
+        if (behavior.RandomItemId.Any() || !string.IsNullOrWhiteSpace(behavior.ReplaceBy))
+        {
+            Log($"Replacing {affectedItem.QualifiedItemId} for {behavior.ReplaceBy}.");
+            var indexOf = menu.actualInventory.IndexOf(affectedItem);
+                    
+            //if there's a random item list, it'll be preferred over normal Id
+            var whichItem = behavior.RandomItemId.Any() ? Game1.random.ChooseFrom(behavior.RandomItemId) : behavior.ReplaceBy;
+                    
+            if (behavior.RemoveAmount <= 0)
+            {
+                var newItem = ItemRegistry.Create(whichItem, behavior.RetainAmount ? affectedItem.Stack : 1, behavior.RetainQuality ? affectedItem.Quality : 0);
+                menu.actualInventory[indexOf] = newItem;
+            }
+            else
+            {
+                /* e.g: stack of 8, remove 3 per created
+                 *
+                 * (heldItem.Stack - heldItem.Stack % data.RemoveAmount) / data.RemoveAmount
+                 * (8 - (8 % 3)) / 3
+                 * (8 - 2) / 3
+                 * 6 / 3
+                 * 2
+                 *
+                 * if we have 8 and need 3 per conversion, we can make 2 max.
+                 * if affected stack is smaller than max, make stack count. else, maxpossible is set
+                 */
+                var maxToCreate = (heldItem.Stack - heldItem.Stack % behavior.RemoveAmount) / behavior.RemoveAmount;
+                var actualCreateCount = affectedItem.Stack < maxToCreate ? affectedItem.Stack : maxToCreate;
+                var newItem = ItemRegistry.Create(whichItem, actualCreateCount,
+                    behavior.RetainQuality ? affectedItem.Quality : 0);
+
+                Log($"Created {actualCreateCount} items from stack with {heldItem.Stack} items ({behavior.RemoveAmount} per change).");
+
+                //if stack is the same, replace.
+                if (affectedItem.Stack == actualCreateCount)
+                    menu.actualInventory[indexOf] = newItem;
+                else
+                {
+                    menu.actualInventory[indexOf].ConsumeStack(actualCreateCount);
+                    Game1.player.addItemByMenuIfNecessary(newItem);
+                }
+
+                Log($"Removing {behavior.RemoveAmount} for each converted item.");
+                var consumed = actualCreateCount * behavior.RemoveAmount;
+
+                Log($"New stack will be {heldItem.Stack - consumed} ...");
+
+                //either reduce count OR remove item
+                if (heldItem.Stack - consumed > 0)
+                {
+                    heldItem.ConsumeStack(consumed);
+                }
+                else
+                {
+                    shouldNullResult = true;
+                }
+
+                //this is to avoid copying new values on a preexisting item (that isnt supposed to be changed)
+                Log($"New affected item will be {newItem.QualifiedItemId} ({newItem.DisplayName}).");
+                affectedItem = newItem;
+            }
+        }
+
+        TryContextTags(behavior, affectedItem);
+                
+        TryModData(behavior, affectedItem);
+
+        TryQualityChange(behavior, affectedItem);
+
+        TryPriceChange(behavior, affectedItem);
+
+        TryTextureChange(behavior.TextureIndex, affectedItem);
+
+        return false;
     }
 
     private static void CallWithoutItem(InventoryMenu menu, ref Item target, int x, int y)

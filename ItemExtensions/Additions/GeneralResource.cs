@@ -388,16 +388,7 @@ public static class GeneralResource
 
         if (!string.IsNullOrWhiteSpace(resource.ItemDropped))
         {
-            if (Game1.IsMultiplayer)
-            {
-                Game1.recentMultiplayerRandom = Utility.CreateRandom(tileLocation.X * 1000.0, tileLocation.Y);
-                for (var index = 0; index < Game1.random.Next(2, 4); ++index)
-                    CreateItemDebris(resource.ItemDropped, num2, (int)tileLocation.X, (int)tileLocation.Y, location);
-            }
-            else
-            {
-                CreateItemDebris(resource.ItemDropped, num2, (int)tileLocation.X, (int)tileLocation.Y, location);
-            }
+            CreateItemDebris(resource.ItemDropped, num2, (int)tileLocation.X, (int)tileLocation.Y, location);
         }
 
         if (resource.ExtraItems != null && resource.ExtraItems.Any())

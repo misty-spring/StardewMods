@@ -3,6 +3,7 @@ using ItemExtensions.Additions;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
 
@@ -45,7 +46,7 @@ public class TractorModPatches
     {
         try
         {
-            if (tool is null)
+            if (tool is null || tileObj is Chest)
                 return;
             
             tileObj?.performToolAction(tool);

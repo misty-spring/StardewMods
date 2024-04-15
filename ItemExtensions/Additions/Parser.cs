@@ -36,8 +36,12 @@ public static class Parser
                 parsed.Add(item.Key,temp);
         }
 
-        if (parsed.Count > 0)
-            ModEntry.MenuActions = parsed;
+        if (parsed.Count <= 0) 
+            return;
+        
+        Log("FOR MODDERS: Patches to /MenuActions are deprecated. To see the new model, check the template in the mod's page.", LogLevel.Warn);
+        
+        ModEntry.MenuActions = parsed;
     }
 
     internal static void ObjectData(Dictionary<string, ItemData> objData)

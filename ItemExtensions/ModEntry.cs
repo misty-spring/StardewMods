@@ -87,7 +87,7 @@ public sealed class ModEntry : Mod
 
     private static void OnLaunch(object sender, GameLaunchedEventArgs e)
     {
-        Mon.Log("Getting resources for the first time...", Level);
+        Mon.Log("Getting resources for the first time...");
         var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
         Parser.Resources(oreData, true);
 #if DEBUG
