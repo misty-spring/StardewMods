@@ -29,7 +29,6 @@ public sealed class ModEntry : Mod
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
         helper.Events.Content.LocaleChanged += LocaleChanged;
-        helper.Events.Display.RenderedHud += Hud.Rendered;
         
         Mon = Monitor;
         Help = Helper;

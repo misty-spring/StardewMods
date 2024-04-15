@@ -258,26 +258,8 @@ public static class InventoryPatches
 
         TryTextureChange(behavior.TextureIndex, affectedItem);
         
-        if (string.IsNullOrWhiteSpace(behavior.Animation)) 
-            return false;
-        
-        if (behavior.Animation.Equals("poof", StringComparison.OrdinalIgnoreCase))
-        {
-            AnimationQueue = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 320, 64, 64), 50f, 8, 0, new Vector2(x, y), false, false);
-        }
-        else if (behavior.Animation.Equals("gift", StringComparison.OrdinalIgnoreCase))
-        {
-            AnimationQueue = new TemporaryAnimatedSprite("LooseSprites\\JunimoNote", new Rectangle(548, 262, 18, 20), 70f, 4, 5, new Vector2(x, y), false, false, 0.5f, 0.0f, Color.White, 4f, 0.0f, 0.0f, 0.0f, true);
-        }
-        else if (behavior.Animation.Equals("sparkle", StringComparison.OrdinalIgnoreCase))
-        {
-            AnimationQueue = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 640, 64, 64), 100f, 8, 0, new Vector2(x, y), flicker: false, flipped: false);
-        }
-        
         return false;
     }
-
-    internal static TemporaryAnimatedSprite AnimationQueue { get; set; } = new();
 
     private static void CallWithoutItem(InventoryMenu menu, ref Item target, int x, int y)
     {

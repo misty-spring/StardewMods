@@ -5,6 +5,7 @@ using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewValley;
 using StardewValley.GameData.Objects;
 
 namespace ItemExtensions.Events;

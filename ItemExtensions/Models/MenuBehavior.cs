@@ -50,7 +50,6 @@ public class MenuBehavior : IWorldChangeData
     
     public string PlayMusic { get; set; }
     public string PlaySound { get; set; }
-    public string Animation { get; set; }
     
     public string TriggerAction { get; set; }
     public List<string> RemoveFlags { get; set; } = new();
