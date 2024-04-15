@@ -74,21 +74,23 @@ public static class InventoryPatches
             if (onlyCheckToolAttachments)
                 return;
 
-            if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+            if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}"))
             {
-                if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}") == false)
-                    return;
-                
                 var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}");
                 
                 if (particularMenuData is null)
+                {
+#if DEBUG
+                    Log("Asset doesn't exist.");
+#endif
                     return;
+                }
 
                 foreach (var data in particularMenuData)
                 {
                     if (data.Value.Parse(out var rightInfo))
                     {
-                        var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, rightInfo, x, y, out var shouldNullSpecific);
+                        var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, rightInfo, x, y, out var shouldNullSpecific) == false;
                         
                         if (shouldNullSpecific)
                             __result = null;
@@ -107,7 +109,15 @@ public static class InventoryPatches
                 }
                 return;
             }
+#if DEBUG
+            else
+            {
+                Log($"Asset for {heldItem.QualifiedItemId} couldn't be found. Checking deprecated file");
+            }
+#endif
 
+            if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+                return;
 
             // ReSharper disable once PossibleNullReferenceException
             if (!ModEntry.MenuActions.TryGetValue(heldItem.QualifiedItemId, out var options))
@@ -117,7 +127,7 @@ public static class InventoryPatches
 
             foreach (var data in options)
             {
-                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, x, y, out var shouldNullSpecific);
+                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, x, y, out var shouldNullSpecific) == false;
                         
                 if (shouldNullSpecific)
                     __result = null;
@@ -247,25 +257,27 @@ public static class InventoryPatches
         TryPriceChange(behavior, affectedItem);
 
         TryTextureChange(behavior.TextureIndex, affectedItem);
-
+        
         if (string.IsNullOrWhiteSpace(behavior.Animation)) 
             return false;
         
         if (behavior.Animation.Equals("poof", StringComparison.OrdinalIgnoreCase))
         {
-            var poof = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 320, 64, 64), 50f, 8, 0, new Vector2((float) (x - x % 64 + 16), (float) (y - y % 64 + 16)), false, false);
+            AnimationQueue = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 320, 64, 64), 50f, 8, 0, new Vector2(x, y), false, false);
         }
         else if (behavior.Animation.Equals("gift", StringComparison.OrdinalIgnoreCase))
         {
-            var presentButton = new TemporaryAnimatedSprite("LooseSprites\\JunimoNote", new Rectangle(548, 262, 18, 20), 70f, 4, 5, new Vector2(x, y), false, false, 0.5f, 0.05f, Color.White, 4f, 0.0f, 0.0f, 0.0f, true);
+            AnimationQueue = new TemporaryAnimatedSprite("LooseSprites\\JunimoNote", new Rectangle(548, 262, 18, 20), 70f, 4, 5, new Vector2(x, y), false, false, 0.5f, 0.0f, Color.White, 4f, 0.0f, 0.0f, 0.0f, true);
         }
         else if (behavior.Animation.Equals("sparkle", StringComparison.OrdinalIgnoreCase))
         {
-            var sparkle = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 640, 64, 64), 100f, 8, 0, new Vector2(x, y), flicker: false, flipped: false);
+            AnimationQueue = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 640, 64, 64), 100f, 8, 0, new Vector2(x, y), flicker: false, flipped: false);
         }
         
         return false;
     }
+
+    internal static TemporaryAnimatedSprite AnimationQueue { get; set; } = new();
 
     private static void CallWithoutItem(InventoryMenu menu, ref Item target, int x, int y)
     {
