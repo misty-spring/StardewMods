@@ -31,7 +31,7 @@ If your held item has "custom behavior" for the clicked one, it'll be called.
 
 ## How to use
 
-Edit the item's `Mods/mistyspring.dynamicdialogues/ItemActions` file.
+Edit the item's `Mods/mistyspring.dynamicdialogues/MenuActions` file.
 The key is to identify your mod's patch (in case of failure), and the value is the item action.
 
 ## Example
@@ -44,7 +44,7 @@ This will happen for all eggs in the stack. It will also play a fire sound.
 ```
 {
     "Action": "EditData",
-    "Target": "Mods/mistyspring.ItemExtensions/ItemActions/(W)9",
+    "Target": "Mods/mistyspring.ItemExtensions/MenuActions/(W)9",
     "Entries": {
         "nameOfMyPatch":
         {

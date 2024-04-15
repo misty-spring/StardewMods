@@ -3,6 +3,7 @@ using HarmonyLib;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
+using Microsoft.Xna.Framework;
 using Netcode;
 using StardewModdingAPI;
 using StardewValley;
@@ -75,7 +76,10 @@ public static class InventoryPatches
 
             if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
             {
-                var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/ItemActions/{heldItem.QualifiedItemId}");
+                if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}") == false)
+                    return;
+                
+                var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}");
                 
                 if (particularMenuData is null)
                     return;
@@ -84,7 +88,7 @@ public static class InventoryPatches
                 {
                     if (data.Value.Parse(out var rightInfo))
                     {
-                        var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, rightInfo, out var shouldNullSpecific);
+                        var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, rightInfo, x, y, out var shouldNullSpecific);
                         
                         if (shouldNullSpecific)
                             __result = null;
@@ -93,15 +97,13 @@ public static class InventoryPatches
                             continue;
                         
                         Log($"Finished applying action {data.Key} for item.");
-                        break;
+                        return;
                     }
-                    else
-                    {
-                        var sb = new StringBuilder("There was an error while validating ");
-                        sb.Append(data.Key ?? "this action");
-                        sb.Append(". Skipping... (Make sure the format is valid)");
-                        Log(sb.ToString(), LogLevel.Info);
-                    }
+                    
+                    var sb = new StringBuilder("There was an error while validating ");
+                    sb.Append(data.Key ?? "this action");
+                    sb.Append(". Skipping... (Make sure the format is valid)");
+                    Log(sb.ToString(), LogLevel.Info);
                 }
                 return;
             }
@@ -115,7 +117,7 @@ public static class InventoryPatches
 
             foreach (var data in options)
             {
-                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, out var shouldNullSpecific);
+                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, x, y, out var shouldNullSpecific);
                         
                 if (shouldNullSpecific)
                     __result = null;
@@ -139,7 +141,7 @@ public static class InventoryPatches
     /// <param name="behavior"></param>
     /// <param name="shouldNullResult"></param>
     /// <returns>Whether to continue iterating.</returns>
-    private static bool CheckMenuActions(ref InventoryMenu menu, ref Item heldItem, ref Item affectedItem, MenuBehavior behavior, out bool shouldNullResult)
+    private static bool CheckMenuActions(ref InventoryMenu menu, ref Item heldItem, ref Item affectedItem, MenuBehavior behavior, int x, int y, out bool shouldNullResult)
     {
         shouldNullResult = false;
 
@@ -246,6 +248,22 @@ public static class InventoryPatches
 
         TryTextureChange(behavior.TextureIndex, affectedItem);
 
+        if (string.IsNullOrWhiteSpace(behavior.Animation)) 
+            return false;
+        
+        if (behavior.Animation.Equals("poof", StringComparison.OrdinalIgnoreCase))
+        {
+            var poof = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 320, 64, 64), 50f, 8, 0, new Vector2((float) (x - x % 64 + 16), (float) (y - y % 64 + 16)), false, false);
+        }
+        else if (behavior.Animation.Equals("gift", StringComparison.OrdinalIgnoreCase))
+        {
+            var presentButton = new TemporaryAnimatedSprite("LooseSprites\\JunimoNote", new Rectangle(548, 262, 18, 20), 70f, 4, 5, new Vector2(x, y), false, false, 0.5f, 0.05f, Color.White, 4f, 0.0f, 0.0f, 0.0f, true);
+        }
+        else if (behavior.Animation.Equals("sparkle", StringComparison.OrdinalIgnoreCase))
+        {
+            var sparkle = new TemporaryAnimatedSprite("TileSheets\\animations", new Rectangle(0, 640, 64, 64), 100f, 8, 0, new Vector2(x, y), flicker: false, flipped: false);
+        }
+        
         return false;
     }
 
