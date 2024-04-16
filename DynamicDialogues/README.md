@@ -16,6 +16,7 @@ Aquí puedes encontrar la [versión en español.](https://github.com/misty-sprin
   * [New game state queries](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/game-state-queries.md)
   * [New trigger actions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/trigger-actions.md)
   * [Menu item behavior](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/menu-item-actions.md)
+  * [Overriding archaeology gift taste](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/arch-gift-taste.md)
 * [Known issues](#known-issues)
 
 
@@ -41,7 +42,6 @@ So it's compatible with custom NPCs of any type.
 Notifications are all in a single file, and so are Greetings (see adding [notifs](#adding-notifications) or [greetings](#adding-greetings) for more info).
 
 If the NPC hasn't been unlocked yet (e.g kent or leo), their entries will be skipped until the player meets them.
-**Note:** ALL files are reloaded when the day starts.
 
 ### Tutorials are linked [here](#Contents).
 
