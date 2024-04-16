@@ -10,10 +10,11 @@ Fuente de trabajo que te permite agregar diálogos y mensajes más dinámicos.
     * [Saludos de PNJ](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/creating-greetings.md)
     * [Agregar preguntas](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/creating-questions.md)
   * [Notificaciones](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/creating-notifs.md)
-  * [Comandos nuevos](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/event-commands.md)
-  * [Nuevos game state queries](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/game-state-queries.md)
-  * [Nuevos trigger actions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/trigger-actions.md)
-  * [Comportamiento de items (menú)](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/menu-item-actions.md)
+  * 1.6 only:
+    * [Comandos nuevos](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/event-commands.md)
+    * [Nuevos game state queries](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/game-state-queries.md)
+    * [Nuevos trigger actions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/trigger-actions.md)
+    * [Cambiar gusto de regalos arqueológicos](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/arch-gift-taste.md)
 
 
 ## Características
