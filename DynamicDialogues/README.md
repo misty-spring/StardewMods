@@ -12,11 +12,11 @@ Aquí puedes encontrar la [versión en español.](https://github.com/misty-sprin
     * [Adding greetings](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/creating-greetings.md)
     * [Adding questions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/creating-questions.md)
   * [Adding notifications](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/creating-notifs.md)
-  * [New event commands](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/event-commands.md)
-  * [New game state queries](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/game-state-queries.md)
-  * [New trigger actions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/trigger-actions.md)
-  * [Menu item behavior](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/menu-item-actions.md)
-  * [Overriding archaeology gift taste](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/arch-gift-taste.md)
+  * 1.6 only:
+    * [New event commands](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/event-commands.md)
+    * [New game state queries](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/game-state-queries.md)
+    * [New trigger actions](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/trigger-actions.md)
+    * [Overriding archaeology gift taste](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/arch-gift-taste.md)
 * [Known issues](#known-issues)
 
 
