@@ -46,6 +46,9 @@ public class Api : IApi
 {
     public bool IsStone(string id)
     {
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+        
         if (!ModEntry.Ores.TryGetValue(id, out var resource))
             return false;
 
@@ -60,6 +63,9 @@ public class Api : IApi
         health = null;
         itemDropped = null;
         
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+
         if (!ModEntry.Ores.TryGetValue(id, out var resource))
             return false;
 
@@ -90,7 +96,13 @@ public class Api : IApi
     public bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = true)
     {
         error = null;
-        
+
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            error = "Id can't be null.";
+            return false;
+        }
+
         if(ModEntry.BigClumps.TryGetValue(itemId, out var data) == false)
         {
             error = "Couldn't find the given ID.";
@@ -135,6 +147,11 @@ public class Api : IApi
 
     public List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true)
     {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return null;
+        }
+        
         //if no seed data
         if (ModEntry.Seeds.TryGetValue(itemId, out var seeds) == false)
             return null;
