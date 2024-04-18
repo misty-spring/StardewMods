@@ -3,7 +3,6 @@ using HarmonyLib;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
-using Microsoft.Xna.Framework;
 using Netcode;
 using StardewModdingAPI;
 using StardewValley;
@@ -181,7 +180,7 @@ public static class InventoryPatches
             Game1.showRedMessageUsingLoadString("Strings/StringsFromCSFiles:BlueprintsMenu.cs.10002");
             Game1.playSound("cancel");
 
-            Log("No spaces avaiable in inventory. Can't partially convert stack.");
+            Log("No spaces available in inventory. Can't partially convert stack.");
             return false;
         }
 
@@ -263,21 +262,35 @@ public static class InventoryPatches
 
     private static void CallWithoutItem(InventoryMenu menu, ref Item target, int x, int y)
     {
-        if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
+        if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/None") == false)
             return;
         
-        // ReSharper disable once PossibleNullReferenceException
-        if (!ModEntry.MenuActions.TryGetValue("None", out var options))
+        var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/None");
+                
+        if (particularMenuData is null)
+        {
+#if DEBUG
+                    Log("Asset doesn't exist.");
+#endif
             return;
-        
+        }
+
         Log("Found conversion data for item. (Mouse/empty action)");
 
-        //search for ID
-        foreach (var data in options)
+        foreach (var (id, data) in particularMenuData)
         {
             //if not id, keep searching
             if (data.TargetId != target.QualifiedItemId)
                 continue;
+
+            if (data.Parse(out var rightInfo) == false)
+            {
+                var sb = new StringBuilder("There was an error while validating ");
+                sb.Append(id ?? "this action");
+                sb.Append(". Skipping... (Make sure the format is valid)");
+                Log(sb.ToString(), LogLevel.Info);
+                continue;
+            }
 
             //if conditions don't match
             if (!string.IsNullOrWhiteSpace(data.Conditions) && !GameStateQuery.CheckConditions(data.Conditions))
@@ -288,20 +301,21 @@ public static class InventoryPatches
 
             //solve basic data
             IWorldChangeData.Solve(data);
-            
+
             //check if item should be replaced. this ignores the Remove field, because we're holding no item
             if (data.RandomItemId.Any() || !string.IsNullOrWhiteSpace(data.ReplaceBy))
             {
                 Log($"Replacing {target.QualifiedItemId} for {data.ReplaceBy}.");
                 var indexOf = menu.actualInventory.IndexOf(target);
-                    
+
                 //if there's a random item list, it'll be preferred over normal Id
                 var whichItem = data.RandomItemId.Any() ? Game1.random.ChooseFrom(data.RandomItemId) : data.ReplaceBy;
 
                 if (whichItem.Equals("Remove", StringComparison.OrdinalIgnoreCase))
                 {
-                    if(data.RemoveAmount > 0)
-                    {}
+                    if (data.RemoveAmount > 0)
+                    {
+                    }
                     else
                     {
                         menu.actualInventory[indexOf] = null;
@@ -315,7 +329,7 @@ public static class InventoryPatches
                 }
             }
 
-                //check for changes in these fields
+            //check for changes in these fields
             TryContextTags(data, target);
             TryModData(data, target);
             TryQualityChange(data, target);
@@ -323,6 +337,8 @@ public static class InventoryPatches
             TryTextureChange(data.TextureIndex, target);
 
             menu.leftClick(x, y, target, false);
+
+            Log($"Finished applying action {data} for item.");
             break;
         }
     }

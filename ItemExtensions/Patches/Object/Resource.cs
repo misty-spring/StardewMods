@@ -18,7 +18,12 @@ public partial class ObjectPatches
         try
         {
             if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource) == false)
+            {
+                #if DEBUG
+                Log("Not a node.");
+                #endif
                 return;
+            }
 
             if (resource.Tool.Equals("vanilla") && __instance.MinutesUntilReady <= 0.0)
             {

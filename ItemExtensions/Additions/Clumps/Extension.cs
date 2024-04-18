@@ -72,6 +72,9 @@ public static class ExtensionClump
     /// <returns></returns>
     public static bool IsCustom(ResourceClump clump)
     {
+        if (clump is null)
+            return false;
+        
         if (clump.modData is null || clump.modData.Any() == false)
             return false;
         

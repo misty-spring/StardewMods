@@ -18,7 +18,7 @@ public class MineShaftPatches
     private static readonly string[] VanillaStones =
     {
         //copper (751) and iron (290) are fairly low-cost, so they're replaced by default. but because gold and iridium are rarer, they're excluded. the rest of IDs are stones
-        "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "290", "450", "668", "670", "751", "760", "762"
+        "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "450", "668", "670", "760", "762" //"290", "751", 
     };
     internal static List<string> OrderedByChance { get; set; }= new();
 #if DEBUG
@@ -97,13 +97,26 @@ public class MineShaftPatches
 
     private static void CheckResourceNodes(MineShaft mineShaft)
     {
+        var stones = VanillaStones;
+        if (Game1.player.MiningLevel > 4)
+        {
+            if (Game1.player.MiningLevel < 7)
+            {
+                
+                stones = new[]{ "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "450", "668", "670", "760", "762", "290" };
+            }
+            else
+            {
+                stones = new[]{ "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "450", "668", "670", "760", "762", "290", "751" };
+            }
+        }
+        
         //if none are an ore
-        if (mineShaft.Objects.Values.Any(o => VanillaStones.Contains(o.ItemId)) == false)
-            return;
-
-        //randomly chooses which stones to replace
         var all = mineShaft.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
 
+        if (all?.Any() == false)
+            return;
+        
         var canApply = GetAllForThisLevel(mineShaft);
         if (canApply is null || canApply.Any() == false)
             return;
@@ -162,17 +175,14 @@ public class MineShaftPatches
 
     private static void CheckResourceClumps(MineShaft mineShaft)
     {
-        //if none are a clump
-        if (mineShaft.terrainFeatures.Values.Any(t => t is ResourceClump == false))
-            return;
-
-        //randomly chooses which stones to replace
-        var all = mineShaft.terrainFeatures.Values.Where(t => t is ResourceClump);
+        //get all clumps
+        var all = mineShaft.resourceClumps;
 
         var canApply = GetAllForThisLevel(mineShaft, true);
         if (canApply is null || canApply.Any() == false)
             return;
 
+        var toReplace = new Dictionary<int, ResourceClump>();
         //for every stone we selected
         foreach (var stone in all)
         {
@@ -191,7 +201,13 @@ public class MineShaftPatches
             var newClump = ExtensionClump.Create(clump, ModEntry.BigClumps[clump], stone.Tile);
 
             //replace & break to avoid re-setting
-            mineShaft.terrainFeatures[stone.Tile] = newClump;
+            var index = mineShaft.resourceClumps.IndexOf(stone);
+            toReplace.Add(index, newClump);
+        }
+
+        foreach (var (index,clump) in toReplace)
+        {
+            mineShaft.resourceClumps[index] = clump;
         }
     }
 
@@ -276,8 +292,7 @@ public class MineShaftPatches
                 Log($"Error while parsing mine level for {id}: {e}\n  This specific ore will be skipped.", LogLevel.Warn);
             }
         }
-        
-        #if DEBUG
+#if DEBUG
         var sb = new StringBuilder();
         foreach (var pair in all)
         {
@@ -289,7 +304,7 @@ public class MineShaftPatches
             sb.Append(", ");
         }
         Log($"In level {mineLevel}: " + sb);
-        #endif
+#endif
         return all;
     }
 }
