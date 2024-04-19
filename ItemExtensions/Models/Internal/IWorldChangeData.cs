@@ -23,8 +23,8 @@ public interface IWorldChangeData
     List<string> AddFlags { get; set; }
     List<string> RemoveFlags { get; set; }
     
-    List<string> AddBuffs { get; set; } = new();
-    List<string> RemoveBuffs { get; set; } = new();
+    List<ObjectBuffData> AddBuffs { get; set; } = new();
+    List<ObjectBuffData> RemoveBuffs { get; set; } = new();
     
     string Conditions { get; set; }
     string TriggerAction { get; set; }
@@ -81,6 +81,22 @@ public interface IWorldChangeData
             foreach (var pair in data.RemoveItems)
             {
                 Game1.player.removeFirstOfThisItemFromInventory(pair.Key, pair.Value);
+            }
+        }
+
+        if (data.AddBuffs.Any())
+        {
+            foreach (var buff in data.RemoveBuffs)
+            {
+                //
+            }
+        }
+        
+        if (data.RemoveBuffs.Any())
+        {
+            foreach (var buff in data.RemoveBuffs)
+            {
+                //
             }
         }
         #endregion
