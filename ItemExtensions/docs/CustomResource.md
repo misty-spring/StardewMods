@@ -31,6 +31,7 @@ Custom resources are very extensive, with many customizable fields:
 
 | name         | type                         | Required | description                                               |
 |--------------|------------------------------|----------|-----------------------------------------------------------|
+| Type         | `CustomResourceType`         | No       | Used for mod compat. Default Stone, can be Weeds or Wood. |
 | Texture      | `string`                     | Yes      | The resource's texture path.                              |
 | SpriteIndex  | `int`                        | Yes      | Index in texture to use.                                  |
 | Width        | `int`                        | Yes      | Resource size.                                            |
