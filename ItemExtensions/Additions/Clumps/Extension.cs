@@ -100,6 +100,11 @@ public static class ExtensionClump
         if (ModEntry.BigClumps.TryGetValue(id, out var resource) == false)
             return false;
 
+        if(clump.health.Value <= 0.0)
+        {
+            return;
+        }
+        
         if (resource.Tool != "vanilla" && !GeneralResource.ToolMatches(t, resource))
         {
             if (GeneralResource.ShouldShowWrongTool(t,resource) && CanShowMessage)
