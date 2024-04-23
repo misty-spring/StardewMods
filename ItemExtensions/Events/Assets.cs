@@ -84,7 +84,7 @@ public static class Assets
                         continue;
                     
                     //check if vanilla, skip if so
-                    if (int.TryParse(itemId, out var asInt) && asInt < 1000)
+                    if (Parser.IsVanilla(itemId))
                     {
                         continue;
                     }
