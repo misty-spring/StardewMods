@@ -187,4 +187,36 @@ public static class Parser
             ModEntry.Panning.Add(pair.Value);
         }
     }
+
+    /// <summary>
+    /// Checks an Id.
+    /// </summary>
+    /// <param name="id">Qualified item ID</param>
+    /// <returns>Whether the Id is a vanilla node.</returns>
+    internal static bool IsVanilla(string id)
+    {
+        if (int.TryParse(id, out var asInt))
+            return asInt < 931;
+
+        return id switch {
+                "VolcanoGoldNode" => true,
+                "VolcanoCoalNode0" => true,
+                "VolcanoCoalNode1" => true,
+                "BasicCoalNode0" => true,
+                "BasicCoalNode1" => true,
+                "GreenRainWeeds7" => true,
+                "GreenRainWeeds6" => true,
+                "GreenRainWeeds5" => true,
+                "GreenRainWeeds4" => true,
+                "GreenRainWeeds3" => true,
+                "GreenRainWeeds2" => true,
+                "GreenRainWeeds1" => true,
+                "GreenRainWeeds0" => true,
+                "CalicoEggStone_0" => true,
+                "CalicoEggStone_1" => true,
+                "CalicoEggStone_2" => true,
+                FarAwayStone => true,
+                _ => false
+        };
+    }
 }
