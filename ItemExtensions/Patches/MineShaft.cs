@@ -46,6 +46,7 @@ public class MineShaftPatches
             if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0)
                 return;
 
+            CheckTrees(__instance);
             CheckResourceNodes(__instance);
             
             //clumps aren't changed here to avoid issues because the zone is special
@@ -252,6 +253,9 @@ public class MineShaftPatches
                     if (spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
                         continue;
 
+                    if (spawns.Type == MineType.Frenzy && spawns.LastFrenzy == (Game1.dayOfMonth, Game1.season))
+                        continue;
+
                     foreach (var floor in spawns.RealFloors)
                     {
 #if DEBUG
@@ -276,6 +280,12 @@ public class MineShaftPatches
                             if (startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
                                 break; //skip
 
+                            //(for frenzy types, set last frenzy)
+                            if (spawns.Type == MineType.Frenzy)
+                            {
+                                spawns.LastFrenzy = (Game1.dayOfMonth, Game1.season);
+                            }
+                            
                             //otherwise, add & break loop
                             all.Add(id, spawns.SpawnFrequency + extraforLevel);
                             break;
@@ -306,5 +316,174 @@ public class MineShaftPatches
         Log($"In level {mineLevel}: " + sb);
 #endif
         return all;
+    }
+    
+    private static void CheckTrees(MineShaft mineShaft)
+    {
+        var mineLevel = mineShaft.mineLevel;
+        var all = new Dictionary<string, double>();
+        //check every tree
+        foreach (var (id, tree) in ModEntry.MineTrees)
+        {
+            try
+            {
+                if(string.IsNullOrWhiteSpace(id))
+                    continue;
+                
+                //if not spawnable on mines, skip
+                if (tree.RealSpawnData is null || tree.RealSpawnData.Any() == false)
+                    continue;
+
+                foreach (var spawns in tree.RealSpawnData)
+                {
+                    //if GSQ exists & not valid
+                    if (string.IsNullOrWhiteSpace(spawns.Condition) == false &&
+                        GameStateQuery.CheckConditions(spawns.Condition) == false)
+                        continue;
+#if DEBUG
+                    Log($"{spawns?.RealFloors.Count} in {id}");
+#endif
+                    if (spawns?.RealFloors is null)
+                        continue;
+
+                    var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
+
+                    //if qi-only & not qi on, skip
+                    if (spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
+                        continue;
+
+                    //if vanilla-only & qi on, skip
+                    if (spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
+                        continue;
+
+                    if (spawns.Type == MineType.Frenzy && spawns.LastFrenzy == (Game1.dayOfMonth, Game1.season))
+                        continue;
+
+                    foreach (var floor in spawns.RealFloors)
+                    {
+#if DEBUG
+                        Log($"Data: {floor}");
+#endif
+                        if (string.IsNullOrWhiteSpace(floor))
+                            continue;
+
+                        //if it's of style minSpawnLevel-maxSpawnLevel
+                        if (floor.Contains('/'))
+                        {
+                            var both = ArgUtility.SplitQuoteAware(floor, '/');
+                            //if less than 2 values, or can't parse either as int
+                            if (both.Length < 2 || int.TryParse(both[0], out var startLevel) == false ||
+                                int.TryParse(both[1], out var endLevel) == false)
+                                break;
+
+#if DEBUG
+                            Log($"Level range: {startLevel} to {endLevel}");
+#endif
+                            //initial is bigger than current OR max is less than current (& end level isn't max)
+                            if (startLevel > mineLevel || (endLevel < mineLevel && endLevel != -999))
+                                break; //skip
+
+                            //(for frenzy types, set last frenzy)
+                            if (spawns.Type == MineType.Frenzy)
+                            {
+                                spawns.LastFrenzy = (Game1.dayOfMonth, Game1.season);
+                            }
+                            
+                            //otherwise, add & break loop
+                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                            break;
+                        }
+
+                        //or if level is explicitly included
+                        if (int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
+                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log($"Error while parsing mine level for {id}: {e}\n  This specific ore will be skipped.", LogLevel.Warn);
+            }
+        }
+#if DEBUG
+        var sb = new StringBuilder();
+        foreach (var pair in all)
+        {
+            sb.Append("{ ");
+            sb.Append(pair.Key);
+            sb.Append(", ");
+            sb.Append(pair.Value);
+            sb.Append(" }");
+            sb.Append(", ");
+        }
+        Log($"In level {mineLevel}: " + sb);
+#endif
+        if(all.Any() == false)
+            return;
+
+        //for every stone we selected
+        foreach (var (treeType, data) in all)
+        {
+            //choose a %
+            var nextDouble = Game1.random.NextDouble();
+#if DEBUG
+            Log($"Chance: {nextDouble} for tree {treeType}");
+#endif
+            var sorted = GetAllForThisDouble(nextDouble, all);
+
+            //shouldn't happen but a safe check is a safe check
+            if (sorted.Any() == false)
+                continue;
+            
+            //get tile
+            var tile = Vector2.Zero;
+            var canReplace = false;
+            for (var i = 0; i < mineShaft.Objects.Length; i++)
+            {
+                tile = mineShaft.getRandomTile();
+                if (mineShaft.getObjectAtTile((int)tile.X, (int)tile.Y) is not null)
+                    continue;
+
+                canReplace = true;
+                break;
+            }
+
+            //if didn't find a valid tree tile
+            if(canReplace == false)
+            {
+                continue;
+            }
+
+            var id = Game1.random.ChooseFrom(sorted);
+            var terrainFeature = new Tree(treeType, data.growthStage);
+
+            //replace & break to avoid re-setting
+            mineShaft.TerrainFeatures.Add(tile, terrainFeature);
+
+            //check ladder
+            if (mineShaft.tileBeneathLadder == tile)
+            {
+#if DEBUG
+                Log($"Changing tile...(old {mineShaft.tileBeneathLadder})");
+#endif
+                var tile2 = Vector2.Zero;
+                var canReplace = false;
+                for (var i = 0; i < mineShaft.Objects.Length; i++)
+                {
+                    tile2 = mineShaft.getRandomTile();
+                    if (mineShaft.getObjectAtTile((int)tile2.X, (int)tile2.Y) is null)
+                        continue;
+
+                    canReplace = true;
+                    break;
+                }
+                
+                if(canReplace)
+                    mineShaft.tileBeneathLadder = tile2;
+#if DEBUG
+                Log($"Tile changed to {mineShaft.tileBeneathLadder}.");
+#endif
+            }
+        }
     }
 }
