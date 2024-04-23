@@ -132,11 +132,16 @@ public interface IWorldChangeData
 
         if (string.IsNullOrWhiteSpace(data.TriggerAction)) 
             return;
-        
-        TriggerActionManager.TryRunAction(data.TriggerAction, out var error, out var exception);
-        if (!string.IsNullOrWhiteSpace(error))
+
+        //get all actions
+        var actions = data.TriggerAction.replace(", ", ",").split(',');
+        foreach(var trigger in actions)
         {
-            ModEntry.Mon.Log($"Error: {error}. {exception}");
+            TriggerActionManager.TryRunAction(trigger, out var error, out var exception);
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                ModEntry.Mon.Log($"Error: {error}. {exception}", LogLevel.Warn);
+            }
         }
     }
 
