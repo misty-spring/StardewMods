@@ -24,7 +24,7 @@ public interface IWorldChangeData
     List<string> RemoveFlags { get; set; }
     
     List<ObjectBuffData> AddBuffs { get; set; } = new();
-    List<ObjectBuffData> RemoveBuffs { get; set; } = new();
+    //List<ObjectBuffData> RemoveBuffs { get; set; } = new();
     
     string Conditions { get; set; }
     string TriggerAction { get; set; }
@@ -86,19 +86,20 @@ public interface IWorldChangeData
 
         if (data.AddBuffs.Any())
         {
-            foreach (var buff in data.RemoveBuffs)
+            foreach (var buff in data.AddBuffs)
             {
-                //
+                Game1.player.applyBuff(buff);
             }
         }
-        
+
+        /*
         if (data.RemoveBuffs.Any())
         {
             foreach (var buff in data.RemoveBuffs)
             {
                 //
             }
-        }
+        }*/
         #endregion
         
         #region quests
