@@ -117,12 +117,17 @@ public sealed class ModEntry : Mod
         Parser.ItemActions(menuActions);
         Monitor.Log($"Loaded {MenuActions?.Count ?? 0} menu actions.", LogLevel.Debug);
         
+        //get item actions
+        var trees = Help.GameContent.Load<Dictionary<string, TreeSpawnData>>($"Mods/{Id}/MineTrees");
+        Parser.Trees(trees);
+        Monitor.Log($"Loaded {MenuActions?.Count ?? 0} trees to spawn in mines.", LogLevel.Debug);
+        
         //get mixed seeds
         var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
         Parser.MixedSeeds(seedData);
         Monitor.Log($"Loaded {Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
         
-        //get mixed seeds
+        //get panning
         var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
         Parser.Panning(panData);
         Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
@@ -168,6 +173,7 @@ public sealed class ModEntry : Mod
     public static Dictionary<string, ItemData> Data { get; internal set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
+    internal static Dictionary<string, TreeSpawnData> MineTrees { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
