@@ -5,7 +5,9 @@ public enum MineType
     None,
     Normal,
     Qi,
-    General,
     Frenzy,
+    Volcano,
+    Quarry,
+    General,
     All
 }
