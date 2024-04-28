@@ -32,13 +32,59 @@ public interface IApi
     /// <returns>Whether this item has menu behavior for target.</returns>
     bool HasBehavior(string qualifiedItemId, string target);
 
+    /// <summary>
+    /// Checks for a qualified id in modded clump data.
+    /// </summary>
+    /// <param name="qualifiedItemId">Qualified item ID.</param>
+    /// <returns>Whether this id is a clump's.</returns>
     bool IsClump(string qualifiedItemId);
     
+    /// <summary>
+    /// Tries to spawn a clump.
+    /// </summary>
+    /// <param name="itemId">The clump ID.</param>
+    /// <param name="position">Tile position.</param>
+    /// <param name="locationName">Location name or unique name.</param>
+    /// <param name="error">Error string, if applicable.</param>
+    /// <param name="avoidOverlap">Avoid overlapping with other clumps.</param>
+    /// <returns>Whether spawning succeeded.</returns>
     bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false);
     
+    /// <summary>
+    /// Tries to spawn a clump.
+    /// </summary>
+    /// <param name="itemId">The clump ID.</param>
+    /// <param name="position">Tile position.</param>
+    /// <param name="location">Location to use.</param>
+    /// <param name="error">Error string, if applicable.</param>
+    /// <param name="avoidOverlap">Avoid overlapping with other clumps.</param>
+    /// <returns>Whether spawning succeeded.</returns>
     bool TrySpawnClump(string itemId, Vector2 position, GameLocation location, out string error, bool avoidOverlap = false);
 
+    /// <summary>
+    /// Checks custom mixed seeds.
+    /// </summary>
+    /// <param name="itemId">The 'main seed' ID.</param>
+    /// <param name="includeSource">Include the main seed's crop in calculation.</param>
+    /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
+    /// <returns>All possible seeds.</returns>
     List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true);
+
+    /// <summary>
+    /// Gets drops for a clump.
+    /// </summary>
+    /// <param name="clump">The clump instance.</param>
+    /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
+    /// <returns>All possible drops, with %.</returns>
+    Dictionary<string,double> GetClumpDrops(ResourceClump clump, bool parseConditions = false);
+
+    /// <summary>
+    /// Gets drops for a node.
+    /// </summary>
+    /// <param name="clump">The node instance.</param>
+    /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
+    /// <returns>All possible drops, with %.</returns>
+    Dictionary<string,double> GetObjectDrops(Object node, bool parseConditions = false);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -165,6 +211,87 @@ public class Api : IApi
             
             if (GameStateQuery.CheckConditions(mixedSeed.Condition, Game1.player.currentLocation, Game1.player))
                 result.Add(mixedSeed.ItemId);
+        }
+
+        return result;
+    }
+
+    public Dictionary<string,(double, int)> GetClumpDrops(Clump clump, bool parseConditions = false)
+    {
+        var result = new Dictionary<string,(double, int)>();
+        var location = Game1.player.currentLocation;
+        var who = Game1.player;
+        var context = new ItemQueryContext(location, who, Game1.random);
+
+        if (node is null)
+            return result;
+        
+        if(clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
+            return result;
+    
+        if (!ModEntry.BigClumps.TryGetValue(id, out var resource))
+            return result;
+
+        if (resource is null || resource == new ResourceData())
+            return result;
+            
+        if(string.IsNullOrWhiteSpace(drop.Condition) == false)
+        {
+            result.Add(resource.ItemDropped, (1, Game1.random.Next(resource.MinDrops, resource.MaxDrops)));
+        }
+
+        foreach(var drop in resource.ExtraItems)
+        {
+            if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
+                continue;
+                
+            var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
+            foreach (var result in itemQuery)
+            {
+                var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
+                parsedItem.Stack *= multiplier;
+        
+                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(resource.MinStack, resource.MaxStack)));
+            }
+        }
+
+        return result;
+    }
+
+    public Dictionary<string,(double, int)> GetObjectDrops(Object node, bool parseConditions = false)
+    {
+        var result = new Dictionary<string,(double, int)>();
+        var location = Game1.player.currentLocation;
+        var who = Game1.player;
+        var context = new ItemQueryContext(location, who, Game1.random);
+
+        if (node is null)
+            return result;
+        
+        if (!ModEntry.Ores.TryGetValue(node.QualifiedItemId, out var resource))
+            return result;
+
+        if (resource is null || resource == new ResourceData())
+            return result;
+            
+        if(string.IsNullOrWhiteSpace(drop.Condition) == false)
+        {
+            result.Add(resource.ItemDropped, (1, Game1.random.Next(resource.MinDrops, resource.MaxDrops)));
+        }
+
+        foreach(var drop in resource.ExtraItems)
+        {
+            if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
+                continue;
+                
+            var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
+            foreach (var result in itemQuery)
+            {
+                var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
+                parsedItem.Stack *= multiplier;
+        
+                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(resource.MinStack, resource.MaxStack)));
+            }
         }
 
         return result;
