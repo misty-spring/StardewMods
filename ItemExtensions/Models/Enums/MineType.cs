@@ -4,10 +4,10 @@ public enum MineType
 {
     None,
     Normal,
-    Qi,
     Frenzy,
+    Mountain,
     Volcano,
-    Quarry,
+    Qi,
     General,
     All
 }
