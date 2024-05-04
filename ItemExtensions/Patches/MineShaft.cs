@@ -46,7 +46,7 @@ public class MineShaftPatches
             if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0)
                 return;
 
-            CheckTrees(__instance);
+            CheckTerrainFeatures(__instance);
             CheckResourceNodes(__instance);
             
             //clumps aren't changed here to avoid issues because the zone is special
@@ -318,23 +318,25 @@ public class MineShaftPatches
         return all;
     }
     
-    private static void CheckTrees(MineShaft mineShaft)
+    private static void CheckTerrainFeatures(MineShaft mineShaft)
     {
         var mineLevel = mineShaft.mineLevel;
+        var currentCount = 0;
+        var maxCount = GetMaxFeatures(mineLevel);
         var all = new Dictionary<string, double>();
-        //check every tree
-        foreach (var (id, tree) in ModEntry.MineTrees)
+        //check every tree data
+        foreach (var (id, data) in ModEntry.MineFeatures)
         {
             try
             {
-                if(string.IsNullOrWhiteSpace(id))
+                if(string.IsNullOrWhiteSpace(data.TerrainFeatureId))
                     continue;
                 
                 //if not spawnable on mines, skip
-                if (tree.RealSpawnData is null || tree.RealSpawnData.Any() == false)
+                if (data.RealSpawnData is null || data.RealSpawnData.Any() == false)
                     continue;
 
-                foreach (var spawns in tree.RealSpawnData)
+                foreach (var spawns in data.RealSpawnData)
                 {
                     //if GSQ exists & not valid
                     if (string.IsNullOrWhiteSpace(spawns.Condition) == false &&
@@ -402,7 +404,7 @@ public class MineShaftPatches
             }
             catch (Exception e)
             {
-                Log($"Error while parsing mine level for {id}: {e}\n  This specific ore will be skipped.", LogLevel.Warn);
+                Log($"Error while parsing mine level for '{id}': {e}\n  This specific entry will be skipped.", LogLevel.Warn);
             }
         }
 #if DEBUG
@@ -427,7 +429,7 @@ public class MineShaftPatches
             //choose a %
             var nextDouble = Game1.random.NextDouble();
 #if DEBUG
-            Log($"Chance: {nextDouble} for tree {treeType}");
+            Log($"Chance: {nextDouble} for data {treeType}");
 #endif
             var sorted = GetAllForThisDouble(nextDouble, all);
 
@@ -448,14 +450,45 @@ public class MineShaftPatches
                 break;
             }
 
-            //if didn't find a valid tree tile
+            //if didn't find a valid data tile
             if(canReplace == false)
             {
                 continue;
             }
 
             var id = Game1.random.ChooseFrom(sorted);
-            var terrainFeature = new Tree(treeType, data.growthStage);
+            TerrainFeature terrainFeature;
+            
+            if(data.Type == FeatureType.Tree) 
+            {
+                terrainFeature = new Tree(data.TerrainFeatureId);
+                
+                if(data.growthStage > -1)
+                    terrainFeature.growthStage.Value = data.growthStage;
+
+                if(data.Stump)
+                    terrainFeature.stump.Value = true;
+
+                if(Game1.random.NextBool(data.MossChance))
+                    terrainFeature.hasMoss.Value = true;
+
+            }
+            else if(data.Type == FeatureType.FruitTree)
+            {
+                terrainFeature = new FruitTree(data.TerrainFeatureId, data.growthStage);
+                
+                if(data.growthStage > -1)
+                    terrainFeature.growthStage.Value = data.growthStage;
+
+                for(var i=0; i<data.FruitAmount;i++)
+                {
+                    terrainFeature.TryAddFruit();
+                }
+            }
+            else if (data.Type == FeatureType.GiantCrop)
+                terrainFeature = new GiantCrop(data.TerrainFeatureId);
+            else
+                continue;
 
             //replace & break to avoid re-setting
             mineShaft.TerrainFeatures.Add(tile, terrainFeature);
@@ -484,6 +517,13 @@ public class MineShaftPatches
                 Log($"Tile changed to {mineShaft.tileBeneathLadder}.");
 #endif
             }
+
+            //up count of spawned features
+            currentCount++;
+
+            //if it reaches level max, break
+            if(currentCount >= maxCount)
+                break;
         }
     }
 }

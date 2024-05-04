@@ -3,7 +3,7 @@ using StardewValley;
 
 namespace ItemExtensions.Models;
 
-public class TreeSpawnData
+public class TerrainSpawnData
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -14,22 +14,36 @@ public class TreeSpawnData
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
     private static IModHelper Helper => ModEntry.Help;
     
-    //public string TreeId { get; set; }
-    public int GrowthStage { get; set; }
+    //which feature to create
+    public string TerrainFeatureId { get; set; }
+    public FeatureType Type { get; set; } = FeatureType.Tree;
+    public int Health { get; set; } = -1;
+    
+    //configurable for trees
+    public int GrowthStage { get; set; } = -1; //0 seed, 1 sprout, 2 sapling, 3 bush, 5 tree
+    //only for wild trees
+    public double MossChance { get; set; }
+    public bool Stump { get; set; }
+    //only for fruit trees
+    public int FruitAmount { get; set; } = 3; //0 seed, 1 sprout, 2 sapling, 3 bush, 5 tree
   
     //conditional
+    public int Amount { get; set; } = 1; 
     public List<MineSpawn> MineSpawns { get; set; } = new();
-    //conditional
     internal List<MineSpawn> RealSpawnData { get; set; } = new();
 
     public bool IsValid()
     {
-      /*
-        if (string.IsNullOrWhiteSpace(TreeId))
+        if (string.IsNullOrWhiteSpace(TerrainFeatureId))
         {
-            Log("Must specify tree ID! Skipping", LogLevel.Warn);
+            Log("Must specify terrain feature ID! Skipping", LogLevel.Warn);
             return false;
-        }*/
+        }
+        if (Type == FeatureType.None)
+        {
+            Log("Must specify terrain feature type! Skipping", LogLevel.Warn);
+            return false;
+        }
 
          foreach (var floorData in MineSpawns)
         {

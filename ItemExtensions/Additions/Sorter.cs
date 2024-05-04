@@ -12,6 +12,16 @@ public static class Sorter
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
     
+    internal static int GetMaxFeatures(int level)
+    {
+        if (level % 20 == 0)
+            return 0;
+
+        if (level == 77377)
+            return 15;
+
+        var remainder = level % 30;
+    }
     /// <summary>
     /// Grabs all ores that match a random double. (E.g, all with a chance bigger than 0.x, starting from smallest)
     /// </summary>
