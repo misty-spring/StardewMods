@@ -3,6 +3,7 @@ using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.GameData.Objects;
 using StardewValley.Triggers;
 
 // ReSharper disable FieldCanBeMadeReadOnly.Global
@@ -64,6 +65,7 @@ public class MenuBehavior : IWorldChangeData
     public string RemoveQuest { get; set; }
     public string RemoveSpecialOrder { get; set; }
     public List<string> AddFlags { get; set; } = new();
+    public List<ObjectBuffData> AddBuffs { get; set; } = new();
 
     public MenuBehavior()
     {}

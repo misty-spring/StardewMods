@@ -4,6 +4,12 @@ public static class ModKeys
 {
     /// <summary> For extra trade requirements in shops. </summary>
     public const string ExtraTradesKey = "mistyspring.ItemExtensions/ExtraTrades";
+
+    //custom stuff
+    /// <summary> Forces item creation with specific quality. </summary>
+    public const string ForceQuality = "mistyspring.ItemExtensions/ForceQuality";
+    /// <summary> Allows non-fish items to be in ponds. </summary>
+    public const string AllowFishPond = "mistyspring.ItemExtensions/AllowFishPond";
     
     //eating/drinking customization
     /// <summary> Sets animation after consuming item. </summary>

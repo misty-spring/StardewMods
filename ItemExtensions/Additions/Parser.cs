@@ -1,7 +1,9 @@
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Items;
 using StardewModdingAPI;
+using StardewValley;
 
 namespace ItemExtensions.Additions;
 
@@ -188,6 +190,29 @@ public static class Parser
         }
     }
 
+    internal static void Terrain(Dictionary<string, TerrainSpawnData> trees)
+    {
+        ModEntry.MineFeatures = new Dictionary<string,TerrainSpawnData>();
+        foreach (var pair in trees)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            //checks id
+            if (string.IsNullOrWhiteSpace(pair.Value.TerrainFeatureId))
+            {
+                Log($"Mineshaft spawn with key '{pair.Key}' doesn't have an ID. Skipping", LogLevel.Info);
+                continue;
+            }
+            if (pair.Value.Type == FeatureType.FruitTree && Game1.fruitTreeData.ContainsKey(pair.Value.TerrainFeatureId) == false)
+            {
+                Log($"Mineshaft spawn with key '{pair.Key}' has a fruit tree id that doesn't exist. Skipping", LogLevel.Info);
+                continue;
+            }
+
+            ModEntry.MineFeatures.Add(pair.Key, pair.Value);
+        }
+    }
+
     /// <summary>
     /// Checks an Id.
     /// </summary>
@@ -215,8 +240,25 @@ public static class Parser
                 "CalicoEggStone_0" => true,
                 "CalicoEggStone_1" => true,
                 "CalicoEggStone_2" => true,
-                FarAwayStone => true,
+                "FarAwayStone" => true,
                 _ => false
         };
+    }
+
+    internal static List<string> SplitCommas(string str)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(str))
+            return result;
+
+        var str2 = str.Replace(", ", ",");
+        if (string.IsNullOrWhiteSpace(str))
+            return result;
+
+        foreach (var separated in str2.Split(','))
+        {
+            result.Add(separated);
+        }
+        return result;
     }
 }

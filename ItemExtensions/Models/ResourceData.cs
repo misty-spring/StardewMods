@@ -272,7 +272,7 @@ public class ResourceData
         Tool = "vanilla";
     }
     
-    private IEnumerable<string> GetFloors(string floorData)
+    internal static IEnumerable<string> GetFloors(string floorData)
     {
         var all = new List<string>();
         //removes spaces and then separates by comma

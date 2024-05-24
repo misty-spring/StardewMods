@@ -1,3 +1,5 @@
+using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Enums;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -52,7 +54,7 @@ public class TerrainSpawnData
                 if (string.IsNullOrWhiteSpace(floorData.Floors))
                     continue;
                 
-                floorData.Parse(GetFloors(floorData.Floors)); 
+                floorData.Parse(ResourceData.GetFloors(floorData.Floors)); 
                 RealSpawnData.Add(floorData);
             }
             catch (Exception e)

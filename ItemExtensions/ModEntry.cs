@@ -29,6 +29,8 @@ public sealed class ModEntry : Mod
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
         helper.Events.Content.LocaleChanged += LocaleChanged;
+
+        Config = Helper.ReadConfig<ModConfig>();
         
         Mon = Monitor;
         Help = Helper;
@@ -37,18 +39,54 @@ public sealed class ModEntry : Mod
         
         // patches
         var harmony = new Harmony(ModManifest.UniqueID);
-        CropPatches.Apply(harmony);
-        FarmerPatches.Apply(harmony);
-        GameLocationPatches.Apply(harmony);
-        HoeDirtPatches.Apply(harmony);
-        InventoryPatches.Apply(harmony);
+
         ItemPatches.Apply(harmony);
-        MineShaftPatches.Apply(harmony);
         ObjectPatches.Apply(harmony);
-        PanPatches.Apply(harmony);
-        ResourceClumpPatches.Apply(harmony);
-        ShopMenuPatches.Apply(harmony);
+
+        if (Config.MixedSeeds)
+        {
+            CropPatches.Apply(harmony);
+            HoeDirtPatches.Apply(harmony);
+        }
+
+        if (Config.MenuActions)
+        {
+            InventoryPatches.Apply(harmony);
+        }
         
+        if (Config.EatingAnimations)
+        {
+            FarmerPatches.Apply(harmony);
+        }
+        
+        if (Config.Panning)
+        {
+            PanPatches.Apply(harmony);
+        }
+
+        /*
+        if (Config.TrainDrops)
+        {
+            TrainPatches.Apply(harmony);
+        }
+
+        if (Config.FishPond)
+        {
+            FishPondPatches.Apply(harmony);
+        }*/
+
+        if (Config.Resources)
+        {
+            GameLocationPatches.Apply(harmony);
+            MineShaftPatches.Apply(harmony);
+            ResourceClumpPatches.Apply(harmony);
+        }
+
+        if (Config.ShopTrades)
+        {
+            ShopMenuPatches.Apply(harmony);
+        }
+
         if(helper.ModRegistry.Get("Esca.FarmTypeManager") is not null)
             FarmTypeManagerPatches.Apply(harmony);
         
@@ -85,14 +123,105 @@ public sealed class ModEntry : Mod
 
     public override object GetApi() =>new Api();
 
-    private static void OnLaunch(object sender, GameLaunchedEventArgs e)
+    private void OnLaunch(object sender, GameLaunchedEventArgs e)
     {
-        Mon.Log("Getting resources for the first time...");
-        var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
-        Parser.Resources(oreData, true);
+        if  (Config.Resources)
+        {
+            Mon.Log("Getting resources for the first time...");
+            var oreData = Help.GameContent.Load<Dictionary<string, ResourceData>>($"Mods/{Id}/Resources");
+            Parser.Resources(oreData, true);
+        }
+        
 #if DEBUG
         Assets.WriteTemplates();
 #endif
+        var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+        
+        // register mod
+        configMenu?.Register(
+            mod: ModManifest,
+            reset: () => Config = new ModConfig(),
+            save: () => Helper.WriteConfig(Config)
+        );
+        
+        configMenu?.AddParagraph(
+            mod:  ModManifest,
+            text: () => Helper.Translation.Get("config.Description")
+        );
+
+        //customization
+        configMenu?.AddSectionTitle(
+            ModManifest,
+            text: () => Helper.Translation.Get("config.Customization.title")
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.EatingAnimations.name"),
+            getValue: () => Config.EatingAnimations,
+            setValue: value => Config.EatingAnimations = value
+        );
+         
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.MenuActions.name"),
+            getValue: () => Config.MenuActions,
+            setValue: value => Config.MenuActions = value
+        );
+         
+        //vanilla function extension
+        configMenu?.AddSectionTitle(
+            ModManifest,
+            text: () => Helper.Translation.Get("config.VanillaExt.title")
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.FishPond.name"),
+            getValue: () => Config.FishPond,
+            setValue: value => Config.FishPond = value
+        );
+         
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.MixedSeeds.name"),
+            getValue: () => Config.MixedSeeds,
+            setValue: value => Config.MixedSeeds = value
+        );
+         
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Resources.name"),
+            getValue: () => Config.Resources,
+            setValue: value => Config.Resources = value
+        );
+         
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.ShopTrades.name"),
+            getValue: () => Config.ShopTrades,
+            setValue: value => Config.ShopTrades = value
+        );
+         
+        //extra drops
+        configMenu?.AddSectionTitle(
+            ModManifest,
+            text: () => Helper.Translation.Get("config.Drops.title")
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Panning.name"),
+            getValue: () => Config.Panning,
+            setValue: value => Config.Panning = value
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.TrainDrops.name"),
+            getValue: () => Config.TrainDrops,
+            setValue: value => Config.TrainDrops = value
+        );
     }
 
     /// <summary>
@@ -107,30 +236,51 @@ public sealed class ModEntry : Mod
         Parser.ObjectData(objData);
         Monitor.Log($"Loaded {Data?.Count ?? 0} item data.", LogLevel.Debug);
         
-        //get custom animations
-        var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
-        Parser.EatingAnimations(animations);
-        Monitor.Log($"Loaded {EatingAnimations?.Count ?? 0} eating animations.", LogLevel.Debug);
+        if (Config.EatingAnimations)
+        {
+            //get custom animations
+            var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
+            Parser.EatingAnimations(animations);
+            Monitor.Log($"Loaded {EatingAnimations?.Count ?? 0} eating animations.", LogLevel.Debug);
+        }
         
-        //get item actions
-        var menuActions = Help.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
-        Parser.ItemActions(menuActions);
-        Monitor.Log($"Loaded {MenuActions?.Count ?? 0} menu actions.", LogLevel.Debug);
+        if (Config.MenuActions)
+        {
+            //get item actions
+            var menuActions = Help.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
+            Parser.ItemActions(menuActions);
+            Monitor.Log($"Loaded {MenuActions?.Count ?? 0} menu actions.", LogLevel.Debug);
+        }
         
-        //get item actions
-        var trees = Help.GameContent.Load<Dictionary<string, TreeSpawnData>>($"Mods/{Id}/MineTrees");
-        Parser.Trees(trees);
-        Monitor.Log($"Loaded {MenuActions?.Count ?? 0} trees to spawn in mines.", LogLevel.Debug);
+        if (Config.Resources)
+        {
+            //get item actions
+            var trees = Help.GameContent.Load<Dictionary<string, TerrainSpawnData>>($"Mods/{Id}/Mines/Terrain");
+            Parser.Terrain(trees);
+            Monitor.Log($"Loaded {MineFeatures?.Count ?? 0} mineshaft terrain features.", LogLevel.Debug);
+        }
         
-        //get mixed seeds
-        var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
-        Parser.MixedSeeds(seedData);
-        Monitor.Log($"Loaded {Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+        if (Config.MixedSeeds)
+        {
+            //get mixed seeds
+            var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
+            Parser.MixedSeeds(seedData);
+            Monitor.Log($"Loaded {Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+        }
         
-        //get panning
-        var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
-        Parser.Panning(panData);
-        Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+        if (Config.Panning)
+        {
+            //get panning
+            var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
+            Parser.Panning(panData);
+            Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+            /*
+            //train stuff
+            var trainData = Help.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Train");
+            Parser.Train(trainData);
+            Monitor.Log($"Loaded {TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
+            */
+        }
         
         //ACTION BUTTON LIST
         var temp = new List<SButton>();
@@ -169,11 +319,12 @@ public sealed class ModEntry : Mod
 #endif
 
     internal static bool Holding { get; set; }
+    internal static ModConfig Config { get; private set; }
     public static Dictionary<string, ResourceData> BigClumps { get; internal set; } = new();
     public static Dictionary<string, ItemData> Data { get; internal set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
-    internal static Dictionary<string, TreeSpawnData> MineTrees { get; set; } = new();
+    internal static Dictionary<string, TerrainSpawnData> MineFeatures { get; set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();

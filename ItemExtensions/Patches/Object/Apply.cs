@@ -4,6 +4,7 @@ using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Objects;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -56,11 +57,20 @@ public partial class ObjectPatches
           postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_dropItem))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.performToolAction\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Object), "performToolAction"),
-            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Postfix_performToolAction))
-        );
+        if(ModEntry.Config.Resources)
+        {
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.performToolAction\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Object), "performToolAction"),
+                postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Postfix_performToolAction))
+            );
+        
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.onExplosion\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
+                prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_onExplosion))
+            );
+        }
 
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.initializeLightSource\".");
         harmony.Patch(
@@ -74,10 +84,16 @@ public partial class ObjectPatches
             prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_IsHeldOverHead))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.onExplosion\".");
+        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (Vector2, string, bool)\".");
         harmony.Patch(
-            original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
-            prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_onExplosion))
+            original: AccessTools.Constructor(typeof(Object), new[]{typeof(Vector2),typeof(string),typeof(bool)}),
+            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_new))
+        );
+        
+        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (string, int, bool, int, int)\".");
+        harmony.Patch(
+            original: AccessTools.Constructor(typeof(Object), new[]{typeof(string),typeof(int),typeof(bool),typeof(int),typeof(int)}),
+            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_newFromId))
         );
     }
     
@@ -118,39 +134,23 @@ public partial class ObjectPatches
         }
     }
     
-    internal static void Post_new(ref Object __instance, string itemId, int initialStack, bool isRecipe = false,
-        int price = -1, int quality = 0)
+    internal static void Post_new(ref Object __instance, Vector2 tileLocation, string itemId, bool isRecipe = false)
     {
         try
         {
-            if (!ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource))
-                return;
-
-            if (resource == null || resource == new ResourceData())
-                return;
-
-            Log("Created item has resource data. Adding...");
-
-            __instance.MinutesUntilReady = resource.Health; //mainData.Resource.MinToolLevel + 1;
-
-            if (__instance.tempData is null)
-            {
-                __instance.tempData = new Dictionary<string, object>
-                {
-                    { "Health", resource.Health }
-                };
-            }
-            else
-            {
-                __instance.tempData.Add("Health", resource.Health);
-            }
-
-            //__instance.Fragility = Object.fragility_Delicate;
-            __instance.modData["Esca.FarmTypeManager/CanBePickedUp"] = "false";
-            __instance.IsSpawnedObject = false;
-
-            __instance.CanBeGrabbed = false;
-            __instance.CanBeSetDown = true;
+            CheckCustomization(ref __instance);
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}", LogLevel.Error);
+        }
+    }
+    
+    internal static void Post_newFromId(ref Object __instance, string itemId, int initialStack, bool isRecipe = false, int price = -1, int quality = 0)
+    {
+        try
+        {
+            CheckCustomization(ref __instance);
         }
         catch (Exception e)
         {
@@ -158,10 +158,28 @@ public partial class ObjectPatches
         }
     }
 
-    /*
-    private static void Post_canBeGivenAsGift(Object __instance, ref bool __result)
+    internal static void CheckCustomization(ref Object obj)
     {
-        if (__instance is Furniture)
-            __result = true;
-    }*/
+        //don't force quality on these items, as they don't have one to start with
+        if (obj is Furniture || obj is Wallpaper || obj.bigCraftable.Value)
+            return;
+            
+
+        if (Game1.objectData.TryGetValue(obj.ItemId, out var data) == false)
+            return;
+
+        if (data.CustomFields is null || data.CustomFields.Any() == false)
+            return;
+
+        if (data.CustomFields.TryGetValue(Additions.ModKeys.ForceQuality, out var forceQuality))
+        {
+            obj.Quality = forceQuality switch {
+                "normal" or "none" or "low" => 0,
+                "silver" or "med" => 1,
+                "gold" or "high" => 2,
+                "iridium" or "best" => 4,
+                _ => 0
+            };
+        }
+    }
 }

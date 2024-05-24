@@ -1,4 +1,6 @@
+using ItemExtensions.Additions;
 using StardewValley;
+using StardewValley.GameData.Objects;
 using StardewValley.Triggers;
 
 namespace ItemExtensions.Models.Internal;
@@ -23,7 +25,7 @@ public interface IWorldChangeData
     List<string> AddFlags { get; set; }
     List<string> RemoveFlags { get; set; }
     
-    List<ObjectBuffData> AddBuffs { get; set; } = new();
+    List<ObjectBuffData> AddBuffs { get; set; }
     //List<ObjectBuffData> RemoveBuffs { get; set; } = new();
     
     string Conditions { get; set; }
@@ -135,13 +137,13 @@ public interface IWorldChangeData
             return;
 
         //get all actions
-        var actions = data.TriggerAction.replace(", ", ",").split(',');
+        var actions = Parser.SplitCommas(data.TriggerAction);
         foreach(var trigger in actions)
         {
             TriggerActionManager.TryRunAction(trigger, out var error, out var exception);
             if (!string.IsNullOrWhiteSpace(error))
             {
-                ModEntry.Mon.Log($"Error: {error}. {exception}", LogLevel.Warn);
+                ModEntry.Mon.Log($"Error: {error}. {exception}", StardewModdingAPI.LogLevel.Warn);
             }
         }
     }

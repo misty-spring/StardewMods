@@ -1,4 +1,16 @@
 {
   "ItemHover_Requirements_Extra": "{0} {1}",
-  "CantBreak": "Your {0} isn't strong enough to break this."
+  "CantBreak": "Your {0} isn't strong enough to break this.",
+  "config.Description":"This toggles the mod's functionality. Make sure to reset the game after applying settings.",
+  "config.Resources.name":"Resources",
+  "config.MixedSeeds.name":"Mixed seeds",
+  "config.Panning.name":"Panning",
+  "config.MenuActions.name":"Menu actions",
+  "config.ShopTrades.name":"Shop trades",
+  "config.EatingAnimations.name":"Eating animations",
+  "config.TrainDrops.name":"Train",
+  "config.FishPond.name":"Fish pond",
+  "config.Drops.title":"Drop-related",
+  "config.VanillaExt.title":"Vanilla extension",
+  "config.Customization.title":"Customization"
 }

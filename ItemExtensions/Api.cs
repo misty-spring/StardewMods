@@ -1,8 +1,12 @@
+using ItemExtensions.Additions;
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.Internal;
+using StardewValley.TerrainFeatures;
+using Object = StardewValley.Object;
 
 namespace ItemExtensions;
 
