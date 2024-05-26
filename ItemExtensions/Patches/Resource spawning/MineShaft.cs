@@ -327,7 +327,7 @@ public class MineShaftPatches
         var maxCount = GetMaxFeatures(mineLevel);
         var all = new Dictionary<string, double>();
         //check every tree data
-        foreach (var (id, data) in ModEntry.MineFeatures)
+        foreach (var (id, data) in ModEntry.MineTerrain)
         {
             try
             {
@@ -461,7 +461,7 @@ public class MineShaftPatches
             var id = Game1.random.ChooseFrom(sorted);
             TerrainFeature terrainFeature;
 
-            var data = ModEntry.MineFeatures[id];
+            var data = ModEntry.MineTerrain[id];
 
             if(data.Type == FeatureType.Tree) 
             {

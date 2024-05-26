@@ -11,7 +11,9 @@
   "config.FishPond.name":"Estanque de peces",
   "config.TerrainFeatures.name":"Terreno",
   "config.Ores.name":"Menas",
-  "config.Ores.tooltip": "Debe estar activado para permitir terreno extra en las minas.",
+  "config.Volcano.name":"en volcán",
+  "config.Mountain.name":"en montaña",
+  "config.Ores.tooltip": "Debe estar activado para permitir las otras opciones.",
   "config.Resources.title":"Recursos",
   "config.Drops.title":"De ítems extra",
   "config.Customization.title":"Personalización"

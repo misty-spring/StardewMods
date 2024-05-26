@@ -155,13 +155,32 @@ public sealed class ModEntry : Mod
             text: () => Helper.Translation.Get("config.Description")
         );
 
-        configMenu?.AddPageLink(ModManifest, pageId: "Resources", text: () => Helper.Translation.Get("config.Resources.title"));
+        configMenu?.AddPageLink(
+            ModManifest, 
+            pageId: "Resources", 
+            text: () => Helper.Translation.Get("config.Resources.title")
+        );
+
+        configMenu?.AddPageLink(
+            ModManifest,
+            "Drops",
+            text: () => Helper.Translation.Get("config.Drops.title")
+        );
 
         //customization
-        configMenu?.AddSectionTitle(
+        configMenu?.AddPageLink(
             ModManifest,
+            "Custom",
             text: () => Helper.Translation.Get("config.Customization.title")
         );
+
+        configMenu?.AddPageLink(
+            ModManifest,
+            "Ext",
+            () => Helper.Translation.Get("config.VanillaExt.title")
+        );
+
+        configMenu?.AddPage(ModManifest, "Custom", () => Helper.Translation.Get("config.Customization.title"));
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
@@ -178,10 +197,7 @@ public sealed class ModEntry : Mod
         );
          
         //vanilla function extension
-        configMenu?.AddSectionTitle(
-            ModManifest,
-            text: () => Helper.Translation.Get("config.VanillaExt.title")
-        );
+        configMenu?.AddPage( ModManifest, "Ext", () => Helper.Translation.Get("config.VanillaExt.title"));
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
@@ -198,10 +214,8 @@ public sealed class ModEntry : Mod
         );
 
         //extra drops
-        configMenu?.AddSectionTitle(
-            ModManifest,
-            text: () => Helper.Translation.Get("config.Drops.title")
-        );
+
+        configMenu?.AddPage(ModManifest, "Drops", () => Helper.Translation.Get("config.Drops.title"));
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
@@ -225,6 +239,8 @@ public sealed class ModEntry : Mod
         );
 
         //resources
+
+        configMenu?.AddPage(ModManifest, "Resources", () => Helper.Translation.Get("config.Resources.title"));
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
@@ -286,10 +302,10 @@ public sealed class ModEntry : Mod
         
         if (Config.Resources)
         {
-            //get item actions
+            //get extra terrain for mineshaft
             var trees = Help.GameContent.Load<Dictionary<string, TerrainSpawnData>>($"Mods/{Id}/Mines/Terrain");
             Parser.Terrain(trees);
-            Monitor.Log($"Loaded {MineFeatures?.Count ?? 0} mineshaft terrain features.", LogLevel.Debug);
+            Monitor.Log($"Loaded {MineTerrain?.Count ?? 0} mineshaft terrain features.", LogLevel.Debug);
         }
         
         if (Config.MixedSeeds)
@@ -357,7 +373,7 @@ public sealed class ModEntry : Mod
     //resources
     public static Dictionary<string, ResourceData> BigClumps { get; internal set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
-    internal static Dictionary<string, TerrainSpawnData> MineFeatures { get; set; } = new();
+    internal static Dictionary<string, TerrainSpawnData> MineTerrain { get; set; } = new();
     //customization
     public static Dictionary<string, ItemData> Data { get; internal set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();

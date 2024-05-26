@@ -22,6 +22,12 @@ public static class Assets
             Parser.Resources(clumps);
         }
         
+        if(e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Mines/Terrain")))
+        {
+            var trees = Helper.GameContent.Load<Dictionary<string, TerrainSpawnData>>($"Mods/{Id}/Mines/Terrain");
+            Parser.Terrain(trees);
+        }
+
         //don't reload if on title screen
         if (!Context.IsWorldReady)
             return;
@@ -33,9 +39,9 @@ public static class Assets
             Parser.Panning(panData);
         }
 
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/TrainDrops")))
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Train")))
         {
-            var trainData = Helper.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/TrainDrops");
+            var trainData = Helper.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/Train");
             Parser.Train(trainData);
         }
 
@@ -171,7 +177,15 @@ public static class Assets
                 () => new Dictionary<string, PanningData>(),
                 AssetLoadPriority.Low);
         }
-        
+
+        //train
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Train", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, TrainDropData>(),
+                AssetLoadPriority.Low);
+        }
+
         //resources
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Resources", true))
         {
@@ -179,7 +193,14 @@ public static class Assets
                 () => new Dictionary<string, ResourceData>(),
                 AssetLoadPriority.Low);
         }
-        
+
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Mines/Terrain", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, TerrainSpawnData>(),
+                AssetLoadPriority.Low);
+        }
+
         //texture
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Textures/Drink", true))
         {

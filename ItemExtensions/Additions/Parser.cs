@@ -193,7 +193,7 @@ public static class Parser
 
     internal static void Terrain(Dictionary<string, TerrainSpawnData> trees)
     {
-        ModEntry.MineFeatures = new Dictionary<string,TerrainSpawnData>();
+        ModEntry.MineTerrain = new Dictionary<string,TerrainSpawnData>();
         foreach (var pair in trees)
         {
             Log($"Checking {pair.Key} data...");
@@ -210,7 +210,7 @@ public static class Parser
                 continue;
             }
 
-            ModEntry.MineFeatures.Add(pair.Key, pair.Value);
+            ModEntry.MineTerrain.Add(pair.Key, pair.Value);
         }
     }
 

@@ -35,7 +35,7 @@ internal class VolcanoPatches
         );
     }
 
-    private void Post_GenerateEntities(VolcanoDungeon __instance)
+    private static void Post_GenerateEntities(VolcanoDungeon __instance)
     {
         try
         {
