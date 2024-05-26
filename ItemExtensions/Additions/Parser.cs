@@ -4,6 +4,7 @@ using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Items;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.TerrainFeatures;
 
 namespace ItemExtensions.Additions;
 
@@ -210,6 +211,24 @@ public static class Parser
             }
 
             ModEntry.MineFeatures.Add(pair.Key, pair.Value);
+        }
+    }
+
+    internal static void Train(Dictionary<string, TrainDropData> trainData)
+    {
+        ModEntry.TrainDrops = new Dictionary<string, TrainDropData>();
+        foreach (var pair in trainData)
+        {
+            Log($"Checking {pair.Key} data...");
+
+            //checks id
+            if (string.IsNullOrWhiteSpace(pair.Value.ItemId))
+            {
+                Log($"Train drop with key '{pair.Key}' has empty item ID. Skipping", LogLevel.Info);
+                continue;
+            }
+
+            ModEntry.TrainDrops.Add(pair.Key, pair.Value);
         }
     }
 

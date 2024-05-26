@@ -80,7 +80,7 @@ public interface IApi
     /// <param name="clump">The clump instance.</param>
     /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
     /// <returns>All possible drops, with %.</returns>
-    Dictionary<string,double> GetClumpDrops(ResourceClump clump, bool parseConditions = false);
+    Dictionary<string,(double, int)> GetClumpDrops(ResourceClump clump, bool parseConditions = false);
 
     /// <summary>
     /// Gets drops for a node.
@@ -88,7 +88,7 @@ public interface IApi
     /// <param name="clump">The node instance.</param>
     /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
     /// <returns>All possible drops, with %.</returns>
-    Dictionary<string,double> GetObjectDrops(Object node, bool parseConditions = false);
+    Dictionary<string,(double,int)> GetObjectDrops(Object node, bool parseConditions = false);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -220,17 +220,17 @@ public class Api : IApi
         return result;
     }
 
-    public Dictionary<string,(double, int)> GetClumpDrops(Clump clump, bool parseConditions = false)
+    public Dictionary<string,(double, int)> GetClumpDrops(ResourceClump clump, bool parseConditions = false)
     {
         var result = new Dictionary<string,(double, int)>();
         var location = Game1.player.currentLocation;
         var who = Game1.player;
         var context = new ItemQueryContext(location, who, Game1.random);
 
-        if (node is null)
+        if (clump is null)
             return result;
         
-        if(clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
+        if (clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
             return result;
     
         if (!ModEntry.BigClumps.TryGetValue(id, out var resource))
@@ -239,7 +239,7 @@ public class Api : IApi
         if (resource is null || resource == new ResourceData())
             return result;
             
-        if(string.IsNullOrWhiteSpace(drop.Condition) == false)
+        if(string.IsNullOrWhiteSpace(resource.ItemDropped) == false)
         {
             result.Add(resource.ItemDropped, (1, Game1.random.Next(resource.MinDrops, resource.MaxDrops)));
         }
@@ -249,13 +249,13 @@ public class Api : IApi
             if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
                 continue;
                 
-            var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
-            foreach (var result in itemQuery)
+            var itemQuery = ItemQueryResolver.TryResolve(drop, context, drop.Filter, drop.AvoidRepeat);
+            foreach (var queryResult in itemQuery)
             {
-                var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
-                parsedItem.Stack *= multiplier;
+                var parsedItem = ItemRegistry.Create(queryResult.Item.QualifiedItemId, queryResult.Item.Stack, queryResult.Item.Quality);
+                //parsedItem.Stack *= multiplier;
         
-                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(resource.MinStack, resource.MaxStack)));
+                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(drop.MinStack, drop.MaxStack)));
             }
         }
 
@@ -277,24 +277,24 @@ public class Api : IApi
 
         if (resource is null || resource == new ResourceData())
             return result;
-            
-        if(string.IsNullOrWhiteSpace(drop.Condition) == false)
+
+        if (string.IsNullOrWhiteSpace(resource.ItemDropped) == false)
         {
             result.Add(resource.ItemDropped, (1, Game1.random.Next(resource.MinDrops, resource.MaxDrops)));
         }
 
-        foreach(var drop in resource.ExtraItems)
+        foreach (var drop in resource.ExtraItems)
         {
-            if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
+            if (parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
                 continue;
-                
-            var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
-            foreach (var result in itemQuery)
+
+            var itemQuery = ItemQueryResolver.TryResolve(drop, context, drop.Filter, drop.AvoidRepeat);
+            foreach (var queryResult in itemQuery)
             {
-                var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
-                parsedItem.Stack *= multiplier;
-        
-                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(resource.MinStack, resource.MaxStack)));
+                var parsedItem = ItemRegistry.Create(queryResult.Item.QualifiedItemId, queryResult.Item.Stack, queryResult.Item.Quality);
+                //parsedItem.Stack *= multiplier;
+
+                result.Add(parsedItem.QualifiedItemId, (drop.Chance, Game1.random.Next(drop.MinStack, drop.MaxStack)));
             }
         }
 

@@ -21,6 +21,7 @@ public static class Sorter
             return 15;
 
         var remainder = level % 30;
+        return remainder;
     }
     /// <summary>
     /// Grabs all ores that match a random double. (E.g, all with a chance bigger than 0.x, starting from smallest)

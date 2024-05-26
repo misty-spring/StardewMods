@@ -1,11 +1,12 @@
 using HarmonyLib;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
-using System.Security.AccessControl;
+using StardewValley.Internal;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -70,24 +71,27 @@ public partial class TrainPatches
          * packages = 8
          * presents = 9
          */
-        
+
+        var context = new ItemQueryContext(Game1.player.currentLocation, Game1.player, Game1.random);
+
         for (int i = 0; i < train.cars.Count; i++)
         {
             var x = (int)(train.position.X - (float)((i + 1) * 512))/64;
-            if (Utility.isOnScreen(new Point(x, 40)) == false)
+
+            if (Utility.isOnScreen(new Point(x, 40), 0) == false)
                 continue;
 
             foreach(var pair in ModEntry.TrainDrops)
             {
                 var entry = pair.Value;
 
-                var car = GetCarType(train.cars[i].carType);
-                var resource = GetResource(train.cars[i].resourceType);
+                var car = GetCarType(train.cars[i].carType.Value);
+                var resource = GetResourceType(train.cars[i].resourceType.Value);
                 
-                if (car != entry.CarType)
+                if (car != entry.Car)
                     continue;
 
-                if (resource != entry.Resource && entry.Resource != ResourceType.None)
+                if (resource != entry.Type && entry.Type != ResourceType.None)
                     continue;
 
                 if(entry.Chance < Game1.random.NextDouble())

@@ -1,4 +1,5 @@
 using ItemExtensions.Additions;
+using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 using StardewValley.GameData.Objects;
 using StardewValley.Triggers;
@@ -90,7 +91,13 @@ public interface IWorldChangeData
         {
             foreach (var buff in data.AddBuffs)
             {
-                Game1.player.applyBuff(buff);
+                if (!string.IsNullOrWhiteSpace(buff.BuffId))
+                    Game1.player.applyBuff(buff.BuffId);
+                else
+                {
+                    var texture = Game1.content.Load<Texture2D>(buff.IconTexture);
+                    Game1.player.buffs.Apply(new Buff(buff.BuffId, null, null, buff.Duration, texture, buff.IconSpriteIndex, new StardewValley.Buffs.BuffEffects(buff.CustomAttributes), buff.IsDebuff));
+                }
             }
         }
 

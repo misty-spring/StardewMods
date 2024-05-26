@@ -1,9 +1,9 @@
 ﻿namespace ItemExtensions.Models.Items;
 
-internal class TrainDropData : ExtraSpawn
+public class TrainDropData : ExtraSpawn
 {
-    public static CarType Car { get; set; } = CarType.Resource;
-    public static ResourceType Type { get; set; } = ResourceType.Coal;
+    public CarType Car { get; set; } = CarType.Resource;
+    public ResourceType Type { get; set; } = ResourceType.Coal;
 }
 
 public enum CarType

@@ -51,7 +51,7 @@ public class ItemPatches
         {
             if (__result is not Object o)
                 return;
-            ObjectPatches.Post_new(ref o, __result.QualifiedItemId, __result.Stack);
+            ObjectPatches.Post_new(ref o, o.TileLocation, o.ItemId, o.IsRecipe);
         }
         catch (Exception e)
         {

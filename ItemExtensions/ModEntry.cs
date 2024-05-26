@@ -64,7 +64,6 @@ public sealed class ModEntry : Mod
             PanPatches.Apply(harmony);
         }
 
-        /*
         if (Config.TrainDrops)
         {
             TrainPatches.Apply(harmony);
@@ -73,7 +72,7 @@ public sealed class ModEntry : Mod
         if (Config.FishPond)
         {
             FishPondPatches.Apply(harmony);
-        }*/
+        }
 
         if (Config.Resources)
         {
@@ -274,14 +273,16 @@ public sealed class ModEntry : Mod
             var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
             Parser.Panning(panData);
             Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
-            /*
-            //train stuff
-            var trainData = Help.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Train");
-            Parser.Train(trainData);
-            Monitor.Log($"Loaded {TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
-            */
         }
         
+        if(Config.TrainDrops)
+        {
+            //train stuff
+            var trainData = Help.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/Train");
+            Parser.Train(trainData);
+            Monitor.Log($"Loaded {TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
+        }
+
         //ACTION BUTTON LIST
         var temp = new List<SButton>();
         foreach (var b in Game1.options.actionButton)
@@ -320,12 +321,16 @@ public sealed class ModEntry : Mod
 
     internal static bool Holding { get; set; }
     internal static ModConfig Config { get; private set; }
+    //resources
     public static Dictionary<string, ResourceData> BigClumps { get; internal set; } = new();
+    public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
+    internal static Dictionary<string, TerrainSpawnData> MineFeatures { get; set; } = new();
+    //customization
     public static Dictionary<string, ItemData> Data { get; internal set; } = new();
     internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
     internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
-    internal static Dictionary<string, TerrainSpawnData> MineFeatures { get; set; } = new();
-    public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
+    //extra drops
+    public static Dictionary<string, TrainDropData> TrainDrops { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
 }

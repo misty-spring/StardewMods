@@ -351,11 +351,11 @@ public class MineShaftPatches
                     var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
 
                     //if qi-only & not qi on, skip
-                    if (spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
+                    if (spawns.Type == MineType.Qi && mineShaft.GetAdditionalDifficulty() <= 0)
                         continue;
 
                     //if vanilla-only & qi on, skip
-                    if (spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
+                    if (spawns.Type == MineType.Normal && mineShaft.GetAdditionalDifficulty() > 0)
                         continue;
 
                     if (spawns.Type == MineType.Frenzy && spawns.LastFrenzy == (Game1.dayOfMonth, Game1.season))
@@ -424,7 +424,7 @@ public class MineShaftPatches
             return;
 
         //for every stone we selected
-        foreach (var (treeType, data) in all)
+        foreach (var (treeType, chance) in all)
         {
             //choose a %
             var nextDouble = Game1.random.NextDouble();
@@ -458,40 +458,42 @@ public class MineShaftPatches
 
             var id = Game1.random.ChooseFrom(sorted);
             TerrainFeature terrainFeature;
-            
+
+            var data = ModEntry.MineFeatures[id];
+
             if(data.Type == FeatureType.Tree) 
             {
                 terrainFeature = new Tree(data.TerrainFeatureId);
                 
-                if(data.growthStage > -1)
-                    terrainFeature.growthStage.Value = data.growthStage;
+                if(data.GrowthStage > -1)
+                    (terrainFeature as Tree).growthStage.Value = data.GrowthStage;
 
                 if(data.Stump)
-                    terrainFeature.stump.Value = true;
+                    (terrainFeature as Tree).stump.Value = true;
 
                 if(Game1.random.NextBool(data.MossChance))
-                    terrainFeature.hasMoss.Value = true;
+                    (terrainFeature as Tree).hasMoss.Value = true;
 
             }
             else if(data.Type == FeatureType.FruitTree)
             {
-                terrainFeature = new FruitTree(data.TerrainFeatureId, data.growthStage);
+                terrainFeature = new FruitTree(data.TerrainFeatureId, data.GrowthStage);
                 
-                if(data.growthStage > -1)
-                    terrainFeature.growthStage.Value = data.growthStage;
+                if(data.GrowthStage > -1)
+                    (terrainFeature as FruitTree).growthStage.Value = data.GrowthStage;
 
                 for(var i=0; i<data.FruitAmount;i++)
                 {
-                    terrainFeature.TryAddFruit();
+                    (terrainFeature as FruitTree).TryAddFruit();
                 }
             }
             else if (data.Type == FeatureType.GiantCrop)
-                terrainFeature = new GiantCrop(data.TerrainFeatureId);
+                terrainFeature = new GiantCrop(data.TerrainFeatureId, tile);
             else
                 continue;
 
             //replace & break to avoid re-setting
-            mineShaft.TerrainFeatures.Add(tile, terrainFeature);
+            mineShaft.terrainFeatures.Add(tile, terrainFeature);
 
             //check ladder
             if (mineShaft.tileBeneathLadder == tile)
@@ -500,18 +502,18 @@ public class MineShaftPatches
                 Log($"Changing tile...(old {mineShaft.tileBeneathLadder})");
 #endif
                 var tile2 = Vector2.Zero;
-                var canReplace = false;
+                var canReplace2 = false;
                 for (var i = 0; i < mineShaft.Objects.Length; i++)
                 {
                     tile2 = mineShaft.getRandomTile();
                     if (mineShaft.getObjectAtTile((int)tile2.X, (int)tile2.Y) is null)
                         continue;
 
-                    canReplace = true;
+                    canReplace2 = true;
                     break;
                 }
                 
-                if(canReplace)
+                if(canReplace2)
                     mineShaft.tileBeneathLadder = tile2;
 #if DEBUG
                 Log($"Tile changed to {mineShaft.tileBeneathLadder}.");
