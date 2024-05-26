@@ -5,6 +5,7 @@ using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Items;
 using ItemExtensions.Patches;
+using ItemExtensions.Patches.Resource_spawning;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -79,6 +80,12 @@ public sealed class ModEntry : Mod
             GameLocationPatches.Apply(harmony);
             MineShaftPatches.Apply(harmony);
             ResourceClumpPatches.Apply(harmony);
+
+            if (Config.ResourcesMtn)
+                MountainPatches.Apply(harmony);
+
+            if (Config.ResourcesVolcano)
+                VolcanoPatches.Apply(harmony);
         }
 
         if (Config.ShopTrades)
@@ -148,6 +155,8 @@ public sealed class ModEntry : Mod
             text: () => Helper.Translation.Get("config.Description")
         );
 
+        configMenu?.AddPageLink(ModManifest, pageId: "Resources", text: () => Helper.Translation.Get("config.Resources.title"));
+
         //customization
         configMenu?.AddSectionTitle(
             ModManifest,
@@ -183,29 +192,22 @@ public sealed class ModEntry : Mod
          
         configMenu?.AddBoolOption(
             mod: ModManifest,
-            name: () => Help.Translation.Get("config.MixedSeeds.name"),
-            getValue: () => Config.MixedSeeds,
-            setValue: value => Config.MixedSeeds = value
-        );
-         
-        configMenu?.AddBoolOption(
-            mod: ModManifest,
-            name: () => Help.Translation.Get("config.Resources.name"),
-            getValue: () => Config.Resources,
-            setValue: value => Config.Resources = value
-        );
-         
-        configMenu?.AddBoolOption(
-            mod: ModManifest,
             name: () => Help.Translation.Get("config.ShopTrades.name"),
             getValue: () => Config.ShopTrades,
             setValue: value => Config.ShopTrades = value
         );
-         
+
         //extra drops
         configMenu?.AddSectionTitle(
             ModManifest,
             text: () => Helper.Translation.Get("config.Drops.title")
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.MixedSeeds.name"),
+            getValue: () => Config.MixedSeeds,
+            setValue: value => Config.MixedSeeds = value
         );
 
         configMenu?.AddBoolOption(
@@ -220,6 +222,37 @@ public sealed class ModEntry : Mod
             name: () => Help.Translation.Get("config.TrainDrops.name"),
             getValue: () => Config.TrainDrops,
             setValue: value => Config.TrainDrops = value
+        );
+
+        //resources
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Ores.name"),
+            tooltip: () => Help.Translation.Get("config.Ores.tooltip"),
+            getValue: () => Config.Resources,
+            setValue: value => Config.Resources = value
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Ores.name") + ' ' + Help.Translation.Get("config.Volcano.name"),
+            getValue: () => Config.ResourcesVolcano,
+            setValue: value => Config.ResourcesVolcano = value
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Ores.name") + ' ' + Help.Translation.Get("config.Mountain.name"),
+            getValue: () => Config.ResourcesMtn,
+            setValue: value => Config.ResourcesMtn = value
+        );
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.TerrainFeatures.name"),
+            getValue: () => Config.TerrainFeatures,
+            setValue: value => Config.TerrainFeatures = value
         );
     }
 

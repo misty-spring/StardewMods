@@ -26,12 +26,27 @@ public static class Assets
         if (!Context.IsWorldReady)
             return;
         
+        //drops
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Panning")))
         {
             var panData = Helper.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
             Parser.Panning(panData);
         }
-        
+
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/TrainDrops")))
+        {
+            var trainData = Helper.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/TrainDrops");
+            Parser.Train(trainData);
+        }
+
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/MixedSeeds")))
+        {
+            //get menu actions
+            var seeds = Helper.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
+            Parser.MixedSeeds(seeds);
+        }
+
+        //etc
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Data")))
         {
             var objectData = Helper.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
@@ -50,13 +65,6 @@ public static class Assets
             //get menu actions
             var itemActionsRaw = Helper.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
             Parser.ItemActions(itemActionsRaw);
-        }
-        
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/MixedSeeds")))
-        {
-            //get menu actions
-            var seeds = Helper.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
-            Parser.MixedSeeds(seeds);
         }
     }
 

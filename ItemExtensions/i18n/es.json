@@ -2,7 +2,6 @@
   "ItemHover_Requirements_Extra": "{0} unidades de {1}",
   "CantBreak": "Tu {0} no es lo suficientemente fuerte para romper esto.",
   "config.Description":"Esto activa o desactiva las funciones del mod. Asegúrate de reiniciar el juego luego de cambiar esta configuración.",
-  "config.Resources.name":"Recursos",
   "config.MixedSeeds.name":"Semillas mixtas",
   "config.Panning.name":"Batea",
   "config.MenuActions.name":"Acciones en menú",
@@ -10,5 +9,10 @@
   "config.EatingAnimations.name":"Animaciones de comida",
   "config.TrainDrops.name":"Tren",
   "config.FishPond.name":"Estanque de peces",
-  "config.Drops.name":"De ítems extra"
+  "config.TerrainFeatures.name":"Terreno",
+  "config.Ores.name":"Menas",
+  "config.Ores.tooltip": "Debe estar activado para permitir terreno extra en las minas.",
+  "config.Resources.title":"Recursos",
+  "config.Drops.title":"De ítems extra",
+  "config.Customization.title":"Personalización"
 }

@@ -15,7 +15,7 @@ namespace ItemExtensions.Patches;
 
 public class MineShaftPatches
 {
-    private static readonly string[] VanillaStones =
+    internal static readonly string[] VanillaStones =
     {
         //copper (751) and iron (290) are fairly low-cost, so they're replaced by default. but because gold and iridium are rarer, they're excluded. the rest of IDs are stones
         "32", "34", "36", "38", "40", "42", "48", "50", "52", "54", "56", "58", "450", "668", "670", "760", "762" //"290", "751", 
@@ -46,7 +46,9 @@ public class MineShaftPatches
             if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0)
                 return;
 
-            CheckTerrainFeatures(__instance);
+            if (ModEntry.Config.TerrainFeatures)
+                CheckTerrainFeatures(__instance);
+
             CheckResourceNodes(__instance);
             
             //clumps aren't changed here to avoid issues because the zone is special
@@ -113,7 +115,7 @@ public class MineShaftPatches
         }
         
         //if none are an ore
-        var all = mineShaft.Objects.Values.Where(o => VanillaStones.Contains(o.ItemId));
+        var all = mineShaft.Objects.Values.Where(o => stones.Contains(o.ItemId));
 
         if (all?.Any() == false)
             return;

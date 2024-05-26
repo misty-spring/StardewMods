@@ -23,40 +23,41 @@ internal class CropPatches
     internal static bool HasCropsAnytime { get; set; }
     internal static void Apply(Harmony harmony)
     {
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": postfixing SDV method \"Crop.ResolveSeedId(string, GameLocation)\".");
+        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV constructor \"Crop(string, int, int, GameLocation)\".");
         
         harmony.Patch(
-            original: AccessTools.Method(typeof(Crop), nameof(Crop.ResolveSeedId)),
-            postfix: new HarmonyMethod(typeof(CropPatches), nameof(Post_ResolveSeedId))
+            original: AccessTools.Constructor(typeof(Crop), new[] {typeof(string), typeof(int), typeof(int), typeof(GameLocation)}),
+            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_Constructor))
         );
     }
 
-    /// <summary>Choose a random seed from a bag of mixed seeds, if applicable.</summary>
-    /// <param name="itemId">The unqualified item ID for the seed item.</param>
-    /// <param name="location">The location for which to resolve the crop.</param>
-    /// <param name="__result">The unqualified seed ID to use.</param>
-    public static void Post_ResolveSeedId(string itemId, GameLocation location, ref string __result)
+    internal static void Pre_Constructor (Crop __instance, ref string seedId, int tileX, int tileY, GameLocation location)
     {
+        if (string.IsNullOrWhiteSpace(seedId))
+            return;
+
         if (Cached != null)
         {
-            __result = Cached;
+            seedId = Cached;
             return;
         }
+        
         #if DEBUG
-        Log($"CALLED ({itemId})");
+        Log($"CALLED ({seedId})");
         #endif
+        
         try
         {
             //if there's no mod data, do by custom fields
-            if (ModEntry.Seeds.TryGetValue(itemId, out var mixedSeeds) == false)
+            if (ModEntry.Seeds.TryGetValue(seedId, out var mixedSeeds) == false)
             {
 #if DEBUG
-                Log($"No data in ModSeeds for {itemId}, checking object custom fields");
+                Log($"No data in ModSeeds for {seedId}, checking object custom fields");
 #endif
-                if (Game1.objectData.TryGetValue(itemId, out var objectData) == false || objectData.CustomFields is null)
+                if (Game1.objectData.TryGetValue(seedId, out var objectData) == false || objectData.CustomFields is null)
                     return;
 
-                if (Game1.objectData[itemId].CustomFields.TryGetValue(ModKeys.MixedSeeds, out var seeds) == false)
+                if (objectData.CustomFields.TryGetValue(ModKeys.MixedSeeds, out var seeds) == false)
                     return;
 
                 //do from custom field
@@ -101,16 +102,16 @@ internal class CropPatches
                 }
 
                 //also add the "main" seed
-                for (var i = 0; i < AddMainSeedBy(itemId, allFields); i++)
+                for (var i = 0; i < AddMainSeedBy(seedId, allFields); i++)
                 {
-                    allFields.Add(itemId);
+                    allFields.Add(seedId);
                 }
 
                 var fromField = Game1.random.ChooseFrom(allFields);
 
                 Log($"Choosing seed {fromField}");
                 Cached = fromField;
-                __result = fromField;
+                seedId = fromField;
 
                 return;
             }
@@ -173,9 +174,9 @@ internal class CropPatches
             }
 
             //also add the "main" seed
-            for (var i = 0; i < AddMainSeedBy(itemId, all); i++)
+            for (var i = 0; i < AddMainSeedBy(seedId, all); i++)
             {
-                all.Add(itemId);
+                all.Add(seedId);
             }
 
             //if none in all, return. shouldn't happen but just in case
@@ -183,11 +184,11 @@ internal class CropPatches
                 return;
 
 
-            if (itemId == "MixedFlowerSeeds")
+            if (seedId == "MixedFlowerSeeds")
             {
                 all.AddRange(GetVanillaFlowersForSeason(location.GetSeason(), location.IsOutdoors));
             }
-            else if (itemId == "770")
+            else if (seedId == "770")
             {
                 all.AddRange(GetVanillaCropsForSeason(location.GetSeason(), location));
             }
@@ -210,7 +211,7 @@ internal class CropPatches
             var chosen = Game1.random.ChooseFrom(all);
             Log($"Choosing seed {chosen}");
             Cached = chosen;
-            __result = chosen;
+            seedId = chosen;
         }
         catch (Exception e)
         {

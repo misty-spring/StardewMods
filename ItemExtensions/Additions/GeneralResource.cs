@@ -61,8 +61,14 @@ public static class GeneralResource
     /// <returns>Whether the aforementioned match. If tool is null (ie bomb), it's always true.</returns>
     internal static bool ToolMatches(Tool tool, ResourceData data)
     {
+        if(data?.Tool is null)
+        {
+            Log("Resource's tool can't be null. Resource won't be mined.", LogLevel.Warn);
+            return false;
+        }
+
         #if DEBUG
-        Log($"Tool: {tool?.GetToolData()?.ClassName}, required: {data.Tool}");
+            Log($"Tool: {tool?.GetToolData()?.ClassName}, required: {data.Tool}");
         #endif
         
         //bombs call with null tool for Clumps
