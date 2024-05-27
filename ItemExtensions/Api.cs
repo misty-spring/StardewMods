@@ -95,7 +95,7 @@ public interface IApi
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out string resourceType);
+    bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out Enum resourceType);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -308,10 +308,10 @@ public class Api : IApi
         return result;
     }
     
-    public bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out string resourceType)
+    public bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out Enum resourceType)
     {
         bombImmunity = false;
-        resourceType = "None";
+        resourceType = CustomResourceType.Stone;
 
         if (string.IsNullOrWhiteSpace(id))
             return false;
@@ -319,26 +319,14 @@ public class Api : IApi
         if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
         {
             bombImmunity = node.ImmuneToBombs;
-            resourceType = node.Type switch {
-                CustomResourceType.Stone => "Stone",
-                CustomResourceType.Weeds => "Weeds",
-                CustomResourceType.Wood => "Wood",
-                CustomResourceType.Other => "Other",
-                _ => "stone"
-            };
+            resourceType = node.Type;
             return true;
         }
 
         if (ModEntry.BigClumps.TryGetValue(id, out var clump))
         {
             bombImmunity = clump.ImmuneToBombs;
-            resourceType = clump.Type switch {
-                CustomResourceType.Stone => "Stone",
-                CustomResourceType.Weeds => "Weeds",
-                CustomResourceType.Wood => "Wood",
-                CustomResourceType.Other => "Other",
-                _ => "stone"
-            };
+            resourceType = clump.Type;
             return true;
         }
         return false;
