@@ -36,7 +36,7 @@ internal class CropPatches
         if (string.IsNullOrWhiteSpace(seedId))
             return;
 
-        if (Cached != null)
+        if (string.IsNullOrWhiteSpace(Cached) == false)
         {
             seedId = Cached;
             return;

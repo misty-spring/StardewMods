@@ -89,6 +89,13 @@ public interface IApi
     /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
     /// <returns>All possible drops, with %.</returns>
     Dictionary<string,(double,int)> GetObjectDrops(Object node, bool parseConditions = false);
+
+    /// <summary>
+    /// Checks for other resource information.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out string resourceType);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -299,5 +306,41 @@ public class Api : IApi
         }
 
         return result;
+    }
+    
+    public bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out string resourceType)
+    {
+        bombImmunity = false;
+        resourceType = "None";
+
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+        
+        if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
+        {
+            bombImmunity = node.ImmuneToBombs;
+            resourceType = node.Type switch {
+                CustomResourceType.Stone => "Stone",
+                CustomResourceType.Weeds => "Weeds",
+                CustomResourceType.Wood => "Wood",
+                CustomResourceType.Other => "Other",
+                _ => "stone"
+            };
+            return true;
+        }
+
+        if (ModEntry.BigClumps.TryGetValue(id, out var clump))
+        {
+            bombImmunity = clump.ImmuneToBombs;
+            resourceType = clump.Type switch {
+                CustomResourceType.Stone => "Stone",
+                CustomResourceType.Weeds => "Weeds",
+                CustomResourceType.Wood => "Wood",
+                CustomResourceType.Other => "Other",
+                _ => "stone"
+            };
+            return true;
+        }
+        return false;
     }
 }
