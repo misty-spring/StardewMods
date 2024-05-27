@@ -15,4 +15,5 @@ internal class ModConfig
     public bool ShopTrades { get; set; } = true;
     public bool TrainDrops { get; set; } = true;
     public bool TerrainFeatures { get; set; } = true;
+    public bool QualityChanges { get; set; } = true;
 }

@@ -83,18 +83,21 @@ public partial class ObjectPatches
             original: AccessTools.Method(typeof(Object), nameof(Object.IsHeldOverHead)),
             prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_IsHeldOverHead))
         );
+
+        if(ModEntry.Config.QualityChanges)
+        {
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (Vector2, string, bool)\".");
+            harmony.Patch(
+                original: AccessTools.Constructor(typeof(Object), new[]{typeof(Vector2),typeof(string),typeof(bool)}),
+                postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_new))
+            );
         
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (Vector2, string, bool)\".");
-        harmony.Patch(
-            original: AccessTools.Constructor(typeof(Object), new[]{typeof(Vector2),typeof(string),typeof(bool)}),
-            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_new))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (string, int, bool, int, int)\".");
-        harmony.Patch(
-            original: AccessTools.Constructor(typeof(Object), new[]{typeof(string),typeof(int),typeof(bool),typeof(int),typeof(int)}),
-            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_newFromId))
-        );
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV constructor \"Object (string, int, bool, int, int)\".");
+            harmony.Patch(
+                original: AccessTools.Constructor(typeof(Object), new[]{typeof(string),typeof(int),typeof(bool),typeof(int),typeof(int)}),
+                postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_newFromId))
+            );
+        }
     }
     
     private static void Post_initializeLightSource(Object __instance, Vector2 tileLocation, bool mineShaft = false)

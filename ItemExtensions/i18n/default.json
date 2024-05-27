@@ -5,6 +5,7 @@
   "config.MixedSeeds.name":"Mixed seeds",
   "config.Panning.name":"Panning",
   "config.MenuActions.name":"Menu actions",
+  "config.QualityChanges.name":"Quality customization",
   "config.ShopTrades.name":"Shop trades",
   "config.EatingAnimations.name":"Eating animations",
   "config.TrainDrops.name":"Train",

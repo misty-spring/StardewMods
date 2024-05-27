@@ -5,6 +5,7 @@
   "config.MixedSeeds.name":"Semillas mixtas",
   "config.Panning.name":"Batea",
   "config.MenuActions.name":"Acciones en menú",
+  "config.QualityChanges.name":"Modificar calidad",
   "config.ShopTrades.name":"Tiendas",
   "config.EatingAnimations.name":"Animaciones de comida",
   "config.TrainDrops.name":"Tren",
