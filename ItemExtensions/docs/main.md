@@ -46,6 +46,6 @@ To use the mod, simply add it as dependency in your manifest.json:
 
 ### Other
 - [Other extensions](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/BehaviorExtension.md)
-- [Pond extensions](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/PondExtensiosn.md)
+- [Pond extensions](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/PondExtensions.md)
 - [Game state queries](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/GSQ.md)
 - [Trigger Actions](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/TriggerActions.md)
