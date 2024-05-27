@@ -25,7 +25,10 @@ public class ItemPatches
             original: AccessTools.Method(typeof(Item), nameof(Item.addToStack)),
             postfix: new HarmonyMethod(typeof(ItemPatches), nameof(Post_addToStack))
         );
-        
+
+        if (ModEntry.Config.OnBehavior == false)
+            return;
+
         Log($"Applying Harmony patch \"{nameof(ItemPatches)}\": postfixing SDV method \"Item.actionWhenPurchased\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(Item), nameof(Item.actionWhenPurchased)),

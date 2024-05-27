@@ -8,6 +8,7 @@ internal class ModConfig
     public bool FishPond { get; set; } = true;
     public bool MenuActions { get; set; } = true;
     public bool MixedSeeds { get; set; } = true;
+    public bool OnBehavior { get; set; } = true;
     public bool Panning { get; set; } = true;
     public bool Resources { get; set; } = true;
     public bool ResourcesMtn { get; set; } = true;

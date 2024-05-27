@@ -1,5 +1,7 @@
+using System;
 using System.Text;
 using HarmonyLib;
+using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
@@ -9,6 +11,7 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Menus;
 using StardewValley.Objects;
+using StardewValley.Triggers;
 using Object = StardewValley.Object;
 // ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 
@@ -26,11 +29,68 @@ public static class InventoryPatches
     
     internal static void Apply(Harmony harmony)
     {
-        Log($"Applying Harmony patch \"{nameof(InventoryPatches)}\": postfixing SDV method \"InventoryMenu.rightClick(int, int, Item, bool, bool)\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(InventoryMenu), nameof(InventoryMenu.rightClick)),
-            postfix: new HarmonyMethod(typeof(InventoryPatches), nameof(Post_rightClick))
-        );
+        if (ModEntry.Config.MenuActions)
+        {
+            Log($"Applying Harmony patch \"{nameof(InventoryPatches)}\": postfixing SDV method \"InventoryMenu.rightClick(int, int, Item, bool, bool)\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(InventoryMenu), nameof(InventoryMenu.rightClick)),
+                postfix: new HarmonyMethod(typeof(InventoryPatches), nameof(Post_rightClick))
+            );
+        }
+
+        if (ModEntry.Config.OnBehavior)
+        {
+            Log($"Applying Harmony patch \"{nameof(InventoryPatches)}\": postfixing SDV method \"InventoryMenu.rightClick(int, int, Item, bool, bool)\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(InventoryMenu), nameof(InventoryMenu.rightClick)),
+                postfix: new HarmonyMethod(typeof(InventoryPatches), nameof(Post_Attachment))
+            );
+        }
+    }
+
+    /// <summary>
+    /// Does item behavior actions.
+    /// </summary>
+    /// <param name="__instance">This menu instance</param>
+    /// <param name="x">X position</param>
+    /// <param name="y">Y position</param>
+    /// <param name="toAddTo">Item being held.</param>
+    /// <param name="__result">The resulting item.</param>
+    /// <param name="playSound">Sound to play.</param>
+    /// <param name="onlyCheckToolAttachments"></param>
+    /// <exception cref="ArgumentOutOfRangeException">If the price modifier isn't valid.</exception>
+    /// <see cref="StardewValley.Preconditions.FreeInventorySlots"/>
+    internal static void Post_Attachment(InventoryMenu __instance, int x, int y, ref Item toAddTo, ref Item __result, bool playSound = true, bool onlyCheckToolAttachments = false)
+    {
+        var affectedItem = __instance.getItemAt(x, y);
+
+        if (affectedItem is not Tool tool || (toAddTo == null || toAddTo is Object) == false)
+            return;
+
+        if (tool.canThisBeAttached((Object)toAddTo) == false)
+        {
+            return;
+        }
+
+        if (__result is null)
+        {
+            return;
+        }
+
+#if DEBUG
+        Log("It works!", LogLevel.Alert);
+#endif
+        //trigger on attached
+        TriggerActionManager.Raise($"{ModEntry.Id}_OnItemAttached");
+
+        //try get data for tool
+        if (!ModEntry.Data.TryGetValue(tool.QualifiedItemId, out var mainData))
+            return;
+
+        if (mainData.OnAttached == null)
+            return;
+
+        ActionButton.CheckBehavior(mainData.OnAttached);
     }
 
     /// <summary>
@@ -59,7 +119,7 @@ public static class InventoryPatches
                 if (__result != null)
                 {
 #if DEBUG
-                Log($"\nPosition: {x}, {y}\nChecking item {__result.DisplayName} ({__result?.QualifiedItemId})\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
+                    Log($"\nPosition: {x}, {y}\nChecking item {__result.DisplayName} ({__result?.QualifiedItemId})\nplaySound: {playSound}, onlyCheckToolAttachments: {onlyCheckToolAttachments}\n");
 #endif
                     CallWithoutItem(__instance, ref __result, x, y);
                 }

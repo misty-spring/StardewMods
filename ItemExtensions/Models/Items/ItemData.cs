@@ -17,7 +17,8 @@ public class ItemData
     public OnBehavior OnUse { get; set; } = null;
     public OnBehavior OnDrop { get; set; } = null;
     public OnBehavior OnPurchase { get; set; } = null;
-    
+    public OnBehavior OnAttached { get; set; } = null;
+
     // before/after eating
     public FarmerAnimation Eating { get; set; } = null;
     public FarmerAnimation AfterEating { get; set; } = null;

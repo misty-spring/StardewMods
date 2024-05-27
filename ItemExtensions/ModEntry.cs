@@ -50,11 +50,8 @@ public sealed class ModEntry : Mod
             HoeDirtPatches.Apply(harmony);
         }
 
-        if (Config.MenuActions)
-        {
-            InventoryPatches.Apply(harmony);
-        }
-        
+        InventoryPatches.Apply(harmony);
+
         if (Config.EatingAnimations)
         {
             FarmerPatches.Apply(harmony);

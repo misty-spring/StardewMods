@@ -1,5 +1,4 @@
 using HarmonyLib;
-using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -33,29 +32,32 @@ public partial class ObjectPatches
             prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_maximumStackSize))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.actionWhenBeingHeld(Farmer)\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Object), nameof(Object.actionWhenBeingHeld)),
-            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_actionWhenBeingHeld))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.actionWhenStopBeingHeld(Farmer)\".");
-        harmony.Patch(
-          original: AccessTools.Method(typeof(Object), nameof(Object.actionWhenStopBeingHeld)),
-          postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_actionWhenStopBeingHeld))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.performRemoveAction()\".");
-        harmony.Patch(
-          original: AccessTools.Method(typeof(Object), nameof(Object.performRemoveAction)),
-          postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_performRemoveAction))
-        );
-        
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.dropItem(GameLocation, Vector2, Vector2)\".");
-        harmony.Patch(
-          original: AccessTools.Method(typeof(Object), nameof(Object.dropItem)),
-          postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_dropItem))
-        );
+        if(ModEntry.Config.OnBehavior)
+        {
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.actionWhenBeingHeld(Farmer)\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Object), nameof(Object.actionWhenBeingHeld)),
+                postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_actionWhenBeingHeld))
+            );
+
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.actionWhenStopBeingHeld(Farmer)\".");
+            harmony.Patch(
+              original: AccessTools.Method(typeof(Object), nameof(Object.actionWhenStopBeingHeld)),
+              postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_actionWhenStopBeingHeld))
+            );
+
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.performRemoveAction()\".");
+            harmony.Patch(
+              original: AccessTools.Method(typeof(Object), nameof(Object.performRemoveAction)),
+              postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_performRemoveAction))
+            );
+
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.dropItem(GameLocation, Vector2, Vector2)\".");
+            harmony.Patch(
+              original: AccessTools.Method(typeof(Object), nameof(Object.dropItem)),
+              postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_dropItem))
+            );
+        }
         
         if(ModEntry.Config.Resources)
         {
@@ -76,12 +78,6 @@ public partial class ObjectPatches
         harmony.Patch(
             original: AccessTools.Method(typeof(Object), "initializeLightSource"),
             postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_initializeLightSource))
-        );
-
-        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.IsHeldOverHead()\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Object), nameof(Object.IsHeldOverHead)),
-            prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_IsHeldOverHead))
         );
 
         if(ModEntry.Config.QualityChanges)
