@@ -1,7 +1,7 @@
 # Extra train drops
 
 Extra train drops are calculated when a train passes by the valley.
-Every two seconds, it checks every visible train cart and calculates possible drops.
+Every four seconds, it checks every visible train cart and calculates possible drops.
 
 # Contents
 
@@ -20,12 +20,15 @@ Train drops have the same fields as [ExtraSpawns](https://github.com/misty-sprin
 | Car    | `string`              | Yes      | Type of car: can be `Plain`, `Resource`, `Passenger` or `Engine`.                                                                     |
 | Type\* | `string`              | Yes      | What the train carries: can be `Coal`, `Metal`, `Wood`, `Compartments`, `Grass`, `Hay`, `Bricks`, `Rocks`, `Packages`, or `Presents`. |
 
-*=If Car is `Resource`, set to `None`.
+*=If Car **isn't** `Resource`, set Type to `None`.
 
 Just like ExtraSpawns, they **also** have the [same fields as any spawnable item](https://stardewvalleywiki.com/Modding:Item_queries#Item_spawn_fields).
 
 
 ## Example
+
+Here, we add a new drop for trains.
+Every time a train passes by, carts with hay will have a 10% to drop (O)SomeItem.
 
 ```jsonc
 {
