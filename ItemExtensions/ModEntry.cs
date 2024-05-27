@@ -201,6 +201,13 @@ public sealed class ModEntry : Mod
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
+            name: () => Help.Translation.Get("config.QualityChanges.name"),
+            getValue: () => Config.QualityChanges,
+            setValue: value => Config.QualityChanges = value
+        );
+        
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
             name: () => Help.Translation.Get("config.FishPond.name"),
             getValue: () => Config.FishPond,
             setValue: value => Config.FishPond = value
