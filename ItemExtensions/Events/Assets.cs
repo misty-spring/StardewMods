@@ -39,6 +39,12 @@ public static class Assets
             Parser.Panning(panData);
         }
 
+        //drops
+        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Treasure")))
+        {
+            ModEntry.Treasure = Helper.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Treasure");
+        }
+
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Train")))
         {
             var trainData = Helper.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/Train");
@@ -175,6 +181,14 @@ public static class Assets
         {
             e.LoadFrom(
                 () => new Dictionary<string, PanningData>(),
+                AssetLoadPriority.Low);
+        }
+
+        //fishing treasure
+        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Treasure", true))
+        {
+            e.LoadFrom(
+                () => new Dictionary<string, ExtraSpawn>(),
                 AssetLoadPriority.Low);
         }
 

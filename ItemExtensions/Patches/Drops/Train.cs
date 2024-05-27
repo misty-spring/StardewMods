@@ -1,13 +1,11 @@
 using HarmonyLib;
-using ItemExtensions.Models;
-using ItemExtensions.Models.Contained;
+using ItemExtensions.Additions;
 using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Internal;
-using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
 
@@ -38,7 +36,7 @@ public partial class TrainPatches
             if(time.ElapsedGameTime.TotalMilliseconds % 2000 != 0)
                 return;
 
-            TryExtraDrops(__instance);
+            TryExtraDrops(__instance, location);
         }
         catch(Exception e)
         {
@@ -46,10 +44,8 @@ public partial class TrainPatches
         }
     }
 
-    internal static void TryExtraDrops(Train train)
+    internal static void TryExtraDrops(Train train, GameLocation location)
     {
-
-        var location = Game1.MasterPlayer.currentLocation;
         var who = Game1.MasterPlayer;
 
         /*
@@ -72,11 +68,12 @@ public partial class TrainPatches
          * presents = 9
          */
 
-        var context = new ItemQueryContext(Game1.player.currentLocation, Game1.player, Game1.random);
+        var context = new ItemQueryContext(location, who, Game1.random);
+        var y = 2592;
 
         for (int i = 0; i < train.cars.Count; i++)
         {
-            var x = (int)(train.position.X - (float)((i + 1) * 512))/64;
+            var x = (int)(train.position.X - ((i + 1) * 512));
 
             if (Utility.isOnScreen(new Point(x, 40), 0) == false)
                 continue;
@@ -94,20 +91,10 @@ public partial class TrainPatches
                 if (resource != entry.Type && entry.Type != ResourceType.None)
                     continue;
 
-                if(entry.Chance < Game1.random.NextDouble())
-                    continue;
-                        
-                if (string.IsNullOrWhiteSpace(entry.Condition) && GameStateQuery.CheckConditions(entry.Condition, location, who) == false)
+                if (Sorter.GetItem(entry, context, out var item) == false)
                     continue;
                 
-                var item = ItemQueryResolver.TryResolve(entry.ItemId, context, entry.Filter, entry.PerItemCondition, avoidRepeat: entry.AvoidRepeat);
-                
-                var id = item.FirstOrDefault()?.Item.QualifiedItemId;
-                        
-                if (string.IsNullOrWhiteSpace(id))
-                    continue;
-
-                Game1.createObjectDebris(id, x, 42, 2);
+                Game1.createItemDebris(item, new Vector2(x, y), y + 320, location);
             }
         }
     }

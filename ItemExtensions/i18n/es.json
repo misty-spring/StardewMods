@@ -11,6 +11,7 @@
   "config.TrainDrops.name":"Tren",
   "config.FishPond.name":"Estanque de peces",
   "config.TerrainFeatures.name":"Terreno",
+  "config.Treasure.name":"Tesoros (pesca)",
   "config.Ores.name":"Menas",
   "config.Volcano.name":"en volcán",
   "config.Mountain.name":"en montaña",

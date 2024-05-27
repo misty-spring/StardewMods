@@ -65,6 +65,11 @@ public sealed class ModEntry : Mod
             PanPatches.Apply(harmony);
         }
 
+        if (Config.Treasure)
+        {
+            FishingRodPatches.Apply(harmony);
+        }
+
         if (Config.TrainDrops)
         {
             TrainPatches.Apply(harmony);
@@ -223,6 +228,13 @@ public sealed class ModEntry : Mod
         //extra drops
 
         configMenu?.AddPage(ModManifest, "Drops", () => Helper.Translation.Get("config.Drops.title"));
+
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.Treasure.name"),
+            getValue: () => Config.Treasure,
+            setValue: value => Config.Treasure = value
+        );
 
         configMenu?.AddBoolOption(
             mod: ModManifest,
@@ -389,4 +401,5 @@ public sealed class ModEntry : Mod
     public static Dictionary<string, TrainDropData> TrainDrops { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
     internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
+    public static Dictionary<string, ExtraSpawn> Treasure { get; internal set; } = new();
 }

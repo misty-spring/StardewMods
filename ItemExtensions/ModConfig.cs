@@ -16,4 +16,5 @@ internal class ModConfig
     public bool TrainDrops { get; set; } = true;
     public bool TerrainFeatures { get; set; } = true;
     public bool QualityChanges { get; set; } = true;
+    public bool Treasure { get; set; } = true;
 }

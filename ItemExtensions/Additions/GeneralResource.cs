@@ -362,18 +362,11 @@ public static class GeneralResource
                     {
                         if(drop.Chance < Game1.random.NextDouble())
                             continue;
-                        
-                        if (string.IsNullOrWhiteSpace(drop.Condition) && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
-                            continue;
-                        var item = ItemQueryResolver.TryResolve(drop.ItemId, context, drop.Filter,
-                            drop.PerItemCondition, avoidRepeat: drop.AvoidRepeat);
 
-                        var id = item.FirstOrDefault()?.Item.QualifiedItemId;
-                        
-                        if (string.IsNullOrWhiteSpace(id))
+                        if (Sorter.GetItem(drop, context, out var item) == false)
                             continue;
                         
-                        drops.Add(id);
+                        drops.Add(item.QualifiedItemId);
                     }
 
                     mon.objectsToDrop.Set(drops);

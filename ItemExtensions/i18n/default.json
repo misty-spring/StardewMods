@@ -11,6 +11,7 @@
   "config.TrainDrops.name":"Train",
   "config.FishPond.name":"Fish pond",
   "config.TerrainFeatures.name":"Terrain features",
+  "config.Treasure.name":"Fishing treasure",
   "config.Ores.name":"Ores",
   "config.Volcano.name":"in volcano",
   "config.Mountain.name":"in mountain",

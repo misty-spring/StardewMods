@@ -90,14 +90,7 @@ public interface IApi
     /// <returns>All possible drops, with %.</returns>
     Dictionary<string,(double,int)> GetObjectDrops(Object node, bool parseConditions = false);
 
-    /// <summary>
-    /// Checks for other resource information.
-    /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out Enum resourceType);
-
-    bool GetAllResourceData(string id, bool isClump, out object data);
+    bool GetResourceData(string id, bool isClump, out object data);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -334,9 +327,9 @@ public class Api : IApi
         return false;
     }
 
-    public bool GetAllResourceData(string id, bool isClump, out object data)
+    public bool GetResourceData(string id, bool isClump, out object data)
     {
-        data = (ResourceData)null;
+        data = null;
 
         if (string.IsNullOrWhiteSpace(id))
             return false;

@@ -1,4 +1,8 @@
+using ItemExtensions.Models.Items;
 using StardewModdingAPI;
+using StardewValley.Internal;
+using StardewValley;
+using xTile.Dimensions;
 
 namespace ItemExtensions.Additions;
 
@@ -99,5 +103,34 @@ public static class Sorter
         }
 
         return result;
+    }
+
+    internal static bool GetItem(ExtraSpawn data, ItemQueryContext context, out Item item)
+    {
+        item = null;
+        
+        try
+        {
+            if (data.Chance < Game1.random.NextDouble())
+                return false;
+
+            if (string.IsNullOrWhiteSpace(data.Condition) && GameStateQuery.CheckConditions(data.Condition, context.Location, context.Player) == false)
+                return false;
+
+            var solvedQuery = ItemQueryResolver.TryResolve(data.ItemId, context, data.Filter, data.PerItemCondition, avoidRepeat: data.AvoidRepeat);
+
+            var chosenItem = solvedQuery.FirstOrDefault()?.Item;
+
+            if (string.IsNullOrWhiteSpace(chosenItem.QualifiedItemId))
+                return false;
+
+            item = ItemRegistry.Create(chosenItem.QualifiedItemId, chosenItem.Stack, data.Quality);
+            return true;
+        }
+        catch(Exception ex)
+        {
+            Log($"Exception while sorting item query: {ex}.", LogLevel.Warn);
+            return false;
+        }
     }
 }
