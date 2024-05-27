@@ -17,35 +17,6 @@ public static class Parser
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
-    internal static void ItemActions(Dictionary<string, List<MenuBehavior>> ia)
-    {
-        var parsed = new Dictionary<string, List<MenuBehavior>>();
-        foreach (var item in ia)
-        {
-            Log($"Checking {item.Key} ...");
-            var temp = new List<MenuBehavior>();
-            
-            foreach (var affected in item.Value)
-            {
-                if (!affected.Parse(out var rightInfo)) 
-                    continue;
-#if DEBUG
-                Log($"Information parsed successfully! ({rightInfo.TargetId})");
-#endif
-                temp.Add(rightInfo);
-            }
-            
-            if(temp.Count > 0)
-                parsed.Add(item.Key,temp);
-        }
-
-        if (parsed.Count <= 0) 
-            return;
-        
-        Log("FOR MODDERS: Patches to /MenuActions are deprecated. To see the new model, check the template in the mod's page.", LogLevel.Warn);
-        
-        ModEntry.MenuActions = parsed;
-    }
 
     internal static void ObjectData(Dictionary<string, ItemData> objData)
     {

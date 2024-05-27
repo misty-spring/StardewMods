@@ -63,28 +63,60 @@ public static class InventoryPatches
     internal static void Post_Attachment(InventoryMenu __instance, int x, int y, ref Item toAddTo, ref Item __result, bool playSound = true, bool onlyCheckToolAttachments = false)
     {
         var affectedItem = __instance.getItemAt(x, y);
+#if DEBUG
+        var isTool = "is not tool";
+        var attachmentResult = false;
+        if (affectedItem is Tool debugTool)
+        {
+            attachmentResult = debugTool.canThisBeAttached((Object)toAddTo);
+            isTool = "is tool";
+        }
+        Log($"{affectedItem?.QualifiedItemId ?? "NO ITEM"} & {isTool}, {toAddTo?.QualifiedItemId ?? "NO toAddTo"}, can be attached? {attachmentResult}, result is {__result?.QualifiedItemId ?? "NONE"}");
+#endif
 
-        if (affectedItem is not Tool tool || (toAddTo == null || toAddTo is Object) == false)
+        if (affectedItem is not Tool tool)
+        {
             return;
+        }
+
+        //actions if an item was detached
+        if (toAddTo is null || __result is not null)
+        {
+            if (__result is not Object obj)
+                return;
+
+            //if can't be detached
+            if (tool.canThisBeAttached(obj) == false)
+                return;
+
+            //trigger "on detached"
+            TriggerActionManager.Raise($"{ModEntry.Id}_OnItemAttached");
+
+            //try get data for tool
+            if (!ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var dataDetached))
+                return;
+
+            if (dataDetached.OnDetached == null)
+                return;
+
+            ActionButton.CheckBehavior(dataDetached.OnDetached);
+            
+            return;
+        }
 
         if (tool.canThisBeAttached((Object)toAddTo) == false)
         {
             return;
         }
 
-        if (__result is null)
-        {
-            return;
-        }
-
 #if DEBUG
-        Log("It works!", LogLevel.Alert);
+        Log("It works!", LogLevel.Warn);
 #endif
         //trigger on attached
         TriggerActionManager.Raise($"{ModEntry.Id}_OnItemAttached");
 
         //try get data for tool
-        if (!ModEntry.Data.TryGetValue(tool.QualifiedItemId, out var mainData))
+        if (!ModEntry.Data.TryGetValue(toAddTo.QualifiedItemId, out var mainData))
             return;
 
         if (mainData.OnAttached == null)
@@ -133,18 +165,23 @@ public static class InventoryPatches
             if (onlyCheckToolAttachments)
                 return;
 
-            if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}"))
-            {
-                var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}");
-                
-                if (particularMenuData is null)
-                {
-#if DEBUG
-                    Log("Asset doesn't exist.");
-#endif
-                    return;
-                }
+            //if asset doesn't exist, return
+            if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}") == false)
+                return;
 
+            //try loading & checking behavior
+            var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{heldItem.QualifiedItemId}");
+
+            if (particularMenuData is null)
+            {
+#if DEBUG
+                Log("Asset doesn't exist.");
+#endif
+                return;
+            }
+
+            if (particularMenuData.Any())
+            {
                 foreach (var data in particularMenuData)
                 {
                     if (data.Value.Parse(out var rightInfo))
@@ -171,29 +208,9 @@ public static class InventoryPatches
 #if DEBUG
             else
             {
-                Log($"Asset for {heldItem.QualifiedItemId} couldn't be found. Checking deprecated file");
+                Log($"Asset for {heldItem.QualifiedItemId} couldn't be found.");
             }
 #endif
-
-            if (ModEntry.MenuActions == null || ModEntry.MenuActions?.Count == 0)
-                return;
-
-            // ReSharper disable once PossibleNullReferenceException
-            if (!ModEntry.MenuActions.TryGetValue(heldItem.QualifiedItemId, out var options))
-                return;
-
-            Log("Found conversion data for item.");
-
-            foreach (var data in options)
-            {
-                var shouldBreak = CheckMenuActions(ref __instance, ref heldItem, ref affectedItem, data, x, y, out var shouldNullSpecific) == false;
-                        
-                if (shouldNullSpecific)
-                    __result = null;
-
-                if (shouldBreak)
-                    break;
-            }
         }
         catch (Exception e)
         {

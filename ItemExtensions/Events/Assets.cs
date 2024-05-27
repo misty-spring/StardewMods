@@ -71,13 +71,6 @@ public static class Assets
             var animations = Helper.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
             Parser.EatingAnimations(animations);
         }
-
-        if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/MenuActions")))
-        {
-            //get menu actions
-            var itemActionsRaw = Helper.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
-            Parser.ItemActions(itemActionsRaw);
-        }
     }
 
     public static void OnRequest(object sender, AssetRequestedEventArgs e)
@@ -158,10 +151,10 @@ public static class Assets
         }
         
         //menu actions / object behavior
-        if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/MenuActions", true))
+        if (e.NameWithoutLocale.StartsWith($"Mods/{Id}/MenuActions/"))
         {
             e.LoadFrom(
-                () => new Dictionary<string, List<MenuBehavior>>
+                () => new Dictionary<string, MenuBehavior>
                 {
                     { "None", new() }
                 },

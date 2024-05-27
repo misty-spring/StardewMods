@@ -115,7 +115,9 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_OnPurchased");
         TriggerActionManager.RegisterTrigger($"{Id}_OnItemRemoved");
         TriggerActionManager.RegisterTrigger($"{Id}_OnItemDropped");
-        
+        TriggerActionManager.RegisterTrigger($"{Id}_OnItemAttached");
+        TriggerActionManager.RegisterTrigger($"{Id}_OnItemDetached");
+
         TriggerActionManager.RegisterTrigger($"{Id}_OnEquip");
         TriggerActionManager.RegisterTrigger($"{Id}_OnUnequip");
         
@@ -308,14 +310,6 @@ public sealed class ModEntry : Mod
             Monitor.Log($"Loaded {EatingAnimations?.Count ?? 0} eating animations.", LogLevel.Debug);
         }
         
-        if (Config.MenuActions)
-        {
-            //get item actions
-            var menuActions = Help.GameContent.Load<Dictionary<string, List<MenuBehavior>>>($"Mods/{Id}/MenuActions");
-            Parser.ItemActions(menuActions);
-            Monitor.Log($"Loaded {MenuActions?.Count ?? 0} menu actions.", LogLevel.Debug);
-        }
-        
         if (Config.Resources)
         {
             //get extra terrain for mineshaft
@@ -337,7 +331,7 @@ public sealed class ModEntry : Mod
             //get panning
             var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
             Parser.Panning(panData);
-            Monitor.Log($"Loaded {Panning?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+            Monitor.Log($"Loaded {Panning?.Count ?? 0} panning data.", LogLevel.Debug);
         }
         
         if(Config.TrainDrops)
@@ -389,14 +383,13 @@ public sealed class ModEntry : Mod
     //resources
     public static Dictionary<string, ResourceData> BigClumps { get; internal set; } = new();
     public static Dictionary<string, ResourceData> Ores { get; internal set; } = new();
-    internal static Dictionary<string, TerrainSpawnData> MineTerrain { get; set; } = new();
+    public static Dictionary<string, TerrainSpawnData> MineTerrain { get; internal set; } = new();
     //customization
     public static Dictionary<string, ItemData> Data { get; internal set; } = new();
-    internal static Dictionary<string, FarmerAnimation> EatingAnimations { get; set; } = new();
-    internal static Dictionary<string, List<MenuBehavior>> MenuActions { get; set; } = new();
+    public static Dictionary<string, FarmerAnimation> EatingAnimations { get; internal set; } = new();
     //extra drops
     public static Dictionary<string, TrainDropData> TrainDrops { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
-    internal static Dictionary<string, List<MixedSeedData>> Seeds { get; set; } = new();
+    public static Dictionary<string, List<MixedSeedData>> Seeds { get; internal set; } = new();
     public static Dictionary<string, ExtraSpawn> Treasure { get; internal set; } = new();
 }

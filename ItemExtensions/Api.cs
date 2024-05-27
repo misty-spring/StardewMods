@@ -131,14 +131,25 @@ public class Api : IApi
 
     public bool HasBehavior(string qualifiedItemId, string target = null)
     {
-        if(string.IsNullOrWhiteSpace(target))
-            return ModEntry.MenuActions.ContainsKey(qualifiedItemId);
-        
-        if (!ModEntry.MenuActions.TryGetValue(qualifiedItemId, out var value))
+        if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{qualifiedItemId}") == false)
             return false;
 
-        var behavior = value.Find(b => b.TargetId == target);
-        return behavior != null;
+        //try loading & checking behavior
+        var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{qualifiedItemId}");
+
+        if (particularMenuData is null)
+        {
+            return false;
+        }
+
+        //if no specific target, check the asset has any data
+        if (string.IsNullOrWhiteSpace(target))
+            return particularMenuData.Any();
+        else
+        {
+            //else check specific target
+            return particularMenuData.ContainsKey(target);
+        }
     }
 
     public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId);
