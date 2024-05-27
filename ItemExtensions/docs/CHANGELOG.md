@@ -9,6 +9,8 @@
 - Can now spawn the following in mines: trees, fruit trees, giant crops
 - Can now force items to always have a specific quality
 - Can now turn specific components on/off
+- Can add non-fish to ponds.
+- Nodes now have the "placeable" tag by default.
 
 ## 1.4.3
 - Fixed tractor mod bug (final)

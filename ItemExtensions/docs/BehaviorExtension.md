@@ -4,6 +4,7 @@ These changes are made to the file `Mods/mistyspring.ItemExtensions/Data`, and u
 ## Contents
 
 * [Options](#options)
+* [Force quality](#force-quality)
 * [Max stack change](#max-stack-change)
 * [Held over head](#held-over-head)
 * [Item light](#light)
@@ -34,6 +35,16 @@ Item extensibility is added in the mod's /Data file, and has the following optio
 
 \* = For OnBehavior fields, [see here](#on-behavior).
 
+## Force quality
+
+You can force item quality- anytime you get the item, it'll have the quality.
+Just add this to your Object's `CustomFields`:
+
+```
+"mistyspring.ItemExtensions/ForceQuality":"quality"
+```
+
+The quality can be "none", "silver", "gold" or "iridium"
 
 ## Max stack change
 
