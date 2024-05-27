@@ -96,6 +96,8 @@ public interface IApi
     /// <param name="id"></param>
     /// <returns></returns>
     bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out string resourceType);
+
+    bool GetAllResourceData(string id, bool isClump, out object data);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -339,6 +341,27 @@ public class Api : IApi
                 CustomResourceType.Other => "Other",
                 _ => "stone"
             };
+            return true;
+        }
+        return false;
+    }
+
+    public bool GetAllResourceData(string id, bool isClump, out object data)
+    {
+        data = (ResourceData)null;
+
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+        
+        if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
+        {
+            data = node;
+            return true;
+        }
+
+        if (ModEntry.BigClumps.TryGetValue(id, out var clump))
+        {
+            data = clump;
             return true;
         }
         return false;
