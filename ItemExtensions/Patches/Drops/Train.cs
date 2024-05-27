@@ -21,10 +21,10 @@ public partial class TrainPatches
     
     internal static void Apply(Harmony harmony)
     {
-        Log($"Applying Harmony patch \"{nameof(TrainPatches)}\": prefixing SDV method \"Train.Update(GameTime, GameLocation)\".");
+        Log($"Applying Harmony patch \"{nameof(TrainPatches)}\": postfix SDV method \"Train.Update(GameTime, GameLocation)\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(Train), nameof(Train.Update)),
-            prefix: new HarmonyMethod(typeof(TrainPatches), nameof(Post_Update))
+            postfix: new HarmonyMethod(typeof(TrainPatches), nameof(Post_Update))
         );
     }
 
@@ -32,8 +32,11 @@ public partial class TrainPatches
     {
         try
         {
+#if DEBUG
+            Log($"{time.TotalGameTime.TotalMilliseconds}, {(int)time.TotalGameTime.TotalMilliseconds % 2000}");
+#endif
             //only do this check once per second
-            if(time.ElapsedGameTime.TotalMilliseconds % 2000 != 0)
+            if((int)time.TotalGameTime.TotalMilliseconds % 4000 != 0)
                 return;
 
             TryExtraDrops(__instance, location);
@@ -46,6 +49,9 @@ public partial class TrainPatches
 
     internal static void TryExtraDrops(Train train, GameLocation location)
     {
+#if DEBUG
+        Log("Testing extra drops...");
+#endif
         var who = Game1.MasterPlayer;
 
         /*
@@ -74,8 +80,9 @@ public partial class TrainPatches
         for (int i = 0; i < train.cars.Count; i++)
         {
             var x = (int)(train.position.X - ((i + 1) * 512));
+            var tileX = (int)(x / 64);
 
-            if (Utility.isOnScreen(new Point(x, 40), 0) == false)
+            if (tileX < 6 || tileX > 62)
                 continue;
 
             foreach(var pair in ModEntry.TrainDrops)
@@ -93,7 +100,10 @@ public partial class TrainPatches
 
                 if (Sorter.GetItem(entry, context, out var item) == false)
                     continue;
-                
+
+#if DEBUG
+                Log($"Creating item debris {item?.QualifiedItemId} ({item?.DisplayName}) at {x},{y}");
+#endif
                 Game1.createItemDebris(item, new Vector2(x, y), y + 320, location);
             }
         }
