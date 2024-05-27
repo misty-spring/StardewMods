@@ -68,7 +68,10 @@ public static class GeneralResource
         }
 
         #if DEBUG
-            Log($"Tool: {tool?.GetToolData()?.ClassName}, required: {data.Tool}");
+        var toolName = tool?.GetToolData()?.ClassName;
+        if (tool is MeleeWeapon debug_weapon)
+            toolName = debug_weapon.DisplayName + " (weapon)";
+        Log($"Tool: {toolName}, required: {data.Tool}");
         #endif
         
         //bombs call with null tool for Clumps
@@ -77,7 +80,12 @@ public static class GeneralResource
 
         //if any
         if (data.Tool.Equals("Any", IgnoreCase) || data.Tool.Equals("All", IgnoreCase))
+        {
+#if DEBUG
+            Log("Any tool/weapon allowed");
+#endif
             return true;
+        }
         
         //"tool" → any non-weapon
         if (data.Tool.Equals("Tool", IgnoreCase))
@@ -583,7 +591,13 @@ public static class GeneralResource
         if (tool is MeleeWeapon w)
         {
             var middle = (w.minDamage.Value + w.maxDamage.Value) / 2;
-            return middle / 10;
+            var wpnDmg = middle / 10;
+
+            //some weapons have very little damage- if so, give them damage 1.
+            if (wpnDmg <= 0)
+                return 1;
+            else
+                return wpnDmg;
         }
         //if no tool, return fallback
         if (tool is null)
