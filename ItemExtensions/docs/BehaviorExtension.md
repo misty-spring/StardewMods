@@ -29,6 +29,8 @@ Item extensibility is added in the mod's /Data file, and has the following optio
 | OnUse        | `OnBehavior`      | No       | Action on using item.                      |
 | OnDrop       | `OnBehavior`      | No       | Action on dropping item.                   |
 | OnPurchase   | `OnBehavior`      | No       | Action on purchasing.                      |
+| OnAttached   | `OnBehavior`      | No       | Action on attaching to a tool.             |
+| OnDetached   | `OnBehavior`      | No       | Action on detaching from tool.             |
 | Eating       | `FarmerAnimation` | No       | Custom eating animation.                   |
 | AfterEating  | `FarmerAnimation` | No       | Animation to play after eating.            |
 

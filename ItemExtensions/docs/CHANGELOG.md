@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.6.0
+- Bug fix for train drops
+- New OnBehaviors: OnAttached, OnDetached
+- Support for custom fishing treasure
+- API changes
+
+## 1.5.1
+- New API method
+- Temptative bugfix for mixed seeds 
+
 ## 1.5.0
 - Fixed mixed seed bug where crops would randomly change to another type
 - Fixed mining bug where some weapons did 0 damage
