@@ -1,18 +1,14 @@
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
-using HarmonyLib;
 using ItemExtensions.Additions;
 using ItemExtensions.Models.Contained;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
-using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
 
-internal class CropPatches
+internal static class CropPatches
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -21,77 +17,25 @@ internal class CropPatches
 #endif
 
     internal static string Cached { get; set; }
+    internal static bool Chosen { get; set; }
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
 
     internal static bool HasCropsAnytime { get; set; }
-    internal static void Apply(Harmony harmony)
-    {
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV method \"GameLocation.CanPlantSeedsHere\".");
-        
-        harmony.Patch(
-            original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.CanPlantSeedsHere)),
-            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_CanPlantSeedsHere))
-        );
-
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": transpiling SDV method \"Object.placementAction\".");
-        
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Object), nameof(Object.placementAction)),
-            transpiler: new HarmonyMethod(typeof(CropPatches), nameof(Transpiler_placementAction))
-        );
-    }
-
-    /// <summary>
-    /// Transpiles JumpFish to allow no jumping.
-    /// </summary>
-    /// <param name="instructions">Original instructions</param>
-    /// <returns>The code (either original or transpiled).</returns>
-    private static IEnumerable<CodeInstruction> Transpiler_placementAction(IEnumerable<CodeInstruction> instructions)
-    {
-        //new one
-        var codes = new List<CodeInstruction>(instructions);
-
-        //find the code that chooses silhouette- aka if there ARE fish to jump
-        var index = codes.FindIndex(ci => ci.opcode == OpCodes.Call && ci.operand is MethodInfo { Name: "ResolveSeedId"});
-
-        if (index < 0)
-        {
-            Log("ResolveSeedId wasn't found.");
-            return codes.AsEnumerable();
-        }
-
-        /*
-         * This just replaces resolveSeedId with our own code, because, well im out of options.
-         */
-
-        var patch = new CodeInstruction(OpCodes.Call,
-            AccessTools.Method(typeof(Crop), nameof(ResolveSeedId)));
-        
-        Log("Inserting method");
-        codes[index] = patch;
-
-        return codes.AsEnumerable();
-    }
-
-    private static void Pre_CanPlantSeedsHere(ref GameLocation __instance, ref string itemId, int tileX, int tileY, bool isGardenPot, string deniedMessage)
-    {
-#if DEBUG
-        Log("Called canplant", LogLevel.Warn);
-#endif
-        //itemId = ResolveSeedId(itemId, __instance);
-    }
     
     public static string ResolveSeedId(string itemId, GameLocation location)
     {
 #if DEBUG
-        Log("Hi", LogLevel.Warn);
+        Log($"Checking {itemId} data", LogLevel.Warn);
 #endif
         if (string.IsNullOrWhiteSpace(itemId))
             return itemId;
 
-        if (string.IsNullOrWhiteSpace(Cached) == false)
+        if (Chosen)
         {
+#if DEBUG
+            Log("Returning cached seed...");
+#endif
             return Cached;
         }
         
@@ -106,6 +50,7 @@ internal class CropPatches
                 var chosen = GetFromFramework(itemId, mixedSeeds, location);
                 Log($"Choosing seed {chosen}");
                 Cached = chosen;
+                Chosen = true;
                 return chosen;
             }
 
@@ -125,6 +70,7 @@ internal class CropPatches
 
             Log($"Choosing seed {fromField}");
             Cached = fromField;
+            Chosen = true;
 
             return fromField;
         }
@@ -133,6 +79,7 @@ internal class CropPatches
             Log($"Error: {e}", LogLevel.Error);
         }
 
+        Chosen = false;
         return itemId;
     }
 
@@ -326,6 +273,9 @@ internal class CropPatches
         if (Game1.objectData.TryGetValue(itemId, out var objData) == false)
             return 0;
 
+        if (Game1.cropData.TryGetValue(itemId, out _) == false)
+            return 0;
+
         var fields = objData.CustomFields;
         
         // if empty, return "once"
@@ -333,7 +283,7 @@ internal class CropPatches
             return 1;
         
         // if there's any custom fields
-        if (fields is not null && fields.Any())
+        if (fields.Any())
         {
             // if it has specific count
             if (fields.TryGetValue(ModKeys.AddMainSeed, out var timesToAdd))

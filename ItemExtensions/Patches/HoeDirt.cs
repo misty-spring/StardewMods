@@ -12,12 +12,9 @@ public class HoeDirtPatches
 #else
     private const LogLevel Level =  LogLevel.Trace;
 #endif
-
-    internal static string Cached { get; set; }
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
 
-    internal static bool HasCropsAnytime { get; set; }
     internal static void Apply(Harmony harmony)
     {
         Log($"Applying Harmony patch \"{nameof(HoeDirtPatches)}\": prefixing SDV method \"HoeDirt.canPlantThisSeedHere\".");
@@ -42,24 +39,27 @@ public class HoeDirtPatches
         );
     }
     
-    private static void Pre_canPlantThisSeedHere(string itemId, bool isFertilizer = false)
+    private static void Pre_canPlantThisSeedHere(HoeDirt __instance, ref string itemId, bool isFertilizer = false)
     {
+        itemId = CropPatches.ResolveSeedId(itemId, __instance.Location);
 #if DEBUG
-        Log("Called canPlant from hoedirt", LogLevel.Warn);
+        Log($"Changed ItemId to {itemId}");
 #endif
     }
     
     private static void Pre_plant(ref string itemId, Farmer who, bool isFertilizer)
     {
-#if DEBUG
-        Log("Called plant", LogLevel.Warn);
-#endif
-        //itemId = CropPatches.ResolveSeedId(itemId, who.currentLocation);
+        if(CropPatches.Chosen)
+            itemId = CropPatches.Cached;
     }
     
     private static void Post_plant(string itemId, Farmer who, bool isFertilizer)
     {
+#if DEBUG
+        Log("_____________________________________________");
+#endif
         Log($"Clearing seed cache...(last item {itemId})");
         CropPatches.Cached = null;
+        CropPatches.Chosen = false;
     }
 }
