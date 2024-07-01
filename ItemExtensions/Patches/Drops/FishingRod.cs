@@ -21,20 +21,20 @@ internal class FishingRodPatches
     internal static void Apply(Harmony harmony)
     {
         Log($"Applying Harmony patch \"{nameof(FishingRodPatches)}\": transpiling game method \"FishingRod.openTreasureMenuEndFunction\".");
-
+        
         harmony.Patch(
             original: AccessTools.Method(typeof(FishingRod), nameof(FishingRod.openTreasureMenuEndFunction)),
             transpiler: new HarmonyMethod(typeof(FishingRodPatches), nameof(Transpiler_openTreasureMenuEndFunction))
         );
     }
-
+    
     private static IEnumerable<CodeInstruction> Transpiler_openTreasureMenuEndFunction(IEnumerable<CodeInstruction> instructions)
     {
         //new one
         var codes = new List<CodeInstruction>(instructions);
         var instructionsToInsert = new List<CodeInstruction>();
 
-        /*
+        
         //find the code that creates itemgrabmenu, we'll add changes right before that
         CodeInstruction createMenu = null;
         for (var i = 0; i < codes.Count - 1; i++)
@@ -65,13 +65,14 @@ internal class FishingRodPatches
         {
             Log("itemgrabmenu ctor wasn't found.");
             return codes.AsEnumerable();
-        }*/
+        }
         
         var listCreation = codes.FindLast(ci => ci.opcode == OpCodes.Newobj);
         
-        var index = codes.IndexOf(listCreation) - 3; //3 before it
+        var index = codes.IndexOf(listCreation) - 2; //2 before it
         
         //arguments
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_0)); //player
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_1)); //inventory
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(FishingRodPatches), nameof(AddExtraDrops))));
         
@@ -82,12 +83,12 @@ internal class FishingRodPatches
         return codes.AsEnumerable();
     }
 
-    internal static void AddExtraDrops(List<Item> inventory)
+    internal static void AddExtraDrops(Farmer who, List<Item> inventory)
     {
 #if DEBUG
         Log("Checking extra drops.", LogLevel.Warn);
 #endif
-        var context = new ItemQueryContext(Game1.player.currentLocation, Game1.player, Game1.random);
+        var context = new ItemQueryContext(who.currentLocation, who, Game1.random);
 
         foreach (var (entry, data) in ModEntry.Treasure)
         {
