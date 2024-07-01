@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using ItemExtensions.Additions;
@@ -39,13 +40,20 @@ internal class FishingRodPatches
 #if DEBUG
         Log("Index is " + index);
 #endif
+        /*
+           foreach (var item in FishingRodPatches.GetAllItems(lastUser))  {
+             inventory.Add(item);
+           }
+         */
         
         //arguments
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 0)); //player
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_1)); //inventory
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldfld)); //set in stack?
-        //call w/ previous arguments
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(FishingRodPatches), nameof(AddExtraDrops))));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg, 0)); //lastUser
+        //GetAllItems
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(FishingRodPatches), nameof(GetAllItems))));
+        //get enumerator
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Callvirt, typeof(List<Item>).GetMethod("GetEnumerator")));
+        //
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc, 10)); //lastUser
         
         Log($"codes count: {codes.Count}, insert count: {instructionsToInsert.Count}");
         Log($"Inserting method at {index}");
@@ -54,6 +62,30 @@ internal class FishingRodPatches
         return codes.AsEnumerable();
     }
 
+    internal static List<Item> GetAllItems(Farmer who)
+    {
+        var result = new List<Item>();
+#if DEBUG
+        Log("Checking extra drops.", LogLevel.Warn);
+#endif
+        var context = new ItemQueryContext(who.currentLocation, who, Game1.random);
+
+        foreach (var (entry, data) in ModEntry.Treasure)
+        {
+#if DEBUG
+            Log($"Checking entry {entry}...");
+#endif
+            if (Sorter.GetItem(data, context, out var item) == false)
+                continue;
+
+            //PROBLEM TO FIGURE OUT: can't access inventory list
+            result.Add(item);
+            
+            Log($"Added treasure reward from entry {entry} ({item.QualifiedItemId})");
+        }
+        return result;
+    }
+    
     internal static void AddExtraDrops(Farmer who, ref List<Item> inventory)
     {
 #if DEBUG
