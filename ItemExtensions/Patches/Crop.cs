@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using HarmonyLib;
 using ItemExtensions.Additions;
@@ -6,6 +8,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
+using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
 
@@ -24,62 +27,113 @@ internal class CropPatches
     internal static bool HasCropsAnytime { get; set; }
     internal static void Apply(Harmony harmony)
     {
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV constructor \"Crop(string, int, int, GameLocation)\".");
+        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV method \"GameLocation.CanPlantSeedsHere\".");
         
         harmony.Patch(
-            original: AccessTools.Constructor(typeof(Crop), new[] {typeof(string), typeof(int), typeof(int), typeof(GameLocation)}),
-            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_Constructor))
+            original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.CanPlantSeedsHere)),
+            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_CanPlantSeedsHere))
+        );
+
+        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": transpiling SDV method \"Object.placementAction\".");
+        
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Object), nameof(Object.placementAction)),
+            transpiler: new HarmonyMethod(typeof(CropPatches), nameof(Transpiler_placementAction))
         );
     }
 
-    internal static void Pre_Constructor (Crop __instance, ref string seedId, int tileX, int tileY, GameLocation location)
+    /// <summary>
+    /// Transpiles JumpFish to allow no jumping.
+    /// </summary>
+    /// <param name="instructions">Original instructions</param>
+    /// <returns>The code (either original or transpiled).</returns>
+    private static IEnumerable<CodeInstruction> Transpiler_placementAction(IEnumerable<CodeInstruction> instructions)
     {
-        if (string.IsNullOrWhiteSpace(seedId))
-            return;
+        //new one
+        var codes = new List<CodeInstruction>(instructions);
+
+        //find the code that chooses silhouette- aka if there ARE fish to jump
+        var index = codes.FindIndex(ci => ci.opcode == OpCodes.Call && ci.operand is MethodInfo { Name: "ResolveSeedId"});
+
+        if (index < 0)
+        {
+            Log("ResolveSeedId wasn't found.");
+            return codes.AsEnumerable();
+        }
+
+        /*
+         * This just replaces resolveSeedId with our own code, because, well im out of options.
+         */
+
+        var patch = new CodeInstruction(OpCodes.Call,
+            AccessTools.Method(typeof(Crop), nameof(ResolveSeedId)));
+        
+        Log("Inserting method");
+        codes[index] = patch;
+
+        return codes.AsEnumerable();
+    }
+
+    private static void Pre_CanPlantSeedsHere(ref GameLocation __instance, ref string itemId, int tileX, int tileY, bool isGardenPot, string deniedMessage)
+    {
+#if DEBUG
+        Log("Called canplant", LogLevel.Warn);
+#endif
+        //itemId = ResolveSeedId(itemId, __instance);
+    }
+    
+    public static string ResolveSeedId(string itemId, GameLocation location)
+    {
+#if DEBUG
+        Log("Hi", LogLevel.Warn);
+#endif
+        if (string.IsNullOrWhiteSpace(itemId))
+            return itemId;
 
         if (string.IsNullOrWhiteSpace(Cached) == false)
         {
-            seedId = Cached;
-            return;
+            return Cached;
         }
         
-        Log($"Checking seed {seedId}...");
+        Log($"Checking seed {itemId}...");
         
         try
         {
             //if there's mod data
-            if (ModEntry.Seeds.TryGetValue(seedId, out var mixedSeeds))
+            if (ModEntry.Seeds.TryGetValue(itemId, out var mixedSeeds))
             {
                 //get seed and return
-                var chosen = GetFromFramework(seedId, mixedSeeds, location);
+                var chosen = GetFromFramework(itemId, mixedSeeds, location);
                 Log($"Choosing seed {chosen}");
                 Cached = chosen;
-                seedId = chosen;
-                return;
+                return chosen;
             }
 
 #if DEBUG
-            Log($"No data in ModSeeds for {seedId}, checking object's custom fields");
+            Log($"No data in ModSeeds for {itemId}, checking object's custom fields");
 #endif
-            if (Game1.objectData.TryGetValue(seedId, out var objectData) == false || objectData.CustomFields is null)
-                return;
+            if (Game1.objectData.TryGetValue(itemId, out var objectData) == false || objectData.CustomFields is null)
+                return itemId;
             
             if (objectData.CustomFields.Any() == false || objectData.CustomFields.TryGetValue(ModKeys.MixedSeeds, out var seeds) == false)
             {
                 Log("Found no mixed seeds in custom fields. Using original seed");
-                return;
+                return itemId;
             }
 
-            var fromField = RandomFromCustomFields(seedId, seeds, location);
+            var fromField = RandomFromCustomFields(itemId, seeds, location);
 
             Log($"Choosing seed {fromField}");
             Cached = fromField;
-            seedId = fromField;
+
+            return fromField;
         }
         catch (Exception e)
         {
             Log($"Error: {e}", LogLevel.Error);
         }
+
+        return itemId;
     }
 
     private static string GetFromFramework(string seedId, List<MixedSeedData> mixedSeeds, GameLocation location)
