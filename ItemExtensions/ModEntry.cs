@@ -31,9 +31,6 @@ public sealed class ModEntry : Mod
         helper.Events.Input.ButtonPressed += ActionButton.Pressed;
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
-        if (Config.Treasure)
-            helper.Events.Display.MenuChanged += Menu.Changed;
-        
         helper.Events.Content.LocaleChanged += LocaleChanged;
         
         Mon = Monitor;
@@ -57,6 +54,11 @@ public sealed class ModEntry : Mod
         if (Config.EatingAnimations)
         {
             FarmerPatches.Apply(harmony);
+        }
+
+        if (Config.Treasure)
+        {
+            FishingRodPatches.Apply(harmony);
         }
         
         if (Config.Panning)
