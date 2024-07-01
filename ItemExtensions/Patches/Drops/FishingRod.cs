@@ -34,46 +34,17 @@ internal class FishingRodPatches
         var codes = new List<CodeInstruction>(instructions);
         var instructionsToInsert = new List<CodeInstruction>();
 
+        var index = codes.FindIndex(ci => ci.opcode == OpCodes.Newobj) + 1;
         
-        //find the code that creates itemgrabmenu, we'll add changes right before that
-        CodeInstruction createMenu = null;
-        for (var i = 0; i < codes.Count - 1; i++)
-        {
-            //if (codes[i - 2].opcode != OpCodes.Ldloc_1)
-            //    continue;
-            
-            if (codes[i - 1].opcode != OpCodes.Ldarg_0)
-                continue;
-            
-            if (codes[i].opcode != OpCodes.Newobj)
-                continue;
-
-            if (codes[i + 1].opcode != OpCodes.Ldc_I4_1)
-                continue;
-            
-            if (codes[i + 2].opcode != OpCodes.Ldc_I4_0)
-                continue;
-            
-            if (codes[i + 3].opcode != OpCodes.Call)
-                continue;
-
-            createMenu = codes[i];
-            break;
-        }
-
-        if (createMenu is null)
-        {
-            Log("itemgrabmenu ctor wasn't found.");
-            return codes.AsEnumerable();
-        }
-        
-        var listCreation = codes.FindLast(ci => ci.opcode == OpCodes.Newobj);
-        
-        var index = codes.IndexOf(listCreation) - 2; //2 before it
+#if DEBUG
+        Log("Index is " + index);
+#endif
         
         //arguments
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_0)); //player
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 0)); //player
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_1)); //inventory
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldfld)); //set in stack?
+        //call w/ previous arguments
         instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(FishingRodPatches), nameof(AddExtraDrops))));
         
         Log($"codes count: {codes.Count}, insert count: {instructionsToInsert.Count}");
@@ -83,7 +54,7 @@ internal class FishingRodPatches
         return codes.AsEnumerable();
     }
 
-    internal static void AddExtraDrops(Farmer who, List<Item> inventory)
+    internal static void AddExtraDrops(Farmer who, ref List<Item> inventory)
     {
 #if DEBUG
         Log("Checking extra drops.", LogLevel.Warn);
@@ -98,6 +69,7 @@ internal class FishingRodPatches
             if (Sorter.GetItem(data, context, out var item) == false)
                 continue;
 
+            //PROBLEM TO FIGURE OUT: can't access inventory list
             inventory.Add(item);
             
             Log($"Added treasure reward from entry {entry} ({item.QualifiedItemId})");
