@@ -87,7 +87,7 @@ public interface IWorldChangeData
             }
         }
 
-        if (data.AddBuffs.Any())
+        if (data.AddBuffs != null && data.AddBuffs.Any())
         {
             foreach (var buff in data.AddBuffs)
             {

@@ -17,6 +17,8 @@ public sealed class ModEntry : Mod
 {
     public override void Entry(IModHelper helper)
     {
+        Config = Helper.ReadConfig<ModConfig>();
+        
         helper.Events.GameLoop.GameLaunched += OnLaunch;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         
@@ -29,9 +31,10 @@ public sealed class ModEntry : Mod
         helper.Events.Input.ButtonPressed += ActionButton.Pressed;
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
+        if (Config.Treasure)
+            helper.Events.Display.MenuChanged += Menu.Changed;
+        
         helper.Events.Content.LocaleChanged += LocaleChanged;
-
-        Config = Helper.ReadConfig<ModConfig>();
         
         Mon = Monitor;
         Help = Helper;
@@ -59,11 +62,6 @@ public sealed class ModEntry : Mod
         if (Config.Panning)
         {
             PanPatches.Apply(harmony);
-        }
-
-        if (Config.Treasure)
-        {
-            FishingRodPatches.Apply(harmony);
         }
 
         if (Config.TrainDrops)
@@ -340,6 +338,9 @@ public sealed class ModEntry : Mod
             Parser.Train(trainData);
             Monitor.Log($"Loaded {TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
         }
+        
+        if(Config.Treasure)
+            Treasure = Helper.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Treasure");
 
         //ACTION BUTTON LIST
         var temp = new List<SButton>();

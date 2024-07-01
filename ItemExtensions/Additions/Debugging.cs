@@ -3,11 +3,12 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Additions;
 
-public class Debugging
+public static class Debugging
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;

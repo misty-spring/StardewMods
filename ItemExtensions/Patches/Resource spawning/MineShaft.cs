@@ -245,21 +245,24 @@ public class MineShaftPatches
                     if (spawns?.RealFloors is null)
                         continue;
 
-                    var extraforLevel = spawns.AdditionalChancePerLevel * mineLevel;
-
-                    //if qi-only & not qi on, skip
-                    if (spawns.Type == MineType.Qi && mine.GetAdditionalDifficulty() <= 0)
-                        continue;
-
-                    //if vanilla-only & qi on, skip
-                    if (spawns.Type == MineType.Normal && mine.GetAdditionalDifficulty() > 0)
-                        continue;
-
-                    if (spawns.Type == MineType.Frenzy && spawns.LastFrenzy == (Game1.dayOfMonth, Game1.season))
-                        continue;
-
-                    if (spawns.Type == MineType.Volcano)
-                        continue;
+                    var extraForLevel = spawns.AdditionalChancePerLevel * mineLevel;
+                    
+                    switch (spawns.Type)
+                    {
+                        //if volcano, don't
+                        case MineType.Volcano:
+                        //if qi-only & not qi on, skip
+                        case MineType.Qi when mine.GetAdditionalDifficulty() <= 0:
+                        //if vanilla-only & qi on, skip
+                        case MineType.Normal when mine.GetAdditionalDifficulty() > 0:
+                        //if frenzy and already had one
+                        case MineType.Frenzy when spawns.LastFrenzy == (Game1.dayOfMonth, Game1.season):
+                        //if not meant to spawn
+                        case MineType.None:
+                        //if mountain
+                        case MineType.Mountain:
+                            continue;
+                    }
 
                     foreach (var floor in spawns.RealFloors)
                     {
@@ -292,13 +295,13 @@ public class MineShaftPatches
                             }
                             
                             //otherwise, add & break loop
-                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                            all.Add(id, spawns.SpawnFrequency + extraForLevel);
                             break;
                         }
 
                         //or if level is explicitly included
                         if (int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
-                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                            all.Add(id, spawns.SpawnFrequency + extraForLevel);
                     }
                 }
             }

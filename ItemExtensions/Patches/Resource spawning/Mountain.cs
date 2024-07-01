@@ -4,6 +4,7 @@ using StardewValley;
 using StardewValley.Locations;
 using static ItemExtensions.Additions.Sorter;
 using System.Text;
+using ItemExtensions.Additions;
 using Object = StardewValley.Object;
 using StardewValley.Extensions;
 using ItemExtensions.Models.Enums;
@@ -58,6 +59,9 @@ internal class MountainPatches
         //for every stone we selected
         foreach (var stone in all)
         {
+            if (stone.modData.ContainsKey(ModKeys.DontReplace))
+                continue;
+            
             //choose a %
             var nextDouble = Game1.random.NextDouble();
 #if DEBUG
@@ -67,7 +71,10 @@ internal class MountainPatches
 
             //shouldn't happen but a safe check is a safe check
             if (sorted.Any() == false)
+            {
+                stone.modData.Add(ModKeys.DontReplace, "true");
                 continue;
+            }
 
             var id = Game1.random.ChooseFrom(sorted);
             var ore = new Object(id, 1)

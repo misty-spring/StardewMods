@@ -61,7 +61,7 @@ public static class GeneralResource
     /// <returns>Whether the aforementioned match. If tool is null (ie bomb), it's always true.</returns>
     internal static bool ToolMatches(Tool tool, ResourceData data)
     {
-        if(data?.Tool is null)
+        if(string.IsNullOrWhiteSpace(data?.Tool))
         {
             Log("Resource's tool can't be null. Resource won't be mined.", LogLevel.Warn);
             return false;
