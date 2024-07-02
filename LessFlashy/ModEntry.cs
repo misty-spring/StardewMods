@@ -146,6 +146,14 @@ public sealed class ModEntry : Mod
             setValue: value => Config.Water = value
         );
         
+        configMenu.AddBoolOption(
+            mod: ModManifest,
+            name: () => Helper.Translation.Get("config.Petals.name"),
+            tooltip: () => Helper.Translation.Get("config.Petals.description"),
+            getValue: () => Config.Petals,
+            setValue: value => Config.Petals = value
+        );
+        
         configMenu.AddNumberOption(
             mod: ModManifest,
             name: () => Helper.Translation.Get("config.Rain.name"),

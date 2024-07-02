@@ -7,6 +7,7 @@ public class ModConfig
     public bool Forge { get; set; } = true;
     public bool Lava { get; set; } = true;
     public float Rain { get; set; } = 1.0f;
+    public bool Petals { get; set; }
     public bool Sewing { get; set; }
     public bool SoftLight { get; set; }
     public bool Water { get; set; }

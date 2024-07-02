@@ -108,6 +108,17 @@ public static class Asset
             AssetEditPriority.Late + 10);
         }
 
+        if (e.NameWithoutLocale.BaseName.Equals("LooseSprites/Cursors") && Config.Petals)
+        {
+            e.Edit(asset =>  
+                {
+                    var imageAsset = asset.AsImage();
+                    var patch = Helper.ModContent.Load<Texture2D>("assets/remove_petals.png");
+                    imageAsset.PatchImage(patch, targetArea: new Rectangle(352, 1184, 176, 48));
+                }, 
+                AssetEditPriority.Late + 10);
+        }
+        
         if (e.NameWithoutLocale.BaseName.Equals("LooseSprites/Movies") && Config.Animations is NoFlash or Minimal)
         {
             e.Edit(asset =>
