@@ -3,6 +3,8 @@
 ## 1.6.1
 - Bug fix for treasure rewards
 - Fixed bug where seeds couldn't be planted
+- Updated french translation (by Caranud)
+- Updated chinese translation (by Awassakura)
 
 ## 1.6.0
 - Bug fix for train drops

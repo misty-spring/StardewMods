@@ -162,9 +162,7 @@ public static class ExtensionClump
         
         clump.health.Value -= parsedDamage;
         
-        #if DEBUG
         Log($"Remaining health {clump.health.Value}");
-        #endif
 
         if (clump.health.Value <= 0.0)
         {

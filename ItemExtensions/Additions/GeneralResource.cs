@@ -327,6 +327,8 @@ public static class GeneralResource
 
     public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t)
     {
+        Log("Checking resource drops...", LogLevel.Debug);
+        
         var who = t?.getLastFarmerToUse() ?? Game1.player;
 
         if (resource.OnDestroy != null)
@@ -486,9 +488,7 @@ public static class GeneralResource
             if (chance > item.Chance)
                 continue;
 
-#if DEBUG
             Log($"Chance and condition match. Spawning extra item(s)...({item.ItemId})");
-#endif
                 
             var context = new ItemQueryContext(location, who, Game1.random);
             var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);

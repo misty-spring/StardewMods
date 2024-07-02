@@ -27,9 +27,11 @@ public partial class ObjectPatches
 
             if (__instance.MinutesUntilReady <= 0.0)
             {
-                if(resource.Tool.Equals("vanilla"))
+                if (resource.Tool.Equals("vanilla"))
+                {
                     CheckDrops(resource, __instance.Location, __instance.TileLocation, t);
-                return;
+                    return;
+                }
             }
 
             if (ToolMatches(t, resource) == false)
