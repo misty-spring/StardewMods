@@ -75,7 +75,7 @@ public class ModEntry : Mod
         if (configMenu is null)
             return;
 
-        var hasNonDestructive = Help.ModRegistry.IsLoaded("MadaraUchiha.NonDestructiveNPCs");
+        var hasNonDestructive = Help.ModRegistry.IsLoaded("IamSaulC.NonDestructiveNPCs");
 
         #region config
         #region main
