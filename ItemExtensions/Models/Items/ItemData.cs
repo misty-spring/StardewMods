@@ -21,6 +21,7 @@ public class ItemData
     public OnBehavior OnDetached { get; set; } = null;
 
     // before/after eating
+    public EdibilityData EdibleData { get; set; } = null;
     public FarmerAnimation Eating { get; set; } = null;
     public FarmerAnimation AfterEating { get; set; } = null;
 }

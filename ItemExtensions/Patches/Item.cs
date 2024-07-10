@@ -161,7 +161,7 @@ public class ItemPatches
     /// <param name="instructions">IL code instructions passed to the transpiler.</param>
     public static IEnumerable<CodeInstruction> Transpiler_Game1_pressActionButton(IEnumerable<CodeInstruction> instructions)
     {
-        CodeMatcher cMatcher = new CodeMatcher(instructions);
+        var cMatcher = new CodeMatcher(instructions);
 
         cMatcher.MatchStartForward(
                 new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.content))),
@@ -179,7 +179,7 @@ public class ItemPatches
             new CodeInstruction(OpCodes.Callvirt,
                 AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
             new CodeInstruction(OpCodes.Call,
-                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getMenuString)))
+                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetMenuString)))
         );
 
         cMatcher.AddLabels(firstLabel);
@@ -196,19 +196,39 @@ public class ItemPatches
             new CodeInstruction(OpCodes.Callvirt,
                 AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
             new CodeInstruction(OpCodes.Call,
-                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getMenuString)))
+                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetMenuString)))
         );
 
         cMatcher.AddLabels(secondLabel);
+        
+        /*own addition
+        var thirdLabel = cMatcher.Labels;
+        cMatcher.Advance(4);
+#if DEBUG
+        Log($"Current: {cMatcher.Instruction}, {cMatcher.Opcode}");
+#endif
+        cMatcher.RemoveInstructions(2);
+        cMatcher.Insert(
+            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+            new CodeInstruction(OpCodes.Callvirt,
+                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.currentLocation))),
+            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+            new CodeInstruction(OpCodes.Callvirt,
+                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+            new CodeInstruction(OpCodes.Call,
+                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetYesNo)))
+        );
+        cMatcher.AddLabels(thirdLabel);
+        */
 
         return cMatcher.InstructionEnumeration();
     }
     
     /// <summary>Allows customization of the unable to eat/drink message.</summary>
     /// <param name="instructions">IL code instructions passed to the transpiler.</param>
-    static IEnumerable<CodeInstruction> Transpiler_Farmer_eatObject(IEnumerable<CodeInstruction> instructions)
+    private static IEnumerable<CodeInstruction> Transpiler_Farmer_eatObject(IEnumerable<CodeInstruction> instructions)
     {
-        CodeMatcher cMatcher = new CodeMatcher(instructions);
+        var cMatcher = new CodeMatcher(instructions);
 
         cMatcher.MatchStartForward(
                 new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.content))),
@@ -222,7 +242,7 @@ public class ItemPatches
                 new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
                 new CodeInstruction(OpCodes.Callvirt,
                     AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getFailureString)))
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetFailureString)))
             );
         
         cMatcher.MatchStartForward(
@@ -237,42 +257,65 @@ public class ItemPatches
                 new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
                 new CodeInstruction(OpCodes.Callvirt,
                     AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getFailureString)))
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetFailureString)))
             );
 
         return cMatcher.InstructionEnumeration();
     }
 }
 
-public class TranspilerSupplementary
+internal class TranspilerSupplementary
 {
     /// <summary>Internally used by the Game1.pressActionButton transpiler.</summary>
     /// <param name="stringFallback">A string referencing a game content string.</param>
     /// <param name="obj">The object being eaten.</param>
-    public static string getMenuString(string stringFallback, Object obj)
+    internal static string GetMenuString(string stringFallback, Object obj)
     {
-        var modified = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("placeholder");
+        var fallback = Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
         
-        if (modified.ContainsKey(obj.ItemId) && modified[obj.ItemId].ContainsKey("ConsumeText"))
-        {
-            return modified[obj.ItemId]["ConsumeText"].Replace("{0}", obj.DisplayName);
-        }
-
-        return Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
+        if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
+            return fallback;
+        
+        if (data.EdibleData is null || string.IsNullOrWhiteSpace(data.EdibleData.ConsumeQuestion))
+            return fallback;
+        
+        return data.EdibleData.ConsumeQuestion.Replace("{0}", obj.DisplayName);
     }
 
     /// <summary>Internally used by the Farmer.eatObject transpiler.</summary>
     /// <param name="stringFallback">A string referencing a game content string.</param>
     /// <param name="obj">The object unable to be eaten.</param>
-    public static string getFailureString(string stringFallback, Object obj)
+    internal static string GetFailureString(string stringFallback, Object obj)
     {
-        var modified = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("placeholder");
-
-        if (modified.ContainsKey(obj.ItemId) && modified[obj.ItemId].ContainsKey("CannotConsumeText"))
-        {
-            return modified[obj.ItemId]["CannotConsumeText"].Replace("{0}", obj.DisplayName);
-        }
-
-        return Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
+        var fallback = Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
+        
+        if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
+            return fallback;
+        
+        if (data.EdibleData is null || string.IsNullOrWhiteSpace(data.EdibleData.CannotConsume))
+            return fallback;
+        
+        return data.EdibleData.CannotConsume.Replace("{0}", obj.DisplayName);
     }
+
+    /*
+    internal static Response[] GetYesNo(GameLocation location, Object obj)
+    {
+        var fallback = location.createYesNoResponses();
+        var custom = location.createYesNoResponses();
+        
+        if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
+            return fallback;
+        
+        if (data.EdibleData is null || (string.IsNullOrWhiteSpace(data.EdibleData.Yes) && string.IsNullOrWhiteSpace(data.EdibleData.No)))
+            return fallback;
+
+        if(string.IsNullOrWhiteSpace(data.EdibleData.Yes) == false)
+            custom[0].responseText = data.EdibleData.Yes;
+        
+        if(string.IsNullOrWhiteSpace(data.EdibleData.No) == false)
+            custom[1].responseText = data.EdibleData.No;
+
+        return custom;
+    }*/
 }
