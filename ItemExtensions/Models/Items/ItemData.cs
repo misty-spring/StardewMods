@@ -20,8 +20,8 @@ public class ItemData
     public OnBehavior OnAttached { get; set; } = null;
     public OnBehavior OnDetached { get; set; } = null;
 
-    // before/after eating
-    public EdibilityData EdibleData { get; set; } = null;
+    // customize eating
+    public EdibleDialogue FoodDialogue { get; set; } = null;
     public FarmerAnimation Eating { get; set; } = null;
     public FarmerAnimation AfterEating { get; set; } = null;
 }

@@ -201,26 +201,19 @@ public class ItemPatches
 
         cMatcher.AddLabels(secondLabel);
         
-        /*own addition
-        var thirdLabel = cMatcher.Labels;
+        //own addition
         cMatcher.Advance(4);
+        var thirdLabel = cMatcher.Labels;
 #if DEBUG
         Log($"Current: {cMatcher.Instruction}, {cMatcher.Opcode}");
 #endif
         cMatcher.RemoveInstructions(2);
         cMatcher.Insert(
-            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-            new CodeInstruction(OpCodes.Callvirt,
-                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.currentLocation))),
-            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-            new CodeInstruction(OpCodes.Callvirt,
-                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
             new CodeInstruction(OpCodes.Call,
                 AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.GetYesNo)))
         );
         cMatcher.AddLabels(thirdLabel);
-        */
-
+//
         return cMatcher.InstructionEnumeration();
     }
     
@@ -276,10 +269,10 @@ internal class TranspilerSupplementary
         if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
             return fallback;
         
-        if (data.EdibleData is null || string.IsNullOrWhiteSpace(data.EdibleData.ConsumeQuestion))
+        if (data.FoodDialogue is null || string.IsNullOrWhiteSpace(data.FoodDialogue.ConsumeQuestion))
             return fallback;
         
-        return data.EdibleData.ConsumeQuestion.Replace("{0}", obj.DisplayName);
+        return data.FoodDialogue.ConsumeQuestion.Replace("{0}", obj.DisplayName);
     }
 
     /// <summary>Internally used by the Farmer.eatObject transpiler.</summary>
@@ -292,30 +285,30 @@ internal class TranspilerSupplementary
         if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
             return fallback;
         
-        if (data.EdibleData is null || string.IsNullOrWhiteSpace(data.EdibleData.CannotConsume))
+        if (data.FoodDialogue is null || string.IsNullOrWhiteSpace(data.FoodDialogue.CannotConsume))
             return fallback;
         
-        return data.EdibleData.CannotConsume.Replace("{0}", obj.DisplayName);
+        return data.FoodDialogue.CannotConsume.Replace("{0}", obj.DisplayName);
     }
-
-    /*
-    internal static Response[] GetYesNo(GameLocation location, Object obj)
+    
+    internal static Response[] GetYesNo()
     {
-        var fallback = location.createYesNoResponses();
-        var custom = location.createYesNoResponses();
+        var obj = Game1.player.ActiveObject;
+        var fallback = Game1.player.currentLocation.createYesNoResponses();
+        var custom = Game1.player.currentLocation.createYesNoResponses();
         
         if (ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var data) == false)
             return fallback;
         
-        if (data.EdibleData is null || (string.IsNullOrWhiteSpace(data.EdibleData.Yes) && string.IsNullOrWhiteSpace(data.EdibleData.No)))
+        if (data.FoodDialogue is null || (string.IsNullOrWhiteSpace(data.FoodDialogue.Yes) && string.IsNullOrWhiteSpace(data.FoodDialogue.No)))
             return fallback;
 
-        if(string.IsNullOrWhiteSpace(data.EdibleData.Yes) == false)
-            custom[0].responseText = data.EdibleData.Yes;
+        if(string.IsNullOrWhiteSpace(data.FoodDialogue.Yes) == false)
+            custom[0].responseText = data.FoodDialogue.Yes;
         
-        if(string.IsNullOrWhiteSpace(data.EdibleData.No) == false)
-            custom[1].responseText = data.EdibleData.No;
+        if(string.IsNullOrWhiteSpace(data.FoodDialogue.No) == false)
+            custom[1].responseText = data.FoodDialogue.No;
 
         return custom;
-    }*/
+    }
 }
