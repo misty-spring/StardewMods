@@ -30,7 +30,8 @@ To use the mod, simply add it as dependency in your manifest.json:
   - [Adding extra spawns](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/ExtraSpawns.md)
   - [Making them glow](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/LightData.md)
 
-### Eating animation
+### Eating
+- [Customize eating question](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/EatingQuestion.md)
 - [Eating animations](https://github.com/misty-spring/StardewMods/tree/main/ItemExtensions/docs/EatingAnimations.md)
 
 ### Menus
