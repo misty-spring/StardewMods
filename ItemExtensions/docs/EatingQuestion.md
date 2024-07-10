@@ -12,12 +12,12 @@ You can customize the dialogue that confirms eating/drinking.
 
 For this, you must edit Data's `FoodDialogue`:
 
-| name            | type            | required | description                                   |
-|-----------------|-----------------|----------|-----------------------------------------------|
-| ConsumeQuestion | `FarmerFrame[]` | No       | Question prompt when eating.                  |
-| CannotConsume   | `FoodAnimation` | No       | Dialogue shown if you can't consume the item. |
-| Yes             | `bool`          | No       | Text for confirming.                          |
-| No              | `int`           | No       | Text for refusing.                            |
+| name            | type     | required | description                                   |
+|-----------------|----------|----------|-----------------------------------------------|
+| ConsumeQuestion | `string` | No       | Question prompt when eating.                  |
+| CannotConsume   | `string` | No       | Dialogue shown if you can't consume the item. |
+| Yes             | `string` | No       | Text for confirming.                          |
+| No              | `string` | No       | Text for refusing.                            |
 
 Any value that you don't specify will default to the original (e.g, If you don't specify Yes/No, the dialogue will show regular Yes/No responses.)
 
