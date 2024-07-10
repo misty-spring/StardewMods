@@ -24,28 +24,6 @@ internal static class CropPatches
 
     internal static bool HasCropsAnytime { get; set; }
     
-    internal static void Apply(Harmony harmony)
-    {
-        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV method \"Crop.ResolveSeedId\".");
-        
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Crop), nameof(Crop.ResolveSeedId)),
-            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_ResolveSeedId))
-        );
-    }
-
-    private static void Pre_ResolveSeedId(ref string itemId, GameLocation location)
-    {
-        if (itemId != "770")
-            return;
-        
-#if DEBUG
-        Log("mixed seed");
-#endif
-
-        itemId = ResolveSeedId(itemId, location);
-    }
-    
     public static string ResolveSeedId(string itemId, GameLocation location)
     {
 #if DEBUG
@@ -284,18 +262,20 @@ internal static class CropPatches
         
         return season switch
         {
-            Season.Spring => new[] { "472", "474", "475", "476" },
+            Season.Spring => new[] { "472", "474", "475" },
             Season.Summer => new[] { "487", "483", "482", "484" },
-            Season.Fall => new[] { "487", "488", "489", "490", "491" },
+            Season.Fall => new[] { "487", "488", "489", "490" },
             _ => Array.Empty<string>()
         };
     }
 
     private static int AddMainSeedBy(string itemId, List<string> allFields)
     {
+        //if not an object
         if (Game1.objectData.TryGetValue(itemId, out var objData) == false)
             return 0;
 
+        //if no crop data
         if (Game1.cropData.TryGetValue(itemId, out _) == false)
             return 0;
 
