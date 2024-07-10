@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.7.0
+- Removed incorrect seeds from `CropPatches.GetVanillaCropsForSeason`
+- Fixed bug where tractor mod couldn't plant custom mixed seeds
+- Can now customize eating text (by acenyk)
+
 ## 1.6.1
 - Bug fix for treasure rewards
 - Fixed bug where seeds couldn't be planted
