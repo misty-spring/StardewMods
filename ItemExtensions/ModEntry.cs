@@ -46,6 +46,7 @@ public sealed class ModEntry : Mod
 
         if (Config.MixedSeeds)
         {
+            CropPatches.Apply(harmony);
             HoeDirtPatches.Apply(harmony);
         }
 

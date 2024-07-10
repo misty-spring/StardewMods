@@ -1,4 +1,5 @@
 using System.Text;
+using HarmonyLib;
 using ItemExtensions.Additions;
 using ItemExtensions.Models.Contained;
 using StardewModdingAPI;
@@ -22,6 +23,28 @@ internal static class CropPatches
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
 
     internal static bool HasCropsAnytime { get; set; }
+    
+    internal static void Apply(Harmony harmony)
+    {
+        Log($"Applying Harmony patch \"{nameof(CropPatches)}\": prefixing SDV method \"Crop.ResolveSeedId\".");
+        
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Crop), nameof(Crop.ResolveSeedId)),
+            prefix: new HarmonyMethod(typeof(CropPatches), nameof(Pre_ResolveSeedId))
+        );
+    }
+
+    private static void Pre_ResolveSeedId(ref string itemId, GameLocation location)
+    {
+        if (itemId != "770")
+            return;
+        
+#if DEBUG
+        Log("mixed seed");
+#endif
+
+        itemId = ResolveSeedId(itemId, location);
+    }
     
     public static string ResolveSeedId(string itemId, GameLocation location)
     {
@@ -111,7 +134,7 @@ internal static class CropPatches
                     Log($"No crop data found. ({seedData.ItemId})", LogLevel.Warn);
                     continue;
                 }
-
+                
                 //if not in season, no Anytime mod, and outdoors NOT island
                 if (cropData.Seasons.Contains(Game1.season) == false && HasCropsAnytime == false && location.IsOutdoors && location.InIslandContext() == false)
                     continue;

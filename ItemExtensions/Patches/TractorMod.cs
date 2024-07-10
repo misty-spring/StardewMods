@@ -1,9 +1,14 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using ItemExtensions.Additions.Clumps;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Menus;
+using StardewValley.TerrainFeatures;
+using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
 
@@ -32,6 +37,13 @@ public class TractorModPatches
         harmony.Patch(
             original: updateAttachments,
             postfix: new HarmonyMethod(typeof(TractorModPatches), nameof(Post_UpdateAttachmentEffects))
+        );
+        
+        Log($"Applying Harmony patch \"{nameof(TractorModPatches)}\": transpiling mod method \"Pathoschild.Stardew.TractorMod.Framework.Attachments.SeedAttachment:Apply\".");
+        
+        harmony.Patch(
+            original: AccessTools.Method($"Pathoschild.Stardew.TractorMod.Framework.Attachments.SeedAttachment:Apply"),
+            transpiler: new HarmonyMethod(typeof(TractorModPatches), nameof(SeedAttachment_Transpiler))
         );
     }
 
@@ -109,5 +121,53 @@ public class TractorModPatches
             for (int y = -distance; y <= distance; y++)
                 yield return new Vector2(origin.X + x, origin.Y + y);
         }
+    }
+    
+    /// <summary>
+    /// Edits <see cref="GameLocation.spawnObjects"/>:
+    /// Before trying to create a forage, this checks if it's a clump. If so, spawns and breaks (sub)loop.
+    /// </summary>
+    /// <param name="instructions">Original code.</param>
+    /// <param name="il"></param>
+    /// <returns>Edited code.</returns>
+    private static IEnumerable<CodeInstruction> SeedAttachment_Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        //new one
+        var codes = new List<CodeInstruction>(instructions);
+
+        var index = codes.FindIndex(ci => ci.opcode == OpCodes.Callvirt && ci.operand is MethodInfo { Name: "get_ItemId"});
+#if DEBUG
+        Log($"index: {index}, total {codes.Count}", LogLevel.Info);
+#endif
+        
+        /* this replaces `item.ItemId` with `CropPatches.GetSeedForTractor(item)`
+         * for that, we insert the method right on get_ItemId
+         * callvirt will put the value on evaluation stack, so no need to worry
+         */
+
+        var getSeed = new CodeInstruction(OpCodes.Call,
+            AccessTools.Method(typeof(TractorModPatches), nameof(GetSeedForTractor)));
+        
+        Log("Replacing method");
+        codes[index] = getSeed;
+        
+        return codes.AsEnumerable();
+    }
+
+    internal static string GetSeedForTractor(Item item)
+    {
+#if DEBUG
+        Log("Successfully called GetSeedForTractor");
+#endif
+        if (item is Object o)
+        {
+            //use obj location, otherwise player location, as final fallback game1 location
+            var location = o.Location ?? Game1.player.currentLocation;
+            location ??= Game1.currentLocation;
+            
+            return CropPatches.ResolveSeedId(o.ItemId, location);
+        }
+
+        return item.ItemId;
     }
 }
