@@ -1,3 +1,4 @@
+using System.Reflection.Emit;
 using HarmonyLib;
 using ItemExtensions.Events;
 using StardewModdingAPI;
@@ -45,6 +46,18 @@ public class ItemPatches
         harmony.Patch(
           original: AccessTools.Method(typeof(Item), nameof(Item.onUnequip)),
           postfix: new HarmonyMethod(typeof(ItemPatches), nameof(Post_onUnequip))
+        );
+        
+        Log($"Applying Harmony patch \"{nameof(ItemPatches)}\": transpiler running on SDV method \"Game1.pressActionButton\"");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.pressActionButton)),
+            transpiler: new HarmonyMethod(typeof(ItemPatches), nameof(Transpiler_Game1_pressActionButton))
+        );
+        
+        Log($"Applying Harmony patch \"{nameof(ItemPatches)}\": transpiler running on SDV method \"Farmer.eatObject\"");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Farmer), nameof(Farmer.eatObject)),
+            transpiler: new HarmonyMethod(typeof(ItemPatches), nameof(Transpiler_Farmer_eatObject))
         );
     }
 
@@ -142,5 +155,124 @@ public class ItemPatches
         {
             Log($"Error: {e}", LogLevel.Error);
         }
+    }
+    
+    /// <summary>Allows customization of the eat/drink confirmation message.</summary>
+    /// <param name="instructions">IL code instructions passed to the transpiler.</param>
+    public static IEnumerable<CodeInstruction> Transpiler_Game1_pressActionButton(IEnumerable<CodeInstruction> instructions)
+    {
+        CodeMatcher cMatcher = new CodeMatcher(instructions);
+
+        cMatcher.MatchStartForward(
+                new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.content))),
+                new CodeMatch(OpCodes.Ldstr, "Strings\\StringsFromCSFiles:Game1.cs.3160")
+            )
+            .ThrowIfNotMatch("Couldn't find patch location for pressActionButton.");
+
+        var firstLabel = cMatcher.Labels;
+
+        cMatcher.RemoveInstructions(6);
+
+        cMatcher.Insert(
+            new CodeInstruction(OpCodes.Ldstr, "Strings\\StringsFromCSFiles:Game1.cs.3160"),
+            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+            new CodeInstruction(OpCodes.Callvirt,
+                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+            new CodeInstruction(OpCodes.Call,
+                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getMenuString)))
+        );
+
+        cMatcher.AddLabels(firstLabel);
+
+        cMatcher.Advance(5);
+
+        var secondLabel = cMatcher.Labels;
+        
+        cMatcher.RemoveInstructions(6);
+
+        cMatcher.Insert(
+            new CodeInstruction(OpCodes.Ldstr, "Strings\\StringsFromCSFiles:Game1.cs.3159"),
+            new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+            new CodeInstruction(OpCodes.Callvirt,
+                AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+            new CodeInstruction(OpCodes.Call,
+                AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getMenuString)))
+        );
+
+        cMatcher.AddLabels(secondLabel);
+
+        return cMatcher.InstructionEnumeration();
+    }
+    
+    /// <summary>Allows customization of the unable to eat/drink message.</summary>
+    /// <param name="instructions">IL code instructions passed to the transpiler.</param>
+    static IEnumerable<CodeInstruction> Transpiler_Farmer_eatObject(IEnumerable<CodeInstruction> instructions)
+    {
+        CodeMatcher cMatcher = new CodeMatcher(instructions);
+
+        cMatcher.MatchStartForward(
+                new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.content))),
+                new CodeMatch(OpCodes.Ldstr, "Strings\\StringsFromCSFiles:Game1.cs.2898")
+            )
+            .ThrowIfNotMatch("Couldn't find starting position for eatObject patch #1.")
+            .RemoveInstruction()
+            .Advance(1)
+            .RemoveInstruction()
+            .InsertAndAdvance(
+                new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+                new CodeInstruction(OpCodes.Callvirt,
+                    AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getFailureString)))
+            );
+        
+        cMatcher.MatchStartForward(
+                new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.content))),
+                new CodeMatch(OpCodes.Ldstr, "Strings\\StringsFromCSFiles:Game1.cs.2899")
+            )
+            .ThrowIfNotMatch("Couldn't find starting position for eatObject patch #2.")
+            .RemoveInstruction()
+            .Advance(1)
+            .RemoveInstruction()
+            .InsertAndAdvance(
+                new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
+                new CodeInstruction(OpCodes.Callvirt,
+                    AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TranspilerSupplementary), nameof(TranspilerSupplementary.getFailureString)))
+            );
+
+        return cMatcher.InstructionEnumeration();
+    }
+}
+
+public class TranspilerSupplementary
+{
+    /// <summary>Internally used by the Game1.pressActionButton transpiler.</summary>
+    /// <param name="stringFallback">A string referencing a game content string.</param>
+    /// <param name="obj">The object being eaten.</param>
+    public static string getMenuString(string stringFallback, Object obj)
+    {
+        var modified = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("placeholder");
+        
+        if (modified.ContainsKey(obj.ItemId) && modified[obj.ItemId].ContainsKey("ConsumeText"))
+        {
+            return modified[obj.ItemId]["ConsumeText"].Replace("{0}", obj.DisplayName);
+        }
+
+        return Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
+    }
+
+    /// <summary>Internally used by the Farmer.eatObject transpiler.</summary>
+    /// <param name="stringFallback">A string referencing a game content string.</param>
+    /// <param name="obj">The object unable to be eaten.</param>
+    public static string getFailureString(string stringFallback, Object obj)
+    {
+        var modified = Game1.content.Load<Dictionary<string, Dictionary<string, string>>>("placeholder");
+
+        if (modified.ContainsKey(obj.ItemId) && modified[obj.ItemId].ContainsKey("CannotConsumeText"))
+        {
+            return modified[obj.ItemId]["CannotConsumeText"].Replace("{0}", obj.DisplayName);
+        }
+
+        return Game1.content.LoadString(stringFallback).Replace("{0}", obj.DisplayName);
     }
 }
