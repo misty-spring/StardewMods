@@ -11,6 +11,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
+using StardewValley.Minigames;
 using StardewValley.Pathfinding;
 
 // ReSharper disable InconsistentNaming
@@ -76,6 +77,7 @@ public class ModEntry : Mod
             return;
 
         var hasNonDestructive = Help.ModRegistry.IsLoaded("IamSaulC.NonDestructiveNPCs");
+        var Satchels = Help.ModRegistry.IsLoaded("IamSaulC.NonDestructiveNPCs");
 
         #region config
         #region main
@@ -540,6 +542,10 @@ public class ModEntry : Mod
         //if npc has stayed too long, check how to retire
         if (VContext.DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
         {
+            //if on a minigame and same location as visit (multiplayer)
+            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(Visitor.currentLocation))
+                return;
+            
             //sleepover bool checks: soon to sleep, enabled, % match, min hearts OK
             var shouldSleepOver = soonToSleep && Config.Sleepover && Game1.random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= NameAndLevel[Visitor.Name];
 

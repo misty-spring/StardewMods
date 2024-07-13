@@ -12,13 +12,13 @@ namespace FarmVisitors.Visit;
 
 public class Data
 {
-    internal static readonly string[] personalityTraits = new[] { "Outgoing", "Shy", "Polite", "Neutral", "Rude" };
+    private static readonly string[] PersonalityTraits = new[] { "Outgoing", "Shy", "Polite", "Neutral", "Rude" };
 
-    internal static readonly List<string> bachelors = new() { "Abigail", "Alex", "Elliott", "Emily", "Haley", "Harvey", "Leah", "Maru", "Penny", "Sam", "Sebastian", "Shane" };
+    private static readonly List<string> Bachelors = new() { "Abigail", "Alex", "Elliott", "Emily", "Haley", "Harvey", "Leah", "Maru", "Penny", "Sam", "Sebastian", "Shane" };
 
-    internal static readonly List<string> villagers = new() { "Caroline", "Clint", "Demetrius", "Dwarf", "Evelyn", "George", "Gus", "Jas", "Jodi", "Kent", "Krobus", "Leo", "Lewis", "Linus", "Marnie", "Pam", "Pierre", "Robin", "Sandy", "Vincent", "Willy", "Wizard" };
+    internal static readonly List<string> Villagers = new() { "Caroline", "Clint", "Demetrius", "Dwarf", "Evelyn", "George", "Gus", "Jas", "Jodi", "Kent", "Krobus", "Leo", "Lewis", "Linus", "Marnie", "Pam", "Pierre", "Robin", "Sandy", "Vincent", "Willy", "Wizard" };
 
-    internal static readonly List<string> everyone = new() { "Abigail", "Alex", "Caroline", "Clint", "Demetrius", "Dwarf", "Elliott", "Emily", "Evelyn", "George", "Gus", "Haley", "Harvey", "Jas", "Jodi", "Kent", "Krobus", "Leah", "Leo", "Lewis", "Linus", "Marlon", "Marnie", "Maru", "Pam", "Penny", "Pierre", "Robin", "Sam", "Sandy", "Sebastian", "Shane", "Vincent", "Willy", "Wizard" };
+    private static readonly List<string> Everyone = new() { "Abigail", "Alex", "Caroline", "Clint", "Demetrius", "Dwarf", "Elliott", "Emily", "Evelyn", "George", "Gus", "Haley", "Harvey", "Jas", "Jodi", "Kent", "Krobus", "Leah", "Leo", "Lewis", "Linus", "Marlon", "Marnie", "Maru", "Pam", "Penny", "Pierre", "Robin", "Sam", "Sandy", "Sebastian", "Shane", "Vincent", "Willy", "Wizard" };
 
     public static Point RandomSpotInSquare(NPC who, int maxdistance, int tries = 30)
     {
@@ -427,7 +427,7 @@ public class Data
     {
         //we get all bachelors' data
         var temp = new Dictionary<string, List<string>>();
-        foreach (var name in bachelors)
+        foreach (var name in Bachelors)
         {
             var list = new List<string>(){
                     ModEntry.TL.Get($"InLaw.{name}.1"),
@@ -451,7 +451,7 @@ public class Data
     internal static Dictionary<string, List<string>> LoadRetiringTemplate()
     {
         //we get all npcs' data
-        var all = everyone;
+        var all = Everyone;
 
         if (ModEntry.Config.Debug)
         {
@@ -472,7 +472,7 @@ public class Data
         }
 
         //we get generic dialogue
-        foreach (var name in personalityTraits)
+        foreach (var name in PersonalityTraits)
         {
             var list = new List<string>() {
                     ModEntry.TL.Get($"NPCRetiring.{name}1"),
@@ -481,6 +481,9 @@ public class Data
                 };
 
             temp2.Add(name, list);
+#if DEBUG
+            ModEntry.Log($"Adding trait {name} to pool");
+#endif
         }
 
         return temp2;

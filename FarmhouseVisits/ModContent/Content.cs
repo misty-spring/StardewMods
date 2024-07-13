@@ -89,7 +89,7 @@ internal static class Content
 
         //data stored
         InlawDialogue?.Clear();
-        RetiringDialogue?.Clear();
+        //RetiringDialogue?.Clear();
         
         if (!string.IsNullOrWhiteSpace(Config.Blacklist))
         {

@@ -90,7 +90,7 @@ public static class InventoryPatches
                 return;
 
             //trigger "on detached"
-            TriggerActionManager.Raise($"{ModEntry.Id}_OnItemAttached");
+            TriggerActionManager.Raise($"{ModEntry.Id}_OnItemDetached");
 
             //try get data for tool
             if (!ModEntry.Data.TryGetValue(obj.QualifiedItemId, out var dataDetached))

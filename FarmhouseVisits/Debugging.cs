@@ -80,7 +80,7 @@ internal static class Debugging
 
         if (!hasArgs)
         {
-            Log("Please input an option (Avaiable: animal, blacklist, crop, furniture, info, inlaws, visits).", LogLevel.Warn);
+            Log("Please input an option (Avaiable: animal, blacklist, crop, furniture, info, inlaws, visits, data).", LogLevel.Warn);
             return;
         }
 
@@ -168,6 +168,32 @@ internal static class Debugging
 
                         break;
                     }
+                case "retiring":
+                {
+                    print += "\n Retiring dialogue \n--------------------";
+                    foreach (var (name, list) in RetiringDialogue)
+                    {
+                        print += $"{name}: \n";
+                        foreach (var key in list)
+                        {
+                            print += $"-  {key}";
+                        }
+                    }
+                }
+                    break;
+                case "inlawtxt":
+                {
+                    print += "\n In-law dialogue \n--------------------";
+                    foreach (var (name, list) in InlawDialogue)
+                    {
+                        print += $"{name}: \n";
+                        foreach (var key in list)
+                        {
+                            print += $"-  {key}";
+                        }
+                    }
+                }
+                    break;
             }
         }
         Log(print, LogLevel.Info);

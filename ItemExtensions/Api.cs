@@ -25,7 +25,7 @@ public interface IApi
     /// <param name="id">Qualified item ID</param>
     /// <param name="health">MinutesUntilReady value</param>
     /// <param name="itemDropped">Item dropped by ore</param>
-    /// <returns>Whether the object has ore data.</returns>
+    /// <returns>Whether the object has resource data.</returns>
     bool IsResource(string id, out int? health, out string itemDropped);
     
     /// <summary>
@@ -145,11 +145,8 @@ public class Api : IApi
         //if no specific target, check the asset has any data
         if (string.IsNullOrWhiteSpace(target))
             return particularMenuData.Any();
-        else
-        {
-            //else check specific target
-            return particularMenuData.ContainsKey(target);
-        }
+        
+        return particularMenuData.ContainsKey(target);
     }
 
     public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId);
@@ -314,30 +311,6 @@ public class Api : IApi
         return result;
     }
     
-    public bool GetExtraResourceData(string id, bool isClump, out bool bombImmunity, out Enum resourceType)
-    {
-        bombImmunity = false;
-        resourceType = CustomResourceType.Stone;
-
-        if (string.IsNullOrWhiteSpace(id))
-            return false;
-        
-        if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
-        {
-            bombImmunity = node.ImmuneToBombs;
-            resourceType = node.Type;
-            return true;
-        }
-
-        if (ModEntry.BigClumps.TryGetValue(id, out var clump))
-        {
-            bombImmunity = clump.ImmuneToBombs;
-            resourceType = clump.Type;
-            return true;
-        }
-        return false;
-    }
-
     public bool GetResourceData(string id, bool isClump, out object data)
     {
         data = null;

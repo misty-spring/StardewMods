@@ -75,7 +75,7 @@ internal static class Events
         if (e.NameWithoutLocale.IsEquivalentTo("mistyspring.farmhousevisits/Dialogue/Retiring", true))
         {
             e.LoadFrom(
-                () => Data.LoadRetiringTemplate(),
+                Data.LoadRetiringTemplate,
                 AssetLoadPriority.Medium
             );
         }
@@ -83,7 +83,7 @@ internal static class Events
         if (e.NameWithoutLocale.IsEquivalentTo("mistyspring.farmhousevisits/Dialogue/InlawOf", true))
         {
             e.LoadFrom(
-                () => Data.LoadInlawTemplate(),
+                Data.LoadInlawTemplate,
                 AssetLoadPriority.Medium
             );
         }

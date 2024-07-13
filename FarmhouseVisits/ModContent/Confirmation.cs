@@ -8,6 +8,8 @@ public static class Confirmation
     //if user wants confirmation for NPC to come in
     internal static void AskToEnter()
     {
+        Actions.CheckSafeShutdown();
+        
         //knock on door
         DelayedAction.playSoundAfterDelay("stoneStep",300,Game1.player.currentLocation);
         DelayedAction.playSoundAfterDelay("stoneStep",600,Game1.player.currentLocation);

@@ -78,6 +78,8 @@ internal static class Actions
 
     internal static void Retire(NPC c)
     {
+        CheckSafeShutdown();
+        
         var currentLocation = Game1.player.currentLocation;
         var inFarm = Values.NPCinScreen();
 
@@ -322,6 +324,8 @@ internal static class Actions
     // Because this method doesn't exist anymore in Game1, we do its equiv.
     public static void DrawDialogue(NPC who, string text)
     {
+        CheckSafeShutdown();
+        
         var db = new Dialogue(who, null, text);
         who.CurrentDialogue.Push(db);
         Game1.drawDialogue(who);
@@ -337,13 +341,18 @@ internal static class Actions
 
     private static void Leave(NPC c)
     {
-
+        CheckSafeShutdown();
+        
         if (c.controller is not null)
         {
             c.Halt();
             c.controller = null;
         }
-        Game1.drawObjectDialogue(string.Format(Values.GetNpcGone(Game1.currentLocation.Name.StartsWith("Cellar")), c.displayName));
+
+        var exitMessage = string.Format(Values.GetNpcGone(Game1.currentLocation.Name.StartsWith("Cellar")),
+            c.displayName);
+        
+        Game1.addHUDMessage(new HUDMessage(exitMessage));
 
         ReturnToNormal(c);
     }
@@ -363,6 +372,8 @@ internal static class Actions
         var home = Utility.getHomeOfFarmer(Game1.player);
         if (!who.currentLocation.Equals(home))
         {
+            CheckSafeShutdown();
+        
             Game1.fadeScreenToBlack();
             Game1.warpCharacter(who, home, home.getEntryLocation().ToVector2());
 
@@ -439,5 +450,21 @@ internal static class Actions
         }
     }
 
-    #endregion    
+    internal static void CheckSafeShutdown()
+    {
+        if (Game1.activeClickableMenu is null)
+            return;
+
+        var child = Game1.activeClickableMenu.GetChildMenu();
+        if (child is not null)
+        {
+            var grandchild = child.GetChildMenu();
+            grandchild?.exitThisMenu(false);
+            
+            child.exitThisMenu(false);
+        }
+        
+        Game1.activeClickableMenu.exitThisMenu();
+    }
+    #endregion
 }
