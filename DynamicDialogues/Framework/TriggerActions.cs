@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DynamicDialogues.Framework;
+﻿using DynamicDialogues.Framework;
 using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewValley;

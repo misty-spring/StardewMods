@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -13,7 +10,7 @@ namespace DynamicDialogues.Patches;
 // ReSharper disable once InconsistentNaming
 internal class NPCPatches
 {
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
     
     internal static void Apply(Harmony harmony)
     {

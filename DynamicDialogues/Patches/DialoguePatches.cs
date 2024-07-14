@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using HarmonyLib;
 using StardewModdingAPI;
 using StardewValley;
@@ -10,7 +8,7 @@ namespace DynamicDialogues.Patches;
 public static class DialoguePatches
 {
   private static bool IsDebug => ModEntry.Config.Debug;
-  private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
+  private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
   private const string NpcSwap = "$npc";
   
   internal static void Apply(Harmony harmony)

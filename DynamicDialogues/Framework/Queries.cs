@@ -1,7 +1,5 @@
-﻿using System;
-using StardewValley;
+﻿using StardewValley;
 using StardewValley.Delegates;
-using StardewValley.Objects;
 
 namespace DynamicDialogues;
 

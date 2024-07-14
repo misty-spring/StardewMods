@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text;
 using DynamicDialogues.Models;
 using StardewModdingAPI;
@@ -13,7 +10,7 @@ namespace DynamicDialogues.Framework;
 [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
 internal static class Getter
 {
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
     
     /// <summary>
     /// Formats the bubble set by user. "@" is replaced by player name.

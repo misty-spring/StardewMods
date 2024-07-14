@@ -1,7 +1,11 @@
-﻿namespace DynamicDialogues.Models;
+﻿// ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
+namespace DynamicDialogues.Models;
 
 ///<summary>Class which holds animation information (if used for dialogues).</summary>
-internal class AnimationData
+public class AnimationData
 {
     public bool Enabled { get; set; }
     public string Frames { get; set; }
@@ -9,12 +13,5 @@ internal class AnimationData
 
     public AnimationData()
     {
-    }
-
-    public AnimationData(AnimationData a)
-    {
-        Enabled = a.Enabled;
-        Frames = a.Frames;
-        Interval = a.Interval;
     }
 }

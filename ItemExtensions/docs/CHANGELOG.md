@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.8.1
+- Rolled back some API changes
+
 ## 1.8.0
 - Added vanilla clumps to API's IsClump method.
 - Added more conditions for fishing treasure's items

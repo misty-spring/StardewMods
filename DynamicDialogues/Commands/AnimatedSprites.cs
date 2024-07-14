@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -11,7 +10,7 @@ namespace DynamicDialogues.Commands;
 internal static class AnimatedSprites
 {
     private static ModConfig Cfg => ModEntry.Config;
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
     
     /// <summary>
 	/// Add a scene to an event.

@@ -1,23 +1,15 @@
 // ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable FieldCanBeMadeReadOnly.Global
+
+// ReSharper disable ConvertToConstant.Global
 namespace DynamicDialogues.Models;
 
 /// <summary>
 /// A class used for object hunts.
 /// </summary>
-internal class ObjectData
+public class ObjectData
 {
     public string ItemId = "(O)0";
-    public int X;
-    public int Y;
-
-    public ObjectData()
-    {
-    }
-
-    public ObjectData(ObjectData od)
-    {
-        ItemId = od.ItemId;
-        X = od.X;
-        Y = od.Y;
-    }
+    public int X = -1;
+    public int Y = -1;
 }

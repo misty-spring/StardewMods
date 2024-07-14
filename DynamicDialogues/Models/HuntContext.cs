@@ -1,27 +1,14 @@
 ﻿// ReSharper disable ClassNeverInstantiated.Global
-
-using System.Collections.Generic;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace DynamicDialogues.Models;
 
-internal class HuntContext
+public class HuntContext
 {
-    public int Timer { get; }
-    public AfterSequenceBehavior OnFailure { get; }
-    public AfterSequenceBehavior OnSuccess { get; }
-    public bool CanPlayerRun { get; } = true;
-    public List<ObjectData> Objects { get; } = new();
-
-    public HuntContext()
-    {
-    }
-
-    public HuntContext(HuntContext o)
-    {
-        Timer = o.Timer;
-        OnFailure = o.OnFailure;
-        OnSuccess = o.OnSuccess;
-        CanPlayerRun = o.CanPlayerRun;
-        Objects = o.Objects;
-    }
+    public int Timer { get; set; }
+    public AfterSequenceBehavior OnFailure { get; set; }
+    public AfterSequenceBehavior OnSuccess { get; set; }
+    public bool CanPlayerRun { get; set; } = true;
+    public List<ObjectData> Objects { get; set; } = new();
 }

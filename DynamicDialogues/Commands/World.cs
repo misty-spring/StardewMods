@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DynamicDialogues.Models;
+﻿using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -8,7 +6,7 @@ namespace DynamicDialogues.Commands;
 
 internal static class World
 {
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
 
     internal const string HuntSequenceId = "mistyspring.dynamicdialogues.objectHunt:";
 

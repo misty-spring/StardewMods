@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewValley;
@@ -11,14 +8,12 @@ namespace DynamicDialogues;
 [SuppressMessage("ReSharper", "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator")]
 internal static class Debug
 {
-    #region references
     //we reference them here because i don't want modentry's references to be so clogged
     private static Dictionary<string, List<QuestionData>> Question => ModEntry.Questions;
     private static Dictionary<string, List<DialogueData>> Dialog => ModEntry.Dialogues;
     private static Dictionary<string, List<string>> RandomDialogue => ModEntry.RandomPool;
     private static List<NotificationData> Notifications => ModEntry.Notifs;
-    private static void Log(string msg, LogLevel logLevel = LogLevel.Trace) => ModEntry.Mon.Log(msg, logLevel);
-    #endregion
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
 
     internal static void Print(string arg1, string[] arg2)
     {

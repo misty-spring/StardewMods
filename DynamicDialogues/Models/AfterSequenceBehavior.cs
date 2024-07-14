@@ -1,25 +1,13 @@
 ﻿// ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace DynamicDialogues.Models;
 
-internal class AfterSequenceBehavior
+public class AfterSequenceBehavior
 {
-    public string Mail { get; }
-    public bool ImmediateMail { get; }
-    public string Flag { get; }
-    public int Energy { get; }
-    public int Health { get; }
-
-    public AfterSequenceBehavior()
-    { }
-
-    public AfterSequenceBehavior(AfterSequenceBehavior a)
-    {
-        Mail = a.Mail;
-        ImmediateMail = a.ImmediateMail;
-
-        Flag = a.Flag;
-        
-        Energy = a.Energy;
-        Health = a.Health;
-    }
+    public string Mail { get; set; }
+    public bool ImmediateMail { get; set; }
+    public string Flag { get; set; }
+    public int Energy { get; set; }
+    public int Health { get; set; }
 }

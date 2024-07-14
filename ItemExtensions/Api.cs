@@ -29,11 +29,14 @@ public interface IApi
     bool IsResource(string id, out int? health, out string itemDropped);
 
     /// <summary>
-    /// Checks for a qualified id in modded clump data.
+    /// Checks for a qualified id in modded clump data (vanilla not included).
     /// </summary>
     /// <param name="qualifiedItemId">Qualified item ID.</param>
     /// <returns>Whether this id is a clump's.</returns>
     bool IsClump(string qualifiedItemId);
+    
+    //adding empty in the meantime
+    bool HasBehavior(string qualifiedItemId, string target);
     
     /// <summary>
     /// Tries to spawn a clump.
@@ -121,7 +124,8 @@ public class Api : IApi
         return true;
     }
 
-    public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId) || GeneralResource.VanillaClumps.Contains(qualifiedItemId);
+    public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId);
+    public bool HasBehavior(string qualifiedItemId, string target) => false; //should be deprecated next update, keeping here for FTM to not crash
 
     public bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false) => TrySpawnClump(itemId, position, Utility.fuzzyLocationSearch(locationName), out error, avoidOverlap);
     

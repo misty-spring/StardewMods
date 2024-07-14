@@ -1,4 +1,3 @@
-using System;
 using StardewValley;
 using StardewValley.TokenizableStrings;
 

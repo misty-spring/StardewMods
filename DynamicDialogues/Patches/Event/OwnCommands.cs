@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DynamicDialogues.Commands;
 using DynamicDialogues.Models;
 using Microsoft.Xna.Framework;

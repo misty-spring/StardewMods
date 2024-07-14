@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using DynamicDialogues.Models;
+﻿using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -15,18 +12,14 @@ namespace DynamicDialogues.Framework;
 
 internal static class Setter
 {
-    #region references
     //we reference them here because i don't want modentry's references to be so clogged
     private static List<(string, string, string)> Patched => ModEntry.AlreadyPatched;
-    private static Dictionary<string, List<QuestionData>> Question => ModEntry.Questions;
-    private static Dictionary<string, List<DialogueData>> Dialog => ModEntry.Dialogues;
     private static Dictionary<string, List<string>> RandomDialogues => ModEntry.RandomPool;
     private static List<NotificationData> Notifications => ModEntry.Notifs;
     private static IMonitor Monitor => ModEntry.Mon;
     private static IModHelper Helper => ModEntry.Help;
     private static ModConfig Cfg => ModEntry.Config;
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
-    #endregion
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
 
     internal static void OnTimeChange(object sender, TimeChangedEventArgs e)
     {
@@ -53,7 +46,7 @@ internal static class Setter
         }
         
         //regular dialogue
-        foreach (var patch in Dialog)
+        foreach (var patch in ModEntry.Dialogues)
         {
             foreach (var d in patch.Value)
             {
@@ -262,7 +255,7 @@ internal static class Setter
             Patched.Add(conditional);
         }
         
-        foreach (var nameAndQuestions in Question)
+        foreach (var nameAndQuestions in ModEntry.Questions)
         {
             var chara = Game1.getCharacterFromName(nameAndQuestions.Key);
             if (chara.CurrentDialogue.Any()) 

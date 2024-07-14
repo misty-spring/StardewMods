@@ -1,5 +1,20 @@
 ([Versión en Español](https://github.com/misty-spring/DynamicDialogues/blob/main/docs/es/CHANGELOG.md))
 
+## 1.7.0
+- Fixes model bugs (like missing setter)
+- Few other bug fixes
+- Slight refactoring
+- Adds API
+
+## 1.6.3
+- 1.6 bugfixes
+
+## 1.6.2
+- 
+
+## 1.6.1
+- 
+
 ## 1.6.0
 - Doesn't need SpaceCore anymore.
 - Added GSQ+Triggers to framework's dialogues and notifications.

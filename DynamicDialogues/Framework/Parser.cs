@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewValley;
@@ -10,10 +8,8 @@ namespace DynamicDialogues.Framework;
 [SuppressMessage("ReSharper", "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator")]
 internal static class Parser
 {
-    #region references
     private static ModConfig Cfg => ModEntry.Config;
-    private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
-    #endregion
+    private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
 
     /// <summary>
     /// Checks if the conditions match to add a dialogue.
@@ -178,6 +174,9 @@ internal static class Parser
     {
         try
         {
+#if DEBUG
+            Log($"DATA: \n From {data.From} - To {data.To} / Time {data.Time}\nLocation {data.Location}\nConditions {data.Conditions} Trigger {data.TriggerAction}\nDialogue: {data.Dialogue}");
+#endif
             var time = data.Time;
 
             //check if text is bubble and if emotes are allowed. if so return false
@@ -276,37 +275,30 @@ internal static class Parser
     }
 
     /// <summary>
-    /// Check if NPC exists. If null or not in friendship data, returns false.
+    /// Check for a NPC's internal name in friendship data's keys.
     /// </summary>
-    /// <param name="who"> The NPC to check.</param>
-    /// <returns></returns>
-    internal static bool Exists(string who) //rename to CharacterExists
-    {
-        foreach (var name in Game1.player.friendshipData.Keys)
-        {
-            if (name.Equals(who))
-                return true;
-        }
-
-        return false;
-    }
+    /// <param name="who">The NPC internal name.</param>
+    /// <returns>Whether this NPC exists.</returns>
+    internal static bool Exists(string who) => Game1.player.friendshipData.Keys.Contains(who);
         
-    internal static bool Exists(NPC who)
+    /// <summary>
+    /// Check for a NPC's internal name in patchable NPCs.
+    /// </summary>
+    /// <param name="who"> The NPC.</param>
+    /// <returns>Whether this NPC is patchable.</returns>
+    internal static bool CanBePatched(NPC who)
     {
-        var monitor = ModEntry.Mon;
-        var admitted = ModEntry.PatchableNPCs;
-
         if (who is null)
         {
-            monitor.Log("NPC could not be found! See log for more details.", LogLevel.Error);
-            monitor.Log("NPC returned null when calling  Game1.getCharacterFromName().");
+            Log("NPC could not be found! See log for more details.", LogLevel.Error);
+            Log("NPC returned null when calling Game1.getCharacterFromName().");
             return false;
         }
 
-        if (admitted.Contains(who.Name)) return true;
+        if (ModEntry.PatchableNPCs.Contains(who.Name)) return true;
             
-        monitor.Log($"NPC {who} is not in characters! Did you type their name correctly?", LogLevel.Warn);
-        monitor.Log($"NPC {who} seems to exist, but wasn't found in the list of admitted NPCs. This may occur if you haven't met them yet, or if they haven't been unlocked.");
+        Log($"NPC {who} is not in characters! Did you type their name correctly?", LogLevel.Warn);
+        Log($"NPC {who} seems to exist, but wasn't found in the list of admitted NPCs. This may occur if you haven't met them yet, or if they haven't been unlocked.");
         return false;
 
     }

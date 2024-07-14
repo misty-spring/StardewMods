@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using StardewValley;
+﻿using StardewValley;
 
 namespace DynamicDialogues.Commands;
 
