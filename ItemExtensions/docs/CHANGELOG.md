@@ -6,7 +6,7 @@
 ## 1.8.0
 - Added vanilla clumps to API's IsClump method.
 - Added more conditions for fishing treasure's items
-- Changed the `/Treasure` data model to have a `TreasureData` value.
+- Changed the `/Treasure` dictionary to have a `TreasureData` value.
 - Small refactoring
 
 ## 1.7.0
