@@ -65,9 +65,9 @@ internal static class Content
         SetNoVisitor();
         TodaysVisitors?.Clear();
 
-        if (MaxTimeStay != (Config.Duration - 1))
+        if (MaxTimeStay != Config.Duration - 1)
         {
-            MaxTimeStay = (Config.Duration - 1);
+            MaxTimeStay = Config.Duration - 1;
             Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};");
         }
 
@@ -182,7 +182,7 @@ internal static class Content
         if (!string.IsNullOrWhiteSpace(Config.Blacklist))
             ParseBlacklist();
         
-        MaxTimeStay = (Config.Duration - 1);
+        MaxTimeStay = Config.Duration - 1;
         Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};", logLV);
 
         PlayerHome = Utility.getHomeOfFarmer(Game1.player);

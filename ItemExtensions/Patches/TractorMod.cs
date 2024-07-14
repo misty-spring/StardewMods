@@ -116,9 +116,9 @@ public class TractorModPatches
 
     private static IEnumerable<Vector2> GetTileGrid(Vector2 origin, int distance)
     {
-        for (int x = -distance; x <= distance; x++)
+        for (var x = -distance; x <= distance; x++)
         {
-            for (int y = -distance; y <= distance; y++)
+            for (var y = -distance; y <= distance; y++)
                 yield return new Vector2(origin.X + x, origin.Y + y);
         }
     }

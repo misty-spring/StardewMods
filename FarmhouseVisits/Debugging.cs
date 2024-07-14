@@ -173,10 +173,10 @@ internal static class Debugging
                     print += "\n Retiring dialogue \n--------------------";
                     foreach (var (name, list) in RetiringDialogue)
                     {
-                        print += $"{name}: \n";
+                        print += $"\n \n{name}: \n";
                         foreach (var key in list)
                         {
-                            print += $"-  {key}";
+                            print += $" - {key}\n";
                         }
                     }
                 }
@@ -186,10 +186,10 @@ internal static class Debugging
                     print += "\n In-law dialogue \n--------------------";
                     foreach (var (name, list) in InlawDialogue)
                     {
-                        print += $"{name}: \n";
+                        print += $"\n \n{name}: \n";
                         foreach (var key in list)
                         {
-                            print += $"-  {key}";
+                            print += $" - {key}\n";
                         }
                     }
                 }

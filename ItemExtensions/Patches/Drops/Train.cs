@@ -77,9 +77,9 @@ public partial class TrainPatches
         var context = new ItemQueryContext(location, who, Game1.random);
         var y = 2592;
 
-        for (int i = 0; i < train.cars.Count; i++)
+        for (var i = 0; i < train.cars.Count; i++)
         {
-            var x = (int)(train.position.X - ((i + 1) * 512));
+            var x = (int)(train.position.X - (i + 1) * 512);
             var tileX = (int)(x / 64);
 
             if (tileX < 6 || tileX > 62)

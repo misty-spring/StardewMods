@@ -236,14 +236,15 @@ public class Data
 
                 _ => null,
             };
-        }
-        else
-        {
-            string notParsed = GetDialogueRaw();
-            var spousename = GetSpouseName(who);
 
-            result = string.Format(notParsed, spousename);
+            if (string.IsNullOrWhiteSpace(result) == false)
+                return result;
         }
+        
+        var notParsed = GetDialogueRaw();
+        var spousename = GetSpouseName(who);
+
+        result = string.Format(notParsed, spousename);
 
         return result;
     }
@@ -429,6 +430,12 @@ public class Data
         var temp = new Dictionary<string, List<string>>();
         foreach (var name in Bachelors)
         {
+            if (name is "Elliott" or "Leah" or "Harvey")
+            {
+                temp.Add(name, new List<string>());
+                continue;
+            }
+            
             var list = new List<string>(){
                     ModEntry.TL.Get($"InLaw.{name}.1"),
                     ModEntry.TL.Get($"InLaw.{name}.2"),
@@ -440,8 +447,8 @@ public class Data
 
         //add all generic dialogue
         var list2 = new List<string>();
-        for (var i = 0; i < 15; i++)
-            list2.Add(ModEntry.TL.Get($"NPCRetiring.Generic.{i}"));
+        for (var i = 1; i < 16; i++)
+            list2.Add(ModEntry.TL.Get($"InLaw.Generic.{i}"));
 
         temp.Add("Generic", list2);
 

@@ -260,7 +260,7 @@ public partial class ShopMenuPatches
         {
             var num7 = y1 - 4;
             Utility.drawTextWithShadow(b, text4, font, new Vector2(x + 16, num7 + 16 + 4), hoveredItem.getCategoryColor(), horizontalShadowOffset: 2, verticalShadowOffset: 2);
-            y2 = num7 + ((int) font.MeasureString("T").Y + (boldTitleText != null ? 16 : 0) + 4);
+            y2 = num7 + (int) font.MeasureString("T").Y + (boldTitleText != null ? 16 : 0) + 4;
             if (hoveredItem is Tool tool && tool.GetTotalForgeLevels() > 0)
             { 
                 var text5 = Game1.content.LoadString("Strings\\UI:Item_Tooltip_Forged"); 

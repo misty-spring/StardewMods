@@ -45,8 +45,13 @@ public class ModEntry : Mod
         var harmony = new Harmony(ModManifest.UniqueID);
         CharacterPatches.Apply(harmony);
 
-        if (!Config.Debug) return;
-
+        var isDebug = false;
+#if DEBUG
+        isDebug = true;
+#endif
+        if (!Config.Debug && !isDebug) 
+            return;
+        
         helper.ConsoleCommands.Add("print", "List the values requested.", Debugging.Print);
         helper.ConsoleCommands.Add("vi_reload", "Reload visitor info.", Debugging.Reload);
         helper.ConsoleCommands.Add("vi_force", "Force a visit to happen.", Debugging.ForceVisit);
@@ -478,7 +483,7 @@ public class ModEntry : Mod
                     var canVisit = Values.IsFree(visit, false) || (data.Extras is not null && data.Extras.Force);
 
                     //if must be exact, checks that time matches. if not, checks if you're in time range.
-                    var inTimeRange = data.MustBeExact ? e.NewTime.Equals(data.From) : e.NewTime >= data.From && e.NewTime < (data.To - 10);
+                    var inTimeRange = data.MustBeExact ? e.NewTime.Equals(data.From) : e.NewTime >= data.From && e.NewTime < data.To - 10;
 
                     //if it's not starting time OR they're not free
                     if (!inTimeRange || !canVisit)
@@ -872,7 +877,7 @@ public class ModEntry : Mod
     {
         get
         {
-            random ??= new Random(((int)Game1.uniqueIDForThisGame * 26) + (int)(Game1.stats.DaysPlayed * 36));
+            random ??= new Random((int)Game1.uniqueIDForThisGame * 26 + (int)(Game1.stats.DaysPlayed * 36));
             return random;
         }
     }

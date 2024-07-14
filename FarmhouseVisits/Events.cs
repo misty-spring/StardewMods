@@ -97,13 +97,13 @@ internal static class Events
 
         //if any match, reload specific file
 
-        if (e.NamesWithoutLocale.Any(a => a.Name == ("mistyspring.farmhousevisits/Schedules")))
+        if (e.NamesWithoutLocale.Any(a => a.Name == "mistyspring.farmhousevisits/Schedules"))
             Content.ReloadCustomschedules();
 
-        if (e.NamesWithoutLocale.Any(a => a.Name == ("mistyspring.farmhousevisits/Dialogue/Retiring")))
+        if (e.NamesWithoutLocale.Any(a => a.Name == "mistyspring.farmhousevisits/Dialogue/Retiring"))
             ModEntry.RetiringDialogue = ModEntry.Help.GameContent.Load<Dictionary<string,List<string>>>("mistyspring.farmhousevisits/Dialogue/Retiring");
         
-        if(e.NamesWithoutLocale.Any(a => a.Name == ("mistyspring.farmhousevisits/Dialogue/InlawOf")))
+        if(e.NamesWithoutLocale.Any(a => a.Name == "mistyspring.farmhousevisits/Dialogue/InlawOf"))
             ModEntry.InlawDialogue = ModEntry.Help.GameContent.Load<Dictionary<string,List<string>>>("mistyspring.farmhousevisits/Dialogue/InlawOf");
     }
 

@@ -395,7 +395,7 @@ internal static class Values
 
             //if already passed, OR if distance is more than 30
             if (data.Key <= time) continue;
-            if ((data.Key - time) != 70) continue;
+            if (data.Key - time != 70) continue;
             
             if(ModEntry.Config.Debug)
                 ModEntry.Log("Endofroutebehavior: " + data.Value.endOfRouteBehavior);
@@ -449,8 +449,8 @@ internal static class Values
     {
         var farm = Game1.getLocationFromName("Farm");
 
-        var x = ((int)(ModEntry.Visitor.Position.X / 64));
-        var y = ((int)(ModEntry.Visitor.Position.Y / 64));
+        var x = (int)(ModEntry.Visitor.Position.X / 64);
+        var y = (int)(ModEntry.Visitor.Position.Y / 64);
 
         if (ModEntry.Config.Debug)
         {
