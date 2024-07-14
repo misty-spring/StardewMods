@@ -207,13 +207,8 @@ internal static class Events
         //reset certain things
         if (context.Idle)
             context.Idle = false;
-        visit.Halt();
-        visit.controller = null;
-        visit.temporaryController = null;
-        visit.CurrentDialogue?.Clear();
-        visit.Dialogue?.Clear();
-        if (visit.IsWalkingTowardPlayer)
-            visit.IsWalkingTowardPlayer = false;
+        
+        Actions.HaltEverything(visit);
 
         //if farmhouse, get entry
         if (isFarmHouse)

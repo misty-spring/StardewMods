@@ -24,7 +24,7 @@ public static class GeneralResource
     private const LogLevel Level =  LogLevel.Trace;
 #endif
 
-    internal static readonly int[] VanillaClumps = { 600, 602, 622, 672, 752, 754, 756, 758 };
+    internal static readonly string[] VanillaClumps = { "600", "602", "622", "672", "752", "754", "756", "758" };
     private static readonly int[] VanillaStones =
     {
         2, 4, 6, 8, 10, 12, 14, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 75, 76, 77, 95, 290, 343, 390,

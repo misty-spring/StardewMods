@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using StardewValley;
 
 namespace FarmVisitors.Datamodels;
@@ -7,7 +8,7 @@ internal class DupeNPC
     internal static void SetVariables(NPC who)
     {
         //general data
-        who.CurrentDialogue = null;
+        who.CurrentDialogue = new Stack<Dialogue>();
         who.ignoreScheduleToday = true;
         who.temporaryController = null;
         who.currentLocation = Utility.getHomeOfFarmer(Game1.player);
@@ -35,7 +36,7 @@ internal class DupeNPC
             Optimism = who.Optimism,
             SocialAnxiety = who.SocialAnxiety,
             currentLocation = Utility.getHomeOfFarmer(Game1.player),
-            CurrentDialogue = null,
+            CurrentDialogue = new Stack<Dialogue>(),
             ignoreScheduleToday = true,
             temporaryController = null,
             Position = Utility.getHomeOfFarmer(Game1.player).getEntryLocation().ToVector2(),

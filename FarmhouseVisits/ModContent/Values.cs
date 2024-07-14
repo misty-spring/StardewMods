@@ -445,19 +445,15 @@ internal static class Values
     /// Checks if the visitor is on-screen.
     /// </summary>
     /// <returns></returns>
-    internal static bool NPCinScreen()
+    
+    internal static bool NpcOnScreen(NPC who, GameLocation location)
     {
-        var farm = Game1.getLocationFromName("Farm");
-
-        var x = (int)(ModEntry.Visitor.Position.X / 64);
-        var y = (int)(ModEntry.Visitor.Position.Y / 64);
-
         if (ModEntry.Config.Debug)
         {
-            ModEntry.Log($"farm name = {farm.Name}, visitor position = ({x}, {y})", lv.Info);
+            ModEntry.Log($"visitor position = ({who.TilePoint.X}, {who.TilePoint.Y}). On screen? {Utility.isOnScreen(who.TilePoint, 0, location)}", lv.Info);
         }
 
         //return Utility.isOnScreen(who.Position.ToPoint(), 0, farm);
-        return Utility.isOnScreen(new Point(x,y), 0, farm);
+        return Utility.isOnScreen(who.TilePoint, 0, location);
     }
 }

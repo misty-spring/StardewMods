@@ -42,7 +42,7 @@ public static class Assets
         //drops
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Treasure")))
         {
-            ModEntry.Treasure = Helper.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Treasure");
+            ModEntry.Treasure = Helper.GameContent.Load<Dictionary<string, TreasureData>>($"Mods/{Id}/Treasure");
         }
 
         if (e.NamesWithoutLocale.Any(a => a.Name.Equals($"Mods/{Id}/Train")))
@@ -181,7 +181,7 @@ public static class Assets
         if (e.NameWithoutLocale.IsEquivalentTo($"Mods/{Id}/Treasure", true))
         {
             e.LoadFrom(
-                () => new Dictionary<string, ExtraSpawn>(),
+                () => new Dictionary<string, TreasureData>(),
                 AssetLoadPriority.Low);
         }
 

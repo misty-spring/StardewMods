@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.8.0
+- Added vanilla clumps to API's IsClump method.
+- Added more conditions for fishing treasure's items
+- Changed the `/Treasure` data model to have a `TreasureData` value.
+- Small refactoring
+
 ## 1.7.0
 - Removed incorrect seeds from `CropPatches.GetVanillaCropsForSeason`
 - Fixed bug where tractor mod couldn't plant custom mixed seeds

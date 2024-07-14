@@ -80,7 +80,7 @@ public partial class TrainPatches
         for (var i = 0; i < train.cars.Count; i++)
         {
             var x = (int)(train.position.X - (i + 1) * 512);
-            var tileX = (int)(x / 64);
+            var tileX = x / 64;
 
             if (tileX < 6 || tileX > 62)
                 continue;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FarmVisitors.Datamodels;
 using FarmVisitors.Models;
@@ -24,10 +25,8 @@ internal static class Actions
                 ModEntry.Log($"{who.displayName} is not a visitor!");
                 return;
             }
-            who.resetCurrentDialogue();
-            who.Dialogue?.Clear();
-            who.CurrentDialogue?.Clear();
-            who.TemporaryDialogue?.Clear();
+            
+            HaltEverything(who);
             
             if (hadConfirmation == false)
             {
@@ -85,9 +84,10 @@ internal static class Actions
         CheckSafeShutdown();
         
         var currentLocation = Game1.player.currentLocation;
-        var inFarm = Values.NPCinScreen();
+        var visible = Values.NpcOnScreen(who, currentLocation);
 
-        if (currentLocation.Equals(who.currentLocation))
+        //if same as npc AND not farm
+        if (currentLocation.Equals(who.currentLocation) && !currentLocation.Equals(Game1.getFarm()))
         {
             try
             {
@@ -106,7 +106,7 @@ internal static class Actions
             {
                 DrawDialogue(who, Values.GetDialogueType(who, DialogueType.Retiring));
                 ReturnToNormal(who);
-                if (!inFarm)
+                if (!visible)
                 {
                     Game1.player.currentLocation.playSound("doorClose");
                 }
@@ -477,4 +477,22 @@ internal static class Actions
         Game1.activeClickableMenu.exitThisMenu();
     }
     #endregion
+
+    public static void HaltEverything(NPC npc)
+    {
+        npc.Halt();
+        npc.controller = null;
+        npc.temporaryController = null;
+        npc.CurrentDialogue?.Clear();
+        npc.CurrentDialogue ??= new Stack<Dialogue>();
+        //npc.Dialogue?.Clear();
+        
+        if (npc.IsWalkingTowardPlayer)
+            npc.IsWalkingTowardPlayer = false;
+        
+        if (npc.CurrentDialogue?.Count > 0 && npc.CurrentDialogue.Peek().removeOnNextMove && npc.Tile != npc.DefaultPosition / 64f)
+        {
+            npc.CurrentDialogue.Pop();
+        }
+    }
 }

@@ -342,7 +342,7 @@ public sealed class ModEntry : Mod
         }
         
         if(Config.Treasure)
-            Treasure = Helper.GameContent.Load<Dictionary<string, ExtraSpawn>>($"Mods/{Id}/Treasure");
+            Treasure = Helper.GameContent.Load<Dictionary<string, TreasureData>>($"Mods/{Id}/Treasure");
 
         //ACTION BUTTON LIST
         var temp = new List<SButton>();
@@ -393,5 +393,5 @@ public sealed class ModEntry : Mod
     public static Dictionary<string, TrainDropData> TrainDrops { get; internal set; } = new();
     public static List<PanningData> Panning { get; internal set; } = new();
     public static Dictionary<string, List<MixedSeedData>> Seeds { get; internal set; } = new();
-    public static Dictionary<string, ExtraSpawn> Treasure { get; internal set; } = new();
+    public static Dictionary<string, TreasureData> Treasure { get; internal set; } = new();
 }

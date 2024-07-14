@@ -128,7 +128,7 @@ public static class ExtensionClump
         if (parsedDamage <= 0)
             return false;
 
-        if (GeneralResource.VanillaClumps.Contains(clump.parentSheetIndex.Value) && clump.textureName.Value == "Maps\\springobjects")
+        if (GeneralResource.VanillaClumps.Contains($"{clump.parentSheetIndex.Value}") && clump.textureName.Value == "Maps\\springobjects")
         {
             if (clump.health.Value - parsedDamage <= 0)
             {

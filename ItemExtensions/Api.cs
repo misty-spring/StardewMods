@@ -27,14 +27,6 @@ public interface IApi
     /// <param name="itemDropped">Item dropped by ore</param>
     /// <returns>Whether the object has resource data.</returns>
     bool IsResource(string id, out int? health, out string itemDropped);
-    
-    /// <summary>
-    /// Checks mod's menu behaviors. If a target isn't provided, it'll search whether any exist.
-    /// </summary>
-    /// <param name="qualifiedItemId">Qualified item ID.</param>
-    /// <param name="target">Item to search behavior for. (Qualified item ID)</param>
-    /// <returns>Whether this item has menu behavior for target.</returns>
-    bool HasBehavior(string qualifiedItemId, string target);
 
     /// <summary>
     /// Checks for a qualified id in modded clump data.
@@ -129,27 +121,7 @@ public class Api : IApi
         return true;
     }
 
-    public bool HasBehavior(string qualifiedItemId, string target = null)
-    {
-        if (Game1.content.DoesAssetExist<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{qualifiedItemId}") == false)
-            return false;
-
-        //try loading & checking behavior
-        var particularMenuData = ModEntry.Help.GameContent.Load<Dictionary<string, MenuBehavior>>($"Mods/{ModEntry.Id}/MenuActions/{qualifiedItemId}");
-
-        if (particularMenuData is null)
-        {
-            return false;
-        }
-
-        //if no specific target, check the asset has any data
-        if (string.IsNullOrWhiteSpace(target))
-            return particularMenuData.Any();
-        
-        return particularMenuData.ContainsKey(target);
-    }
-
-    public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId);
+    public bool IsClump(string qualifiedItemId) => ModEntry.BigClumps.ContainsKey(qualifiedItemId) || GeneralResource.VanillaClumps.Contains(qualifiedItemId);
 
     public bool TrySpawnClump(string itemId, Vector2 position, string locationName, out string error, bool avoidOverlap = false) => TrySpawnClump(itemId, position, Utility.fuzzyLocationSearch(locationName), out error, avoidOverlap);
     

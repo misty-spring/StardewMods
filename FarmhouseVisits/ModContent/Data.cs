@@ -23,7 +23,7 @@ public class Data
     public static Point RandomSpotInSquare(NPC who, int maxdistance, int tries = 30)
     {
         var result = Point.Zero;
-        var halved = (int)(maxdistance / 2);
+        var halved = maxdistance / 2;
 
         //rectangle that would be "around" NPC
         var rect = new Rectangle(

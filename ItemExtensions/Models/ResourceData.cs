@@ -83,7 +83,7 @@ public class ResourceData
     // Extra
     public List<string> ContextTags { get; set; } = new() { "placeable" };
     public Dictionary<string, string> CustomFields { get; set; } = new();
-    public LightData Light { get; set; } = null;
+    public LightData Light { get; set; }
 
     public OnBehavior OnDestroy { get; set; } = null;
     //general
@@ -244,7 +244,7 @@ public class ResourceData
         Description = null;
         Texture = null;
         SpriteIndex = -1;*/
-        if (Additions.GeneralResource.VanillaClumps.Contains(asInt) == false)
+        if (Additions.GeneralResource.VanillaClumps.Contains($"{asInt}") == false)
         {
             Width = 1;
             Height = 1;

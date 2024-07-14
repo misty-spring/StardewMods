@@ -47,7 +47,7 @@ public class TerrainSpawnData
             return false;
         }
 
-         foreach (var floorData in MineSpawns)
+        foreach (var floorData in MineSpawns)
         {
             try
             {
