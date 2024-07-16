@@ -14,6 +14,8 @@
     "config.FasterWeaponAccess.description": "You'll be able to obtain weapons earlier in the game.",
     "config.RodUpgrades.name": "Fishing rod upgrades",
     "config.RodUpgrades.description": "Lets you upgrade your fishing rod as you progress.",
+    "config.DwarfStays.name": "Dwarf stays",
+    "config.DwarfStays.description": "Dwarf won't disappear once the resort is unlocked.",
     "ItemRecovery_Engaged": "Alright, I'll see if I can find your lost {0} tonight.",
     "ItemRecovery_Engaged_Stack": "Alright, I'll see if I can find your lost {0} tonight.",
     "Sword_type": "{0} sword",

@@ -139,6 +139,14 @@ public sealed class ModEntry : Mod
             getValue: () => Config.RodUpgrades,
             setValue: value => Config.RodUpgrades = value
         );
+        
+        configMenu.AddBoolOption(
+            mod: ModManifest,
+            name: () => Helper.Translation.Get("config.DwarfStays.name"),
+            tooltip: () => Helper.Translation.Get("config.DwarfStays.description"),
+            getValue: () => Config.DwarfStays,
+            setValue: value => Config.DwarfStays = value
+        );
     }
     
     private static void OnTitleReturn(object sender, ReturnedToTitleEventArgs e)
