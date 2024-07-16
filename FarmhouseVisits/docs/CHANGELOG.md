@@ -1,5 +1,11 @@
 ([versión en español aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/CHANGELOG_es.md))
 
+## 1.8.1
+- Updated for 1.6.8
+- Now works with unofficial NonDestructiveNPCs
+- Lots of bug fixes
+- NOTE: Still has issues in MP
+
 ## 1.8.0
 ### 1.6-alpha only
 

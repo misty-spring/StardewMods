@@ -70,15 +70,6 @@ internal static class Actions
             
             SetDialogue(who, text);
             PushDialogue(who, Values.GetDialogueType(who, DialogueType.Thanking));
-            /*var dialogue = new Dialogue(who, null, text);
-            var thanking = new Dialogue(who, null, Values.GetDialogueType(who, DialogueType.Thanking));
-
-            dialogue.removeOnNextMove = true;
-            thanking.removeOnNextMove = true;
-
-            who.CurrentDialogue.Push(dialogue);
-            who.CurrentDialogue.Push(thanking);
-            //*/
 
             if (Game1.player.currentLocation.Equals(farmHouse))
             {
