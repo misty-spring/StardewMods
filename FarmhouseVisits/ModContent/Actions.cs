@@ -4,16 +4,18 @@ using System.Linq;
 using FarmVisitors.Datamodels;
 using FarmVisitors.Models;
 using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.Pathfinding;
-using lv = StardewModdingAPI.LogLevel;
 
 namespace FarmVisitors.Visit;
 
 internal static class Actions
 {
+    private static LogLevel Level => ModEntry.Level;
+    
     #region normal visit
     //regular visit: the one used by non-scheduled NPCs
     internal static void AddToFarmHouse(NPC who, FarmHouse farmHouse, bool hadConfirmation)
@@ -22,11 +24,14 @@ internal static class Actions
         {
             if (!Values.IsVisitor(who.Name))
             {
-                ModEntry.Log($"{who.displayName} is not a visitor!");
+                ModEntry.Log($"{who.displayName} is not a visitor!", Level);
                 return;
             }
             
             HaltEverything(who);
+            #if DEBUG
+            ModEntry.Log("Current dialogues:" + who.CurrentDialogue?.Count, Level);
+            #endif
             
             if (hadConfirmation == false)
             {
@@ -55,14 +60,25 @@ internal static class Actions
                 var withGift = $"{text}#$b#{Values.GetGiftDialogue(who)}";
 
                 if (ModEntry.Config.Debug)
-                    ModEntry.Log($"withGift: {withGift}");
+                    ModEntry.Log($"withGift: {withGift}", Level);
 
                 text = string.Format(withGift, Values.GetSeasonalGifts());
             }
-
+            
+            //more lines, but fixes index bug
+            who.CurrentDialogue = new Stack<Dialogue>();
+            
             SetDialogue(who, text);
-
             PushDialogue(who, Values.GetDialogueType(who, DialogueType.Thanking));
+            /*var dialogue = new Dialogue(who, null, text);
+            var thanking = new Dialogue(who, null, Values.GetDialogueType(who, DialogueType.Thanking));
+
+            dialogue.removeOnNextMove = true;
+            thanking.removeOnNextMove = true;
+
+            who.CurrentDialogue.Push(dialogue);
+            who.CurrentDialogue.Push(thanking);
+            //*/
 
             if (Game1.player.currentLocation.Equals(farmHouse))
             {
@@ -74,7 +90,7 @@ internal static class Actions
         }
         catch (Exception ex)
         {
-            ModEntry.Log($"Error while adding to farmhouse: {ex}", lv.Error);
+            ModEntry.Log($"Error while adding to farmhouse: {ex}", LogLevel.Error);
         }
 
     }
@@ -100,7 +116,7 @@ internal static class Actions
             }
             catch (Exception ex)
             {
-                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", lv.Error);
+                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", LogLevel.Error);
             }
             finally
             {
@@ -120,7 +136,7 @@ internal static class Actions
             }
             catch (Exception ex)
             {
-                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", lv.Error);
+                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", LogLevel.Error);
             }
         }
     }
@@ -165,7 +181,7 @@ internal static class Actions
         {
             if (!Values.IsVisitor(who.Name))
             {
-                ModEntry.Log($"{who.displayName} is not a visitor!");
+                ModEntry.Log($"{who.displayName} is not a visitor!", Level);
                 return;
             }
 
@@ -224,7 +240,7 @@ internal static class Actions
         }
         catch (Exception ex)
         {
-            ModEntry.Log($"Error while adding to farmhouse: {ex}", lv.Error);
+            ModEntry.Log($"Error while adding to farmhouse: {ex}", LogLevel.Error);
         }
 
     }
@@ -244,7 +260,7 @@ internal static class Actions
             }
             catch (Exception ex)
             {
-                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", lv.Error);
+                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", LogLevel.Error);
             }
             finally
             {
@@ -262,7 +278,7 @@ internal static class Actions
             }
             catch (Exception ex)
             {
-                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", lv.Error);
+                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", LogLevel.Error);
             }
         }
     }
@@ -275,7 +291,7 @@ internal static class Actions
 
             if (!Values.IsVisitor(who.Name))
             {
-                ModEntry.Log($"{who.displayName} is not a visitor!");
+                ModEntry.Log($"{who.displayName} is not a visitor!", Level);
                 return;
             }
 
@@ -291,7 +307,7 @@ internal static class Actions
         }
         catch (Exception ex)
         {
-            ModEntry.Log($"Error while adding to farmhouse: {ex}", lv.Error);
+            ModEntry.Log($"Error while adding to farmhouse: {ex}", LogLevel.Error);
         }
     }
     #endregion
@@ -366,7 +382,7 @@ internal static class Actions
         var bed = Values.GetBedSpot();
         if (bed == Point.Zero)
         {
-            ModEntry.Log($"Found no bed. Visit {who.Name} won't stay over.", lv.Warn);
+            ModEntry.Log($"Found no bed. Visit {who.Name} won't stay over.", LogLevel.Warn);
             Retire(who);
             return;
         }
@@ -427,7 +443,7 @@ internal static class Actions
 
             if (ModEntry.Config.Debug)
             {
-                ModEntry.Log($"is the controller empty?: {who.controller == null}", lv.Debug);
+                ModEntry.Log($"is the controller empty?: {who.controller == null}", LogLevel.Debug);
             }
         }
 

@@ -866,7 +866,18 @@ public class ModEntry : Mod
     #endregion
 
     #region used by mod
-    internal static LogLevel Level => Config.Verbose ? LogLevel.Debug : LogLevel.Trace;
+    internal static LogLevel Level
+    {
+        get
+        {
+            var lvl = Config.Verbose ? LogLevel.Debug : LogLevel.Trace;
+#if DEBUG
+            lvl = LogLevel.Debug;
+#endif
+            return lvl;
+        }
+    }
+
     internal static Action<string, LogLevel> Logger { get; private set; }
     internal static void Log(string data, LogLevel type = LogLevel.Trace) => Logger(data, type);
 
