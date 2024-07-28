@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.9.1
+- Fixed issue in resource's monster spawning
+
 ## 1.9.0
 - Added AvoidItemIds (`List<string>`) for ISpawnItemData: you can now avoid certain IDs when spawning drops
 - Fixed bug in spawn conditions/quantity

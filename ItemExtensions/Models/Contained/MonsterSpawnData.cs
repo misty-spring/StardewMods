@@ -10,5 +10,5 @@ public class MonsterSpawnData
     public bool Hardmode { get; set; }
     public Vector2 Distance { get; set; } = new();
     public bool ExcludeOriginalDrops { get; set; }
-    public List<ExtraSpawn> ExtraDrops { get; set; } = null;
+    public List<ExtraSpawn> ExtraDrops { get; set; } = new();
 }
