@@ -1,6 +1,7 @@
 using StardewValley;
 using StardewValley.GameData;
 using StardewValley.Internal;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ItemExtensions.Models.Items;
 
@@ -33,4 +34,5 @@ public class ExtraSpawn : ISpawnItemData
     
     public ItemQuerySearchMode Filter { get; set; } = ItemQuerySearchMode.All;
     public Dictionary<string, string> ModData { get; set; }
+    public List<string> AvoidItemIds { get; set; } = new();
 }

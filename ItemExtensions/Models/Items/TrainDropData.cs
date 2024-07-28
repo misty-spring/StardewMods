@@ -1,4 +1,5 @@
 ﻿namespace ItemExtensions.Models.Items;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 public class TrainDropData : ExtraSpawn
 {

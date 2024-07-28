@@ -1,4 +1,5 @@
 using ItemExtensions.Models.Contained;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ItemExtensions.Models.Items;
 

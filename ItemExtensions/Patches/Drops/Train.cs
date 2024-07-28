@@ -79,7 +79,8 @@ public partial class TrainPatches
 
         for (var i = 0; i < train.cars.Count; i++)
         {
-            var x = (int)(train.position.X - (i + 1) * 512);
+            //randomizes X axis a little
+            var x = (int)(train.position.X - (i + 1) * 512) + Game1.random.Next(0, 256);
             var tileX = x / 64;
 
             if (tileX < 6 || tileX > 62)

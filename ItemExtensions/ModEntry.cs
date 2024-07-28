@@ -13,6 +13,7 @@ using StardewValley.Triggers;
 
 namespace ItemExtensions;
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public sealed class ModEntry : Mod
 {
     public override void Entry(IModHelper helper)
@@ -369,14 +370,15 @@ public sealed class ModEntry : Mod
     /// <summary>Buttons used for custom item actions</summary>
     internal static List<SButton> ActionButtons { get; private set; } = new();
 
-    public static string Id { get; set; }
+    public static string Id { get; private set; }
     internal static string Comma { get; private set; } = ", ";
 
-    internal static IModHelper Help { get; set; }
-    internal static IMonitor Mon { get; set; }
+    internal static IModHelper Help { get; private set; }
+    internal static IMonitor Mon { get; private set; }
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
 #else
+    // ReSharper disable once UnusedMember.Local
     private const LogLevel Level =  LogLevel.Trace;
 #endif
 

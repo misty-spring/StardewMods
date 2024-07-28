@@ -1,4 +1,4 @@
-using StardewModdingAPI;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ItemExtensions;
 

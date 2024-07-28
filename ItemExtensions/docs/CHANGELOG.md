@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.9.0
+- Added AvoidItemIds (`List<string>`) for ISpawnItemData: you can now avoid certain IDs when spawning drops
+- Fixed bug in spawn conditions/quantity
+- Train drops: X axis will now vary a little
+
 ## 1.8.1
 - Rolled back some API changes
 

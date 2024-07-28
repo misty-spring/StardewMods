@@ -49,14 +49,14 @@ public static class Debugging
                 Game1.player.currentLocation.resourceClumps.Add(clump);
                 break;
             case "jelly":
-                Game1.player.eatObject(new StardewValley.Object($"{testPack}_Jelly",1));
+                Game1.player.eatObject(new Object($"{testPack}_Jelly",1));
                 break;
             case "eat":
-                Game1.player.eatObject(new StardewValley.Object($"{testPack}_trash",1));
+                Game1.player.eatObject(new Object($"{testPack}_trash",1));
                 break;
             case "sip":
             case "drink":
-                Game1.player.eatObject(new StardewValley.Object("614",1));
+                Game1.player.eatObject(new Object("614",1));
                 break;
             case "list":
                 Log($"Possible commands: eat, clump, drink, jelly.", LogLevel.Info);

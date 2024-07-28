@@ -114,14 +114,17 @@ public static class Sorter
             if (data.Chance < Game1.random.NextDouble())
                 return false;
 
-            if (string.IsNullOrWhiteSpace(data.Condition) && GameStateQuery.CheckConditions(data.Condition, context.Location, context.Player) == false)
+            //if there's a condition AND it doesn't match
+            if (string.IsNullOrWhiteSpace(data.Condition) == false && GameStateQuery.CheckConditions(data.Condition, context.Location, context.Player) == false)
                 return false;
 
-            var solvedQuery = ItemQueryResolver.TryResolve(data.ItemId, context, data.Filter, data.PerItemCondition, avoidRepeat: data.AvoidRepeat);
+            var avoidItemIds = new HashSet<string>(data.AvoidItemIds);
+            
+            var solvedQuery = ItemQueryResolver.TryResolve(data, context, data.Filter, data.AvoidRepeat, avoidItemIds);
 
             var chosenItem = solvedQuery.FirstOrDefault()?.Item;
 
-            if (string.IsNullOrWhiteSpace(chosenItem.QualifiedItemId))
+            if (string.IsNullOrWhiteSpace(chosenItem?.QualifiedItemId))
                 return false;
 
             item = ItemRegistry.Create(chosenItem.QualifiedItemId, chosenItem.Stack, data.Quality);

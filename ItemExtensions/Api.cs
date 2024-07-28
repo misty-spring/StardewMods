@@ -7,6 +7,7 @@ using StardewValley;
 using StardewValley.Internal;
 using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
+// ReSharper disable UnusedMember.Global
 
 namespace ItemExtensions;
 
@@ -80,7 +81,7 @@ public interface IApi
     /// <summary>
     /// Gets drops for a node.
     /// </summary>
-    /// <param name="clump">The node instance.</param>
+    /// <param name="node">The node instance.</param>
     /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
     /// <returns>All possible drops, with %.</returns>
     Dictionary<string,(double,int)> GetObjectDrops(Object node, bool parseConditions = false);
