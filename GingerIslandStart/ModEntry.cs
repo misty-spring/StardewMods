@@ -1,6 +1,7 @@
 using System.Text;
 using GingerIslandStart.Additions;
 using HarmonyLib;
+using ItemExtensions.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;

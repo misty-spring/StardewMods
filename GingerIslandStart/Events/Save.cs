@@ -1,4 +1,5 @@
 using GingerIslandStart.Additions;
+using ItemExtensions.Models;
 using StardewModdingAPI.Events;
 using StardewValley;
 
@@ -25,6 +26,22 @@ public static class Save
 
     internal static void Loaded(object sender, SaveLoadedEventArgs e)
     {
+/*#if DEBUG        
+        var itemExtensions = ModEntry.Help.ModRegistry.GetApi<ItemExtensionsApi>("mistyspring.ItemExtensions");
+        if (itemExtensions != null)
+        {
+            if (itemExtensions.GetResourceData("mistyspring.GingerIslandStartCP_TropicalWood", false, out var testData))
+            {
+                ModEntry.Mon.Log((testData as ResourceData)?.Description ?? "string.Empty",
+                    StardewModdingAPI.LogLevel.Info);
+                //var test = ModEntry.Help.Reflection.GetField<string>(testData, "Name").GetValue();
+                dynamic data = testData;
+                ModEntry.Mon.Log(data.Name, StardewModdingAPI.LogLevel.Info);
+            }
+            else
+                ModEntry.Mon.Log("couldn't find resource", StardewModdingAPI.LogLevel.Warn);
+        }
+#endif*/
         if (JustCreated)
         {
             Game1.player.mailReceived.Add(ModEntry.Id);
