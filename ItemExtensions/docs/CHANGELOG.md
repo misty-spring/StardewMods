@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.10.0
+- Added `ChanceDropOnFront` for train drops.
+
 ## 1.9.1
 - Fixed issue in resource's monster spawning
 

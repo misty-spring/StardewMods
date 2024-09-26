@@ -105,7 +105,12 @@ public partial class TrainPatches
 #if DEBUG
                 Log($"Creating item debris {item?.QualifiedItemId} ({item?.DisplayName}) at {x},{y}");
 #endif
-                Game1.createItemDebris(item, new Vector2(x, y), y + 320, location);
+                var groundLevel = -1;
+
+                if (Game1.random.NextDouble() <= entry.ChanceDropOnFront)
+                    groundLevel = y + 128;
+                
+                Game1.createItemDebris(item, new Vector2(x, y), y + 320, location, groundLevel);
             }
         }
     }
