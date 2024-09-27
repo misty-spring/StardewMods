@@ -1,0 +1,168 @@
+{
+    "config.advancedConfig.name":"Avancés",
+    "config.advancedConfig.description": "Autoriser ou interdire certain(e)s conjoint(e)s à se rendre sur l'île. (Par défaut, tout(e)s peuvent y aller).",
+    "config.ScheduleRandom.name":"Emploi du temps aléatoire",
+    "config.ScheduleRandom.description":"Si vous activez ceci, votre conjoint(e) visitera une carte aléatoire lors de ses visites.",
+
+    "config.Enabled":"Activé",
+    "config.UseIslandClothes.name":"Utiliser des vêtements de plage",
+
+    "AlreadyInvited": "{0} a déjà été invité(e) !",
+    "AlreadyScheduled.Day":"Vous avez déjà planifié une visite pour demain. Cela ne peut pas être utilisé.",
+    "AlreadyScheduled.Week":"Vous avez déjà planifié une visite pour la semaine. Cela ne peut pas être utilisé.",
+    "AlreadyOngoing.Visit": "Il y a actuellement une visite en cours. Vous ne pouvez pas utiliser ceci.",
+
+    "config.DebugComm.name":"Commandes de débogage",
+    "config.DebugComm.description":"(Avancé) Vous permet de faire usage de commandes liées au mod qui vérifient les informations internes.",
+    "config.Verbose.name":"Journalisation détaillée",
+    "config.Verbose.description":"Le mod journalisera beaucoup plus d'informations.",
+
+    "config.Vanillas.name":"PNJs",
+    "config.Vanillas.description":"PNJs pour lesquels le mod de base ajoute des événements à l'emploi du temps. Si vous souhaitez utiliser un emploi du temps personnalisé (ou ne pas les faire visiter), décochez leur case respective.",
+    "config.RequiresSVE": "Nécessite l'installation de SVE.",
+    "config.CustomChance.name": "Chance d'évènement",
+    "config.CustomChance.description": "La probabilité que votre conjoint(e) visite l'île.",
+    "config.CustomRoom.name": "Chambre de conjoint(e) personnalisée ?",
+    "config.CustomRoom.description": "Ajoute une chambre de conjoint(e) personnalisable à la ferme de l'île.",
+
+    "config.Child2NPC.description": "Configuration liée aux mods des enfants PNJs (comme Child2NPC ou LittleNPCs).",
+    
+    "config.ChildVisitIsland.name":"Autoriser la visite ?",
+    "config.ChildVisitIsland.description":"Permet aux enfants de visiter l'île. (Nécessite LittleNPCs/Child2NPC)",
+    
+    "config.UseFurnitureBed.name":"Utiliser un lit d'enfant normal ?",
+    "config.UseFurnitureBed.description":"Permet d'utiliser un lit d'enfant normal à la place du lit d'enfant ajouté par le mod. Peut être placé n'importe où.",
+    
+    "config.UseModSchedule.name": "Utiliser l'emploi du temps du mod",
+    "config.UseModSchedule.description": "Les enfants auront un emploi du temps de base pour leurs visites.",
+    
+    "config.Childbedcolor.name":"Couleur du lit d'enfant",
+    "config.Childbedcolor.description": "La couleur du lit d'enfant.",
+    "config.Childbedcolor.values.yellow": "jaune",
+    "config.Childbedcolor.values.red": "rouge",
+    "config.Childbedcolor.values.white": "blanc",
+    "config.Childbedcolor.values.grey": "gris",
+    "config.Childbedcolor.values.cyan": "cyan",
+    "config.Childbedcolor.values.green": "vert",
+
+    "config.Devan_Nosit.name":"PNJ Devan",
+    "config.Devan_Nosit.description": "Ajoute une baby-sitter pour s'occuper de vos enfants les jours de visite de l'île. (Ou alternativement, si vous voulez juste le PNJ en ville).",
+    "config.SeasonalDevan.name": "Vêtements saisonniers",
+    "config.SeasonalDevan.description": "Activer pour utiliser les vêtements saisonniers de Devan.",
+    
+    "Willy.IslandTicket":"Ohé, @ ! Tu veux aller sur l'île ?",
+    "IslandVisit.Rejected": "Vous avez décidé de ne pas y aller.",
+    "IslandVisit.Question": "Aller sur l'île ?",
+
+    /* characters data */
+
+    "Krobus.GoOutside": "Je vais sortir aujourd'hui... si je suis rapide, ton peuple ne me remarquera pas.$0#$b#Grâce à toi, je suis devenu curieux des \"activités de divertissement\" des humains.$1",
+
+    "Dialogue.Abigail.arrival": "Salut @.$1#$b#... Wow, il fait chaud...$0",
+    "Dialogue.Abigail.LocA": "Penses-tu qu'on puisse explorer ce volcan ?$0#$b#Willy a dit qu'on ne devrait pas s'en approcher...$2#$b#Mais j'ai quand même apporté mon épée.$1",
+    "Dialogue.Abigail.LocB": "As-tu déjà pensé à combattre ces slimes, @ ?",
+    
+    "Dialogue.Alex.arrival": "Oh, salut @. Je suis enfin là.$0#$b#Je suis impatient de passer la journée avec toi.$1",
+    "Dialogue.Alex.LocA": "%Alex fait de la musculation.",
+    "Dialogue.Alex.LocB": "Rien de mieux que la plage par une journée chaude comme celle-ci.$1",
+    
+    "Dialogue.Elliott.arrival": "Oh, @ ! C'était tout un voyage !$8#$b#C'est un plaisir de te revoir.$1",
+    "Dialogue.Elliott.LocA": "%Elliott est en train de lire.",
+    "Dialogue.Elliott.LocB": "Ah, la vue ici est vraiment vertueuse.$0.#$b#Je sens une idée germer...$1",
+    
+    "Dialogue.Emily.arrival": "Salut, @ !#$b#Cette île est pleine de perroquets, c'est adorable !",
+    "Dialogue.Emily.LocA": "%Emily semble perdue dans ses pensées.",
+    "Dialogue.Emily.LocB": "@, le ressens-tu ?$0#$b#Ces cristaux dégagent une énergie puissante.$1",
+    
+    "Dialogue.Haley.arrival": "@, on peut visiter l'île aujourd'hui ?$0#$b#Il y a quelque chose dans cet endroit qui me met à l'aise.",
+    "Dialogue.Haley.LocA": "Salut, chéri. Je suis tellement contente que tu sois là.^Salut, chérie. Je suis tellement contente que tu sois là.$0#$b#J'adore le temps ensoleillé ici.$1",
+    "Dialogue.Haley.LocB": "%Haley prend des photos.",
+    
+    "Dialogue.Harvey.arrival": "Salut, chéri.^Salut, chérie.$l#$b#C'est tellement mieux que de rester enfermé dans la clinique toute la journée.$1",
+    "Dialogue.Harvey.LocA": "Je vais rester à l'intérieur un moment, @.$0#$b#Assure-toi de bien t'hydrater par ce temps, d'accord ?$1",
+    "Dialogue.Harvey.LocB": "%Harvey est plongé dans un livre.",
+    
+    "Dialogue.Krobus.arrival": "Cette maison... la décoration de ma chambre me rappelle des souvenirs.$0",
+    "Dialogue.Krobus.LocA": "Tu as dit qu'il y avait des grottes ici... j'irai les voir plus tard.$0",
+    "Dialogue.Krobus.LocB": "Je n'ai jamais vu de cristaux comme ceux-ci !$0#$b#Mon peuple adorait les cristaux, tu sais.$0#$b#...$2#$b#... Tu as raison. Peut-être qu'il y en a d'autres comme moi quelque part.#$b#Merci, @.$h",
+
+    "Dialogue.Leah.arrival": "C'est tellement calme et paisible ici.$0#$b#C'est le temps parfait pour un peu de vin.$1",
+    "Dialogue.Leah.LocA": "La vue ici est inspirante, je vais la dessiner.$0",
+    "Dialogue.Leah.LocB": "%Leah dessine.",
+    
+    "Dialogue.Maru.arrival": "Salut ! Quoi de neuf ?$0#$b#J'ai hâte de voir les étoiles la nuit.$1",
+    "Dialogue.Maru.LocA": "@ ! As-tu vu ça ?$9#$b#Il semble qu'il n'y ait pas eu d'activité volcanique depuis un moment.",
+    "Dialogue.Maru.LocB": "Le professeur Snail nous a parlé des traditions de l'île Gingembre.$0#$b#Leur histoire orale est incroyable.$1",
+    
+    "Dialogue.Penny.arrival": "Salut @.$h#$b#Cette île est tellement belle...",
+    "Dialogue.Penny.LocA": "Oh, je lis le livre sur ce marin dont je t'ai parlé.$0#$b#C'est très intéressant.$1",
+    "Dialogue.Penny.LocB": "Chéri, les histoires du professeur Snail sur l'île sont incroyables.^Chérie, les histoires du professeur Snail sur l'île sont incroyables.$0#$b#Je ne savais pas qu'ils avaient autant de traditions !$1",
+    
+    "Dialogue.Sam.arrival": "Salut, @.$0#$b#C'est une belle île... n'est-ce pas ?$1",
+    "Dialogue.Sam.LocA": "Hé... es-tu déjà entré à l'intérieur ?^Hé... es-tu déjà entrée à l'intérieur ?$0#$b#...$0#$b#Vraiment ?$8",
+    "Dialogue.Sam.LocB": "Je me sens plutôt bien ici.",
+    
+    "Dialogue.Sebastian.arrival": "Salut, je suis content que tu sois là.$h#$b#Comment supportes-tu cette chaleur ?",
+    "Dialogue.Sebastian.LocA": "Bon sang, on se croirait dans 'Cave Saga X'...",
+    "Dialogue.Sebastian.LocB": "Je ne suis pas du genre à aimer les endroits bondés.$0#$b#Cet endroit est parfait.$h",
+    
+    "Dialogue.Shane.arrival": "Salut, @.$1#$b#Les plantes tropicales sont géniales.$1",
+    "Dialogue.Shane.LocA": "Charlie semble aimer cet endroit.$8",
+    "Dialogue.Shane.LocB": "Hmm... cet endroit n'est pas si mal.",
+
+    "Dialogue.Claire.arrival": "Bonjour chéri.^Bonjour chérie.$0#$b#Je suis prête pour le temps chaud de cette île !$1",
+    "Dialogue.Claire.LocA": "%Claire lit un scénario.",
+    "Dialogue.Claire.LocB": "Les oiseaux...$0#$b#Il y en a tellement. Je peux les entendre chanter.$1",
+
+    "Dialogue.Lance.arrival": "Bonjour chéri. Cette maison est aussi confortable que notre ferme.^Bonjour chérie. Cette maison est aussi confortable que notre ferme.",
+    "Dialogue.Lance.LocA": "La caldeira de ce volcan renferme une immense puissance arcanique.#$b#Seuls les mages les plus puissants peuvent lancer les sorts qu'elle requiert.",
+    "Dialogue.Lance.LocB": "Les douces vagues de cette plage... je me suis habitué à leur son.",
+
+    "Dialogue.Wizard.arrival": "Bonjour chéri ! Je suis ravi de te voir.^Bonjour chérie ! Je suis ravi de te voir.$1#$b#Cet endroit est vraiment merveilleux. Tu as rendu la maison très confortable.",
+    "Dialogue.Wizard.LocA": "Les créatures de cette île sont conscientes de notre présence. Elles l'ont détectée.#$b#Leur pouvoir arcanique est immense...",
+    "Dialogue.Wizard.LocB": "La forge en cet endroit... les rituels qu'elle requiert ne sont maîtrisés que par quelques-uns.#$b#Même avec une telle maîtrise, les résultats sont presque impossibles à prévoir.",
+
+    "Dialogue.Olivia.arrival": "Bonjour, mon chéri. Ce temps te convient-il ?^Bonjour, ma chérie. Ce temps te convient-il ?$0#$b#On devrait inviter Victor à venir ici un jour.",
+    "Dialogue.Olivia.LocA": "Sautine Ville pourrait avoir de la concurrence... cet endroit est tout simplement unique.$1#$b#Tu te souviens que je voulais une maison sur cette île... n'est-ce pas, chéri ?^Tu te souviens que je voulais une maison sur cette île... n'est-ce pas, chérie ?$4",
+    "Dialogue.Olivia.LocB": "Mon Dieu, l'océan sur cette île est si clair. J'aimerais le peindre un jour.",
+
+    "Dialogue.Sophia.arrival": "@, on peut rester ici ce soir ?#$b#J'apprécie vraiment ce voyage.$0#$b#C'est d'accord ? Super !",
+    "Dialogue.Sophia.LocA": "Oh, @ ! Regarde, il y a des poissons dans l'eau.$1#$b#Ils grignotent quelque chose.$1#$e#... H-hé, sois prudent si tu vas dans ce volcan là-bas, d'accord ?^... H-hé, sois prudente si tu vas dans ce volcan là-bas, d'accord ?$0",
+    "Dialogue.Sophia.LocB": "Ça ? C'est un manga que j'ai pris l'autre jour.$0#$b#Tu veux qu'on le lise ensemble ?$0",
+
+    "Dialogue.Victor.arrival": "Salut, mon amour. Cette plage est magnifique !#$b#Comparée à Pélican Ville, cette chaleur est vraiment intense...",
+    "Dialogue.Victor.LocA": "Alors, c'est le volcan que les nains utilisaient comme source d'énergie...#$b#peut-être qu'on pourrait y aller un jour.",
+    "Dialogue.Victor.LocB": "As-tu vu les os ici, @ ?#$b#Ceux-ci sont assez anciens.",
+    
+    "Invite_Abigail":"L'île Gingembre ? Demain...?#$b#Bien sûr, @.#$b#Je prendrai mon épée.$1",
+    "Invite_Alex":"Génial ! Je voulais faire du jogging autour de l'île avec toi.$1#$b#Allons-y demain.",
+    "Invite_Elliott":"Tu veux aller sur la plage de l'île Gingembre avec moi, @ ?$0#$b#Je suis ravi.$1#$b#J'y serai demain à midi pile.",
+    "Invite_Emily":"Oui ! Allons-y demain, @ !$1#$b#Je ressens déjà une énergie positive.",
+    "Invite_Haley":"*surprise*... Oui !$1#$b#Je suis libre demain. Je suis impatiente.",
+    "Invite_Harvey":"Des vacances seraient les bienvenues. Merci, @.#$b#Je vais finir mon travail et me préparer pour demain.",
+    "Invite_Krobus":"... Un ticket ? Pour aller où ?#$b#À l'île Gingembre ?#$b#Merci, @. J'aurai mon manteau prêt pour demain.$1",
+    "Invite_Maru":"Oh wow, le volcan de l'île Gingembre ? Super !#$b#J'y serai demain, attends-moi.$1",
+    "Invite_Penny":"Oh, des vacances sur l'île Gingembre !$1#$b#C'est très gentil de ta part. Allons-y demain ?",
+    "Invite_Sam":"Oh, ouais ! Tu veux y aller avec moi ?$1#$b#Je vais préparer mes affaires pour demain.",
+    "Invite_Sebastian":"... Merci. Tu veux y aller demain ?#$b#D'accord.$1",
+    "Invite_Shane":"Oh, un ticket ?#$b#Tu veux aller sur l'île Gingembre ?#$b#D'accord. Demain à midi, ça te va ?$1",
+
+    "Invite_Claire":"Oh, une invitation ? Pour moi ?#$b#Merci, @. Allons-y demain.",
+    "Invite_Lance":"Un ticket pour l'île Gingembre ?#$b#Peut-être qu'on pourrait y aller demain, effectivement.$1",
+    "Invite_Olivia":"Oh, mon dieu ! L'île Gingembre ? C'est très attentionné de ta part.#$b#J'adorerais y aller demain.",
+    "Invite_Sophia":"Oh ! Qu'est-ce que c'est, @ ?#$b#Tu veux que j'aille avec toi ?#$b#Oui ! Allons-y demain.$1",
+    "Invite_Victor":"Tu veux aller sur l'île Gingembre demain ?#$b#C'est génial ! Merci, @.$1",
+    "Invite_Wizard":"L'île Gingembre ? Hm... très bien, chéri.^L'île Gingembre ? Hm... très bien, chérie.$1#$b#Je suppose que je n'ai pas vu ses créatures depuis un moment.",
+
+    "Invite_generic_0_1": "Oui ! J'adorerais y aller.$1#$b#Et si on y allait demain ?", //1 polite, 2 rude, 0 normal?
+    "Invite_generic_0_2": "@, tu veux que j'aille sur l'île Gingembre avec toi ?#$b#Bien sûr ! Je te retrouve là-bas demain.$1",
+    "Invite_generic_0_3": "Tu as envie d'aller sur l'île Gingembre ?#$b#D'accord. J'irai demain de bonne heure.",
+    "Invite_generic_1_1": "Merci ! L'île me manquait.#$b#Je vais tout préparer pour demain.",
+    "Invite_generic_1_2": "... Qu'est-ce que c'est ?#$b#Oui, @. J'adorerais aller sur l'île Gingembre.$1#$b#Je vais préparer mes affaires pour y aller tôt.",
+    "Invite_generic_1_3": "Oui, bien sûr.#$b#J'aimerais y aller demain, d'accord ?$1",
+    "Invite_generic_2_1": "D'accord, eh bien.#$b#On y va demain, d'accord ?",
+    "Invite_generic_2_2": "Quoi, tu veux aller sur l'île Gingembre demain ?#$b#D'accord, j'irai avec toi.$1",
+    "Invite_generic_2_3": "J'ai des choses à faire en ce moment, mais demain je suis libre.#$b#Attends-moi là-bas, d'accord ?",
+
+    "Islandvisit_Qi": "Je savais que tu finirais par arriver sur l'île Gimgembre un jour. Cependant, tu dois continuer à travailler dur pour atteindre la perfection.^En guise d'encouragement, prends ces tickets. Ils te seront utiles.^   -Ton ami, M. Qi"
+}
