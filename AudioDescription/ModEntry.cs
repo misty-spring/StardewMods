@@ -51,23 +51,7 @@ public class ModEntry : Mod
 
         var harmony = new Harmony(ModManifest.UniqueID);
 
-        Monitor.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"Game1.playSound\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(Game1), nameof(Game1.playSound)),
-            postfix: new HarmonyMethod(typeof(SoundPatches), nameof(SoundPatches.PostFix_playSound))
-        );
-
-        Monitor.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": prefixing SDV method \"HUDMessage.draw\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(HUDMessage), nameof(HUDMessage.draw)),
-            prefix: new HarmonyMethod(typeof(SoundPatches), nameof(SoundPatches.PrefixHuDdraw))
-        );
-
-        Monitor.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"FarmAnimal.makeSound()\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(FarmAnimal), nameof(FarmAnimal.makeSound)),
-            postfix: new HarmonyMethod(typeof(SoundPatches), nameof(SoundPatches.PostFix_makeSound))
-        );
+        SoundPatches.Apply(harmony);
     }
 
     private static void SecondPassed(object sender, OneSecondUpdateTickedEventArgs e)

@@ -152,9 +152,8 @@ public class MineShaftPatches
             //check ladder
             if (mineShaft.tileBeneathLadder == ore.TileLocation)
             {
-#if DEBUG
-                Log($"Changing tile...(old {mineShaft.tileBeneathLadder})");
-#endif
+                Game1.delayedActions.Add(new DelayedAction(500, AddStaircase));
+                Log($"Changing tile...(old {mineShaft.tileBeneathLadder})..also added staircase to player inventory.");
                 var tile = Vector2.Zero;
                 var canReplace = false;
                 for (var i = 0; i < mineShaft.Objects.Length; i++)
@@ -166,15 +165,20 @@ public class MineShaftPatches
                     canReplace = true;
                     break;
                 }
-                
-                if(canReplace)
+
+                if (canReplace)
+                {
                     mineShaft.tileBeneathLadder = tile;
+                    mineShaft.Objects[mineShaft.tileBeneathLadder] = ItemRegistry.Create("(BC)71") as Object;
+                }
 #if DEBUG
                 Log($"Tile changed to {mineShaft.tileBeneathLadder}.");
 #endif
             }
         }
     }
+
+    private static void AddStaircase() => Game1.player.addItemByMenuIfNecessary(ItemRegistry.Create("(BC)71"));
 
     private static void CheckResourceClumps(MineShaft mineShaft)
     {

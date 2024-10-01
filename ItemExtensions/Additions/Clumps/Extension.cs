@@ -119,7 +119,7 @@ public static class ExtensionClump
         }
 
         //set vars
-        var parsedDamage = GeneralResource.GetDamage(t, damage);
+        var parsedDamage = GeneralResource.GetDamage(t, damage, resource.EasyCalc);
         
         #if DEBUG
         Log($"Damage: {parsedDamage}");

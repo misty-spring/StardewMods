@@ -37,6 +37,7 @@ Custom resources are very extensive, with many customizable fields:
 | Width        | `int`                        | Yes      | Resource size.                                            |
 | Height       | `int`                        | Yes      | Resource size.                                            |
 | Health       | `int`                        | Yes      | Hits before breaking\*.                                   |
+| EasyCalc     | `bool`                       | No       | Changes how damage is calculated.\* Default false.        |
 | Tool         | `string`                     | Yes      | Tool to use.\**                                           |
 | ItemDropped  | `string`                     | No       | Item dropped.                                             |
 | MinDrops     | `int`                        | No       | Min. amount dropped. If no max is set, always drops this. |
@@ -44,8 +45,9 @@ Custom resources are very extensive, with many customizable fields:
 | CustomFields | `Dictionary<string, string>` | No       | Custom Fields.                                            |
 
 
-*= Every time the player hits, it reduces UpgradeLevel + 1 (e.g iridium pickaxe removes 5 HP).
-For example: copper's health is 3, cinder shards' is 12, and radioactive ores have 25.
+*= Every time the player hits, it reduces `(UpgradeLevel + 1) * 0.75` (e.g iridium pickaxe removes 5 HP).
+For example: copper's health is 3, cinder shards' is 12, and radioactive ores have 25. 
+If `EasyCalc` is true, it just reduces UpgradeLevel + 1.
 
 **= This can be any tool class (vanilla's classes can be seen in [Data/Tools](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6#Custom_tools)), "any", or a Weapon type (e.g. Hammer, Sword, etc.).
 

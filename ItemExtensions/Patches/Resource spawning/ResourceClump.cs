@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using ItemExtensions.Additions;
 using ItemExtensions.Additions.Clumps;
@@ -31,6 +33,12 @@ public class ResourceClumpPatches
             original: AccessTools.Method(typeof(ResourceClump), nameof(ResourceClump.performToolAction)),
             prefix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Pre_performToolAction))
         );
+        
+        /*Log($"Applying Harmony patch \"{nameof(ResourceClumpPatches)}\": transpiling SDV method \"ResourceClump.performToolAction\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(ResourceClump), nameof(ResourceClump.performToolAction)),
+            transpiler: new HarmonyMethod(typeof(GameLocationPatches), nameof(ToolActionTranspiler))
+        );*/
     }
     
     public static void Post_OnAddedToLocation(TerrainFeature __instance, GameLocation location, Vector2 tile)
@@ -99,8 +107,7 @@ public class ResourceClumpPatches
     }
     
     //the transpiler would return anyway, so we make it a prefix
-    public static bool Pre_performToolAction(ref ResourceClump __instance, Tool t, int damage, Vector2 tileLocation,
-        ref bool __result)
+    public static bool Pre_performToolAction(ref ResourceClump __instance, Tool t, int damage, Vector2 tileLocation, ref bool __result)
     {
         try
         {
@@ -115,5 +122,76 @@ public class ResourceClumpPatches
             Log($"Error: {e}");
             return true;
         }
+    }
+    
+    private static IEnumerable<CodeInstruction> ToolActionTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+    {
+        //find second ldarg.0
+        //then insert: ldarg.0, ldarg.1, ldarg.2, ldarg.3, code and call. if true, return
+        //new one
+        var codes = new List<CodeInstruction>(instructions);
+        var instructionsToInsert = new List<CodeInstruction>();
+
+        var codeInstruction = codes.FindAll(ci => ci.opcode == OpCodes.Ldarg_0)[1];
+        var index = codes.IndexOf(codeInstruction);
+#if DEBUG
+        Log($"index: {index}", LogLevel.Info);
+#endif
+        var redirectTo = codeInstruction;
+        
+        //add label for brfalse
+        var brfalseLabel = il.DefineLabel();
+        redirectTo.labels ??= new List<Label>();
+        redirectTo.labels.Add(brfalseLabel);
+        
+        if (index <= -1) 
+            return codes.AsEnumerable();
+        
+        /* if (DoCustom(this, damage, tool, tile))
+         * {
+         *      return true;
+         * }
+         */
+        
+        //arguments
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_0)); //this
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_1)); //
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_2)); //
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_3)); //
+        
+        //call my code w/ prev args
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExtensionClump), nameof(ExtensionClump.DoCustom))));
+
+        //tell where to go if false
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Brfalse, brfalseLabel));
+        
+        //if true: ret true
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ret));
+        
+        Log($"codes count: {codes.Count}, insert count: {instructionsToInsert.Count}");
+        Log("Inserting method");
+        codes.InsertRange(index, instructionsToInsert);
+        
+        /* print the IL code
+         * courtesy of atravita
+         *
+        StringBuilder sb = new();
+        sb.Append("ILHelper for: GameLocation.spawnObjects");
+        for (int i = 0; i < codes.Count; i++)
+        {
+            sb.AppendLine().Append(codes[i]);
+            if (index + 3 == i)
+            {
+                sb.Append("       <---- start of transpiler");
+            }
+            if (index + 3 + instructionsToInsert.Count == i)
+            {
+                sb.Append("       <----- end of transpiler");
+            }
+        }
+        Log(sb.ToString(), LogLevel.Info);
+        */
+        return codes.AsEnumerable();
     }
 }

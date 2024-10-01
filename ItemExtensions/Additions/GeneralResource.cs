@@ -577,9 +577,12 @@ public static class GeneralResource
     /// </summary>
     /// <param name="tool">Tool</param>
     /// <param name="damage">Damage as fallback, if tool is null</param>
+    /// <param name="useEasierCalc">Whether to use node calculations instead of clumps'.</param>
     /// <returns>A damage calculation that depends on tool Type</returns>
-    public static int GetDamage(Tool tool, int damage)
+    public static int GetDamage(Tool tool, int damage, bool useEasierCalc)
     {
+        var mult = useEasierCalc ? 1f : 0.75f;
+        
         //if weapon, get 10% of avg.
         if (tool is MeleeWeapon w)
         {
@@ -598,7 +601,7 @@ public static class GeneralResource
             return damage;
         }
         //otherwise, return calculation
-        var dmg = (int)Math.Max(1f, (tool.UpgradeLevel + 1) * 0.75f);
+        var dmg = (int)Math.Max(1f, (tool.UpgradeLevel + 1) * mult);
         
         if (tool is Pickaxe p)
         {

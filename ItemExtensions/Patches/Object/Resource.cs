@@ -13,7 +13,7 @@ public partial class ObjectPatches
     private static bool CanShowMessage { get; set; } = true;
     private static void Reset() => CanShowMessage = true;
     
-    internal static void Postfix_performToolAction(Object __instance, Tool t)
+    internal static void Postfix_performToolAction(ref Object __instance, Tool t)
     {
         try
         {
@@ -50,7 +50,7 @@ public partial class ObjectPatches
             //set vars
             var location = __instance.Location;
             var tileLocation = __instance.TileLocation;
-            var damage = GetDamage(t, -1);
+            var damage = GetDamage(t, -1, resource.EasyCalc);
 #if DEBUG
             Log($"Damage: {damage}");
 #endif

@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 using StardewValley.Menus;
 using AudioDescription.CustomZone;
+using HarmonyLib;
 using StardewValley.Extensions;
 
 namespace AudioDescription;
@@ -111,5 +112,32 @@ internal class SoundPatches
             Utility.drawTextWithShadow(b, __instance.message, Game1.smallFont, vector, Game1.textColor * __instance.transparency, 1f, 1f, -1, -1, __instance.transparency);
             return false;
         }
+    }
+
+    public static void Apply(Harmony harmony)
+    {
+        ModEntry.Mon.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"Game1.playSound\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.playSound), new []{typeof(string), typeof(int?)}),
+            postfix: new HarmonyMethod(typeof(SoundPatches), nameof(PostFix_playSound))
+        );
+        
+        /*ModEntry.Mon.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"Game1.playSound\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Game1), nameof(Game1.playSound), new []{typeof(string), typeof(int), typeof(ICue)}),
+            postfix: new HarmonyMethod(typeof(SoundPatches), nameof(PostFix_playSound))
+        );*/
+
+        ModEntry.Mon.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": prefixing SDV method \"HUDMessage.draw\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(HUDMessage), nameof(HUDMessage.draw)),
+            prefix: new HarmonyMethod(typeof(SoundPatches), nameof(PrefixHuDdraw))
+        );
+
+        ModEntry.Mon.Log($"Applying Harmony patch \"{nameof(SoundPatches)}\": postfixing SDV method \"FarmAnimal.makeSound()\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(FarmAnimal), nameof(FarmAnimal.makeSound)),
+            postfix: new HarmonyMethod(typeof(SoundPatches), nameof(PostFix_makeSound))
+        );
     }
 }

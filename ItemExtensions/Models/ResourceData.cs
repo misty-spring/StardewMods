@@ -42,6 +42,7 @@ public class ResourceData
     /// For weapons, it does 10% average DMG + 1.
     /// See <see cref="StardewValley.Locations.MineShaft"/> for stone health.
     /// </summary>
+    public bool EasyCalc { get; set; } = false;
     public int Health { get; set; } = 10;
     public string ItemDropped { get; set; }
     public int MinDrops { get; set; } = 1;
