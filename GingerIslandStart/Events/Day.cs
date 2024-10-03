@@ -16,6 +16,11 @@ public class Day
     private static IModHelper Help => ModEntry.Help;
 
 
+    /// <summary>
+    /// On day start, adds under conditions: Starter gift, recovery items, quest, understand dwarves. Also warps to island if needed.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     internal static void OnStart(object sender, DayStartedEventArgs e)
     {
         //if not an island save
@@ -68,13 +73,22 @@ public class Day
         Location.WarpToIsland();
     }
 
+    /// <summary>
+    /// Attempts to add the starter quest.
+    /// </summary>
     internal static void TryAddQuest()
     {
         var farmersWithoutQuest = Game1.getAllFarmers().Where(f => f.hasQuest($"{ModEntry.Id}_StarterQuest") == false && f.mailReceived.Contains(ModEntry.Id)).ToList();
+        
         foreach (var farmer in farmersWithoutQuest)
             farmer.addQuest($"{ModEntry.Id}_StarterQuest");
     }
 
+    /// <summary>
+    /// On day end, set resortOpenToday to false (if conditions apply).
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     internal static void OnEnd(object sender, DayEndingEventArgs e)
     {
         //if not an island save

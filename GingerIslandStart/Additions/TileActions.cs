@@ -122,64 +122,6 @@ public static class TileActions
         }
     }
 
-    /*
-    /// <summary>
-    /// Pirate shop, akin to adv. guild's.
-    /// </summary>
-    /// <param name="arg1"></param>
-    /// <param name="arg2"></param>
-    /// <param name="arg3"></param>
-    /// <param name="arg4"></param>
-    /// <see cref="StardewValley.GameLocation.adventureShop"/>
-    /// <see cref="StardewValley.Item"/>
-    public static void PirateShop(GameLocation arg1, string[] arg2, Farmer arg3, Vector2 arg4)
-    {
-        if (Game1.player.itemsLostLastDeath.Count > 0)
-        {
-            var responses = new List<Response>()
-            {
-                new Response("Shop", Game1.content.LoadString("Strings\\Locations:ScienceHouse_CarpenterMenu_Shop")),
-                new Response("Recovery", Game1.content.LoadString("Strings\\Locations:AdventureGuild_ItemRecovery")),
-                new Response("Leave", Game1.content.LoadString("Strings\\Locations:ScienceHouse_CarpenterMenu_Leave"))
-            }.ToArray();
-
-            arg1.createQuestionDialogue(Game1.content.LoadString("Strings\\Locations:AdventureGuild_Greeting"),
-                responses, HandleShopResponse);
-        }
-        else
-        {
-            OpenPirateShop(arg1, arg3, arg4);
-            //Utility.TryOpenShopMenu($"{ModEntry.Id}_Trader", null, true);
-        }
-
-        return;
-
-        void HandleShopResponse(Farmer who, string whichanswer)
-        {
-            switch(whichanswer) {
-                case "Recovery":
-                    Game1.player.forceCanMove();
-                    OpenPirateShop(arg1, arg3, arg4, true);
-                    //Utility.TryOpenShopMenu("AdventureGuildRecovery", null, true);
-                    break;
-                case "Shop":
-                    Game1.player.forceCanMove();
-                    OpenPirateShop(arg1, arg3, arg4);
-                    //Utility.TryOpenShopMenu($"{ModEntry.Id}_Trader", null, true);
-                    break;
-            }
-        }
-    }
-
-    private static void OpenPirateShop(GameLocation where, Farmer who, Vector2 tile, bool isRecovery = false)
-    {
-        var t = new xTile.Dimensions.Location((int)tile.X, (int)tile.Y);
-        var id = ModEntry.Id;
-        var actionString = isRecovery ? $"OpenShop {id}_Recovery" : $"OpenShop {id}_Trader";
-        
-        where.performAction(actionString, who, t);
-    }
-    */
     public static bool Builder(GameLocation arg1, string[] arg2, Farmer arg3, Point arg4)
     {
         var yn = arg1.createYesNoResponses();
@@ -266,14 +208,11 @@ public static class TileActions
             {
                 var marlon = Game1.getCharacterFromName("Marlon");
                 marlon.displayName = Game1.content.LoadString("Strings/UI:LevelUp_ProfessionName_Pirate");
-                var raw = Translate("TrainingQuestion");
-                var money = who.MaxItems == 12 ? 3000 : 12000;
-                var question = string.Format(raw, money);
                 
                 var dialogue = new Dialogue(marlon, null, Translate("PirateTraining"))
                 {
                     overridePortrait = Game1.content.Load<Texture2D>("Mods/mistyspring.GingerIslandStart/Shop_Pirate"),
-                    onFinish = () => arg1.createQuestionDialogue(question, arg1.createYesNoResponses(), AfterTrainingQuestion)
+                    onFinish = CreateTrainingQuestion
                 };
                 Game1.DrawDialogue(dialogue);
             }
@@ -286,6 +225,15 @@ public static class TileActions
                 OpenShop(arg1, new[]{"OpenShop", "mistyspring.GingerIslandStart_Pirate"}, who, arg4);
             }
         }
+    }
+
+    private static void CreateTrainingQuestion()
+    {
+        var location = Game1.player.currentLocation; //should be IslandSouthEastCave
+        var raw = Translate("TrainingQuestion");
+        var money = Game1.player.MaxItems == 12 ? 3000 : 12000;
+        var question = string.Format(raw, money);
+        location.createQuestionDialogue(question, location.createYesNoResponses(), AfterTrainingQuestion);
     }
 
     /// <summary>

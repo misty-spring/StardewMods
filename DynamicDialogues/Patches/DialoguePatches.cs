@@ -65,7 +65,7 @@ public static class DialoguePatches
     {
       if (IsDebug)
       {
-        Log("Current dialogue: " + __instance.dialogues[__instance.currentDialogueIndex], LogLevel.Debug);
+        Log("Current dialogue: " + __instance.dialogues[__instance.currentDialogueIndex].Text, LogLevel.Debug);
       }
 
       if (__instance.dialogues.Count == 0)

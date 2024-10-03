@@ -11,6 +11,9 @@ public static class Render
     {
         if (Game1.player is null || Game1.player.currentLocation is null || Game1.player.currentLocation.Name != "IslandSouth")
             return;
+
+        if (Game1.player.hasOrWillReceiveMail("willyBoatFixed"))
+            return;
         
         var boatTex = Game1.temporaryContent.Load<Texture2D>("LooseSprites\\WillysBoat");
         

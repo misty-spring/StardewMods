@@ -39,10 +39,12 @@ public static class Save
     private static void PlayIntro()
     {
         Game1.PlayEvent("GingerIslandStart_AltIntro", false);
-        Game1.delayedActions.Add(new DelayedAction(1000, () =>
-        {
-            Game1.CurrentEvent.onEventFinished += Location.WarpToIsland;
-        }));
+        Game1.delayedActions.Add(new DelayedAction(1000, OnEventFinished));
         ModEntry.NeedsWarp = false;
+    }
+
+    private static void OnEventFinished()
+    {
+        Game1.CurrentEvent.onEventFinished += Location.WarpToIsland;
     }
 }
