@@ -29,5 +29,15 @@
     "PirateTraining": "Ye call these flimsy things arms?#$b#I can buff ya up, at a price.",
     "TrainingQuestion": "Pay the fee? ({0})",
     "BackpackUpgrade": "Increase backpack",
-    "BackpackUpgraded": "You've become stronger!#You can carry more items."
+    "BackpackUpgraded": "You've become stronger!#You can carry more items.",
+    "Bamboo_Name": "Bamboo",
+    "Bamboo_Description": "This could be used for crafting.",
+    "BambooChair": "Bamboo chair",
+    "BambooBed": "Bamboo bed",
+    "BambooTable": "Bamboo table",
+    "BambooShoot_Name": "Bamboo shoot",
+    "BambooShoot_Description": "A bamboo shoot.",
+    "Quest_Name": "Survival lessons",
+    "Quest_Description": "Resources are scarce in this island, and they'll be useful for trading. Start by gathering {0} stones.",
+    "Quest_Progress": "{0} of {1} stones gathered"
 }

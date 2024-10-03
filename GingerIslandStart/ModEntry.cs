@@ -80,6 +80,11 @@ public sealed class ModEntry : Mod
             return new[] { $"{Config.RodUpgrades}" };
         });
         
+        api?.RegisterToken(ModManifest, "DwarfStays", () =>
+        {
+            return new[] { $"{Config.DwarfStays}" };
+        });
+        
         var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
         if (configMenu is null) return;
         // register mod

@@ -277,7 +277,7 @@ public static class TileActions
             who.Money -= 12000;
         }
         
-        Game1.PlayEvent("GingerIslandStart_UpgradePackage");
+        Game1.PlayEvent("GingerIslandStart_UpgradePackage", false, false);
         Game1.delayedActions.Add(new DelayedAction(1000, () =>
         {
             Game1.CurrentEvent.onEventFinished += IncreaseStamina;
