@@ -39,5 +39,5 @@
     "BambooShoot_Description": "A bamboo shoot.",
     "Quest_Name": "Survival lessons",
     "Quest_Description": "Resources are scarce in this island, and they'll be useful for trading. Start by gathering {0} stones.",
-    "Quest_Progress": "{0} of {1} stones gathered"
+    "Quest_Progress": "{0} out of {1} stones gathered"
 }

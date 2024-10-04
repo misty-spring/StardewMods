@@ -16,7 +16,7 @@ public class StarterQuest : Quest
     [XmlElement("objective")]
     public readonly NetDescriptionElementRef objective = new NetDescriptionElementRef();
 
-    public StarterQuest() => this.questType.Value = 5;
+    public StarterQuest() => this.questType.Value = 1; //basic
 
     protected override void initNetFields()
     {
@@ -63,10 +63,10 @@ public class StarterQuest : Quest
     public override void reloadObjective()
     {
       this.loadQuestInfo();
-      if (this.objective.Value == null && this.whoToGreet.Count > 0)
-        this.objective.Value = new DescriptionElement("Strings\\StringsFromCSFiles:SocializeQuest.cs.13802", new object[2]
+      if (this.objective.Value == null)
+        this.objective.Value = new DescriptionElement("Strings\\StringsFromCSFiles:StartInGI_StarterQuest_Progress", new object[2]
         {
-          (object) (this.total.Value - this.whoToGreet.Count),
+          (object) (this.total.Value - Game1.player.stats.StoneGathered),
           (object) this.total.Value
         });
       if (this.objective.Value == null)
@@ -117,5 +117,4 @@ public class StarterQuest : Quest
         });
       return false;
     }
-  }
 }

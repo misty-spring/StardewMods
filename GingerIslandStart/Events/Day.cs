@@ -4,6 +4,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Objects;
+using StardewValley.Quests;
 
 namespace GingerIslandStart.Events;
 
@@ -78,10 +79,33 @@ public class Day
     /// </summary>
     internal static void TryAddQuest()
     {
+        var questId = $"{ModEntry.Id}_StarterQuest";
         var farmersWithoutQuest = Game1.getAllFarmers().Where(f => f.hasQuest($"{ModEntry.Id}_StarterQuest") == false && f.mailReceived.Contains(ModEntry.Id)).ToList();
-        
+
         foreach (var farmer in farmersWithoutQuest)
+        {
+            /*
+            if (farmer.hasQuest(questId))
+                return;
+            var quest = Quest.getQuestFromId(questId);
+            if (quest is null)
+            {
+                ModEntry.Mon.Log($"Can't find quest {questId}!",LogLevel.Warn);
+                return;
+            }
+            var starterQuest = quest as StarterQuest;
+            if (starterQuest == null)
+            {
+                ModEntry.Mon.Log("Can't add quest with ID '" + questId + "' because no such ID was found.", LogLevel.Warn);
+            }
+            else
+            {
+                farmer.questLog.Add(starterQuest);
+                if (!starterQuest.IsHidden())
+                    Game1.addHUDMessage(new HUDMessage(Game1.content.LoadString("Strings\\StringsFromCSFiles:Farmer.cs.2011"), 2));
+            }*/
             farmer.addQuest($"{ModEntry.Id}_StarterQuest");
+        }
     }
 
     /// <summary>

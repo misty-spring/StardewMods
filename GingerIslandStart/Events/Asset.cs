@@ -61,9 +61,28 @@ public static class Asset
                 var editor = asset.AsDictionary<string,string>();
                 editor.Data.TryAdd("GISurvivalFish_Name", Translate("SurvivalFish_Name"));
                 editor.Data.TryAdd("GISurvivalFish_Description", Translate("SurvivalFish_Desc"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_Bamboo_Name",Translate("Bamboo_Name"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_Bamboo_Description",Translate("Bamboo_Description"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_BambooChair",Translate("BambooChair"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_BambooBed",Translate("BambooBed"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_BambooTable",Translate("BambooTable"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_BambooShoot_Name",Translate("BambooShoot_Name"));
+                editor.Data.TryAdd("mistyspring.GingerIslandStart_BambooShoot_Description",Translate("BambooShoot_Description"));
             });
         }
-
+        
+        /*
+        if (e.NameWithoutLocale.BaseName.Equals("Strings/StringsFromCSFiles"))
+        {
+            e.Edit(asset =>
+            {
+                var editor = asset.AsDictionary<string,string>();
+                editor.Data.TryAdd("StartInGI_StarterQuest_Progress", Translate("Quest_Progress"));
+                editor.Data.TryAdd("StartInGI_StarterQuest_Name", Translate("Quest_Name"));
+                editor.Data.TryAdd("StartInGI_StarterQuest_Description",Translate("Quest_Description"));
+            });
+        }*/
+        
         if (e.NameWithoutLocale.BaseName.Equals("Data/Events/IslandSouthEastCave"))
         {
             e.LoadFrom( () => new Dictionary<string,string>(), AssetLoadPriority.Low);
