@@ -48,7 +48,7 @@ public static class Location
         if (e.NewLocation.Name != "VolcanoDungeon0") 
             return;
         
-        if (Game1.player.hasOrWillReceiveMail("Island_Resort") || !ModEntry.Config.DwarfStays)
+        if (Game1.player.hasOrWillReceiveMail("Island_Resort") && !ModEntry.Config.DwarfStays)
             return;
 
         e.NewLocation.setMapTile(26,41,Game1.player.canUnderstandDwarves ? 95 : 77,"Buildings",$"OpenShop {Id}_Dwarf");
