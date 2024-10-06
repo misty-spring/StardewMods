@@ -34,6 +34,20 @@ public class ResourceClumpPatches
             prefix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Pre_performToolAction))
         );
         
+        //CJB cheats menu bugfix
+        var breakCheat = AccessTools.Method($"CJBCheatsMenu.Framework.Cheats.PlayerAndTools:OneHitBreakCheat");
+        if (updateAttachments is null) //if the method isn't found, return
+        {
+            Log($"Method not found. (OneHitBreakCheat)", LogLevel.Warn);
+            return;
+        }
+        
+        Log($"Applying Harmony patch \"{nameof(ResourceClumpPatches)}\": postfixing CJBCheatsMenu method \"Framework.Cheats.PlayerAndTools.OneHitBreakCheat\".");
+        harmony.Patch(
+            original: breakCheat,
+            postfix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Post_OnUpdated))
+        );
+        
         /*Log($"Applying Harmony patch \"{nameof(ResourceClumpPatches)}\": transpiling SDV method \"ResourceClump.performToolAction\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(ResourceClump), nameof(ResourceClump.performToolAction)),
@@ -193,5 +207,24 @@ public class ResourceClumpPatches
         Log(sb.ToString(), LogLevel.Info);
         */
         return codes.AsEnumerable();
+    }
+
+    private static void Post_OnUpdated(object context, object e) //CheatContext, UpdateTickedEventArgs
+    {
+        //setting health to 0 bugs out IE
+        // skip if not using a tool
+        if (!Context.IsPlayerFree || !Game1.player.UsingTool)
+            return;
+
+        Farmer player = Game1.player;
+        var location = player.currentLocation;
+        if (location == null)
+            return;
+
+        foreach (ResourceClump? clump in location.resourceClumps)
+        {
+            if (clump != null && clump.getBoundingBox().Contains((int)player.GetToolLocation().X, (int)player.GetToolLocation().Y) && clump.health.Value == 0)
+                clump.health.Value = 1;
+        }
     }
 }
