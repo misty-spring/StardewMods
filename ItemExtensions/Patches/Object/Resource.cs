@@ -13,7 +13,7 @@ public partial class ObjectPatches
     private static bool CanShowMessage { get; set; } = true;
     private static void Reset() => CanShowMessage = true;
     
-    internal static void Postfix_performToolAction(ref Object __instance, Tool t)
+    internal static void Postfix_performToolAction(Object __instance, Tool t)
     {
         try
         {
