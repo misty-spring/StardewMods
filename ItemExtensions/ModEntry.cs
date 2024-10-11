@@ -81,6 +81,7 @@ public sealed class ModEntry : Mod
         {
             GameLocationPatches.Apply(harmony);
             MineShaftPatches.Apply(harmony);
+            Patches.CJB_Cheats.OneHitBreakCheat.Apply(harmony);
             ResourceClumpPatches.Apply(harmony);
 
             if (Config.ResourcesMtn)

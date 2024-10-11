@@ -27,5 +27,12 @@
     "PirateTraining": "¿Qué son esos brazos debiluchos?#$b#Arr, te puedo hacer fuerte... por un precio.",
     "TrainingQuestion": "¿Pagar la cuota? ({0})",
     "BackpackUpgrade": "Mejorar la mochila",
-    "BackpackUpgraded": "¡Te has vuelto más fuerte!#Puedes llevar más cosas encima."
+    "BackpackUpgraded": "¡Te has vuelto más fuerte!#Puedes llevar más cosas encima.",
+    "Bamboo_Name": "Bambú",
+    "Bamboo_Description": "Podrías usarlo para construir.",
+    "BambooChair": "Silla de bambú",
+    "BambooBed": "Cama de bambú",
+    "BambooTable": "Mesa de bambú",
+    "BambooShoot_Name": "Brote de bambú",
+    "BambooShoot_Description": "Un brote de bambú."
 }
