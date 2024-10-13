@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 
-namespace ItemExtensions.Patches;
+namespace ItemExtensions.Patches.Mods;
 
 public class FarmTypeManagerPatches
 {

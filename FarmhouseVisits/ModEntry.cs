@@ -396,7 +396,7 @@ public class ModEntry : Mod
         }
 
         //friendship data is reloaded.
-        if (!_firstLoadedDay)
+        if (!FirstLoadedDay)
         {
             Monitor.Log("Reloading data...");
             NameAndLevel?.Clear();
@@ -440,7 +440,12 @@ public class ModEntry : Mod
     private void OnTimeChange(object sender, TimeChangedEventArgs e)
     {
         if (!CanBeVisited)
+        {
+            #if DEBUG
+            Log("Player can't be visited.");
+            #endif
             return;
+        }
 
         //on 610, fix children data
         if (e.OldTime == 600 || e.NewTime == 610)
@@ -451,7 +456,9 @@ public class ModEntry : Mod
 
         var visitsOpen = e.NewTime > Config.StartingHours && e.NewTime < Config.EndingHours;
         var hasReachedMax = CounterToday >= Config.MaxVisitsPerDay;
-
+#if DEBUG
+        Log($"visitsOpen {visitsOpen}, hasReachedMax {hasReachedMax}, HasAnyVisitors {HasAnyVisitors}");
+#endif 
         //if can visit & hasn't reached MAX
         if (visitsOpen && !hasReachedMax && !HasAnyVisitors)
         {
@@ -902,7 +909,7 @@ public class ModEntry : Mod
     internal static List<string> RepeatedByLV = new();
     internal static List<string> BlacklistParsed { get; set; } = new();
     internal static FarmHouse PlayerHome { get; set; }
-    internal static bool _firstLoadedDay;
+    internal static bool FirstLoadedDay;
     private static bool CanBeVisited;
     internal static ModConfig Config;
     #endregion

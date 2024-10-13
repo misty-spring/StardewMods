@@ -5,6 +5,7 @@ using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Items;
 using ItemExtensions.Patches;
+using ItemExtensions.Patches.Mods;
 using ItemExtensions.Patches.Resource_spawning;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -81,7 +82,7 @@ public sealed class ModEntry : Mod
         {
             GameLocationPatches.Apply(harmony);
             MineShaftPatches.Apply(harmony);
-            Patches.CJB_Cheats.OneHitBreakCheat.Apply(harmony);
+            CjbCheat.Apply(harmony);
             ResourceClumpPatches.Apply(harmony);
 
             if (Config.ResourcesMtn)

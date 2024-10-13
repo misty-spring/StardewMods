@@ -209,7 +209,7 @@ internal static class Content
                     {
                         if (Utility.fuzzyCharacterSearch(pair.Key) != null)
                             NameAndLevel.Add(pair.Key, hearts);
-                        else if (_firstLoadedDay)
+                        else if (FirstLoadedDay)
                             Log($"Couldn't find character {pair.Key} in world. They won't be included.");
                     }
                 }

@@ -1,15 +1,11 @@
-using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using StardewModdingAPI;
-using StardewModdingAPI.Events;
-using StardewValley;
-using StardewValley.TerrainFeatures;
 
-namespace ItemExtensions.Patches.CJB_Cheats;
+namespace ItemExtensions.Patches.Mods;
 
 // ReSharper disable once InconsistentNaming
-internal static class OneHitBreakCheat
+internal static class CjbCheat
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -36,11 +32,11 @@ internal static class OneHitBreakCheat
         }
         Log(@params, LogLevel.Alert);*/
 
-        Log($"Applying Harmony patch \"{nameof(OneHitBreakCheat)}\": postfixing CJBCheatsMenu method \"Framework.Cheats.PlayerAndTools.OneHitBreakCheat:OnUpdated\".");
+        Log($"Applying Harmony patch \"{nameof(CjbCheat)}\": postfixing CJBCheatsMenu method \"Framework.Cheats.PlayerAndTools.OneHitBreakCheat:OnUpdated\".");
         harmony.Patch(
             original: breakCheat,
             //postfix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Post_OnUpdated))
-            transpiler: new HarmonyMethod(typeof(OneHitBreakCheat), nameof(CJB_Transpiler))
+            transpiler: new HarmonyMethod(typeof(CjbCheat), nameof(CJB_Transpiler))
         );
     }
     
@@ -92,24 +88,5 @@ internal static class OneHitBreakCheat
         Log(sb.ToString(), LogLevel.Info);
         */
         return codes.AsEnumerable();
-    }
-    
-    private static void Post_OnUpdated(CheatContext context, UpdateTickedEventArgs e)
-    {
-        //setting health to 0 bugs out IE
-        // skip if not using a tool
-        if (!Context.IsPlayerFree || !Game1.player.UsingTool)
-            return;
-
-        Farmer player = Game1.player;
-        var location = player.currentLocation;
-        if (location == null)
-            return;
-
-        foreach (ResourceClump? clump in location.resourceClumps)
-        {
-            if (clump != null && clump.getBoundingBox().Contains((int)player.GetToolLocation().X, (int)player.GetToolLocation().Y) && clump.health.Value == 0)
-                clump.health.Value = 1;
-        }
     }
 }

@@ -17,7 +17,7 @@ internal static class Events
 {
     internal static void SaveLoaded(object sender, SaveLoadedEventArgs e)
     {
-        ModEntry._firstLoadedDay = true;
+        ModEntry.FirstLoadedDay = true;
 
         //clear ALL values and temp data on load. this makes sure there's no conflicts with savedata cache (e.g if player had returned to title)
         Content.ClearValues();
@@ -112,7 +112,7 @@ internal static class Events
         var v = ModEntry.Visitor;
         v?.currentLocation.characters.Remove(v);
 
-        ModEntry._firstLoadedDay = false;
+        ModEntry.FirstLoadedDay = false;
         Content.CleanTemp();
 
         if (ModEntry.Config.Debug)
