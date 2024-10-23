@@ -228,4 +228,36 @@ public partial class ShopMenuPatches
 
         return false;
     }
+    
+    /// <summary>
+    /// If the traded item is an enchanted tool, return the prismatic shards used.
+    /// </summary>
+    /// <param name="itemId">The item to consume.</param>
+    /// <param name="count">How many to consume.</param>
+    public static void Pre_ConsumeTradeItem(string itemId, int count)
+    {
+        var qualifiedItemId = ItemRegistry.QualifyItemId(itemId);
+#if DEBUG
+        Log($"Item id: {qualifiedItemId}");
+#endif
+        if (!qualifiedItemId.StartsWith("(T)")) 
+            return;
+        
+        //get the tool from player inventory
+        var allTools = Game1.player.Items.GetById(qualifiedItemId);
+        var num = 0;
+            
+        foreach (var item in allTools)
+        {
+            var tool = item as Tool;
+            if (!(tool?.enchantments?.Count > 0)) 
+                continue;
+            
+            foreach (var enchantment in tool.enchantments)
+                num++;
+        }
+
+        var prismaticShard = ItemRegistry.Create("(O)74", num * count);
+        Game1.player.addItemByMenuIfNecessary(prismaticShard);
+    }
 }

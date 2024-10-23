@@ -57,8 +57,8 @@ public class ModEntry : Mod
 
             Monitor.Log("Chance set to 100 (% every 10 min)");
             Config.CustomChance = 100;
-            Monitor.Log("Starting hour will be 600.");
-            Config.StartingHours = 600;
+            Monitor.Log("Starting hour will be 630.");
+            Config.StartingHours = 630;
         }
 
         var allowedStringVals = new[]
@@ -195,8 +195,8 @@ public class ModEntry : Mod
             tooltip: () => Helper.Translation.Get("config.StartingHours.description"),
             getValue: () => Config.StartingHours,
             setValue: value => Config.StartingHours = value,
-            min: 600,
-            max: 2400,
+            min: 630,
+            max: 2300,
             interval: 100
         );
         configMenu.AddNumberOption(
@@ -392,7 +392,7 @@ public class ModEntry : Mod
         /* if no friendship with anyone OR festival day:
          * make unvisitable & return
          */
-        FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
+        FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || Utility.IsPassiveFestivalDay(Game1.dayOfMonth, Game1.season, Game1.player.currentLocation.locationContextId);
         var anyInLv = RepeatedByLV?.Any() ?? false;
         Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
 

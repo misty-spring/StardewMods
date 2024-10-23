@@ -79,7 +79,6 @@ internal static class Actions
         {
             ModEntry.Log($"Error while adding to farmhouse: {ex}", LogLevel.Error);
         }
-
     }
 
     internal static void Retire(NPC who)
@@ -90,7 +89,7 @@ internal static class Actions
         var visible = Values.NpcOnScreen(who, currentLocation);
 
         //if same as npc AND not farm
-        if (currentLocation.Equals(who.currentLocation) && !currentLocation.Equals(Game1.getFarm()))
+        if (currentLocation.Equals(who.currentLocation))
         {
             try
             {
@@ -103,7 +102,7 @@ internal static class Actions
             }
             catch (Exception ex)
             {
-                ModEntry.Log($"An error ocurred when pathing to entry: {ex}", LogLevel.Error);
+                ModEntry.Log($"An error occurred when pathing to entry: {ex}", LogLevel.Error);
             }
             finally
             {

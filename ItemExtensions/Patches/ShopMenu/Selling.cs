@@ -160,6 +160,8 @@ public partial class ShopMenuPatches
         foreach (var extra in data)
         {
             Log($"Reducing {extra.Data.DisplayName} by {extra.Count * stockToBuy}...");
+
+            Pre_ConsumeTradeItem(extra.QualifiedItemId, extra.Count * stockToBuy);
             Game1.player.Items.ReduceId(extra.QualifiedItemId, extra.Count * stockToBuy);
         }
     }

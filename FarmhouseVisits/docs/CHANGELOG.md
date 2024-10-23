@@ -1,5 +1,10 @@
 ([versión en español aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/CHANGELOG_es.md))
 
+## 1.8.2
+- Bug fixes
+- Villagers won't visit on Town's passive festivals
+- Enabled compat with the unofficial non-destructible NPCs
+
 ## 1.8.1
 - Updated for 1.6.8
 - Now works with unofficial NonDestructiveNPCs
