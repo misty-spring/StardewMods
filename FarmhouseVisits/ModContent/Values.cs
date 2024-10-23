@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.Extensions;
+using StardewValley.GameData.Objects;
 using StardewValley.Locations;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using lv = StardewModdingAPI.LogLevel;
-using FarmVisitors.Models;
-using StardewValley.GameData.Objects;
 
-namespace FarmVisitors.Visit;
+namespace FarmhouseVisits.ModContent;
 
 public enum ItemType
 {

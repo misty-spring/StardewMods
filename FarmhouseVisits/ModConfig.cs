@@ -1,4 +1,4 @@
-﻿namespace FarmVisitors
+﻿namespace FarmhouseVisits
 {
     internal class ModConfig
     {

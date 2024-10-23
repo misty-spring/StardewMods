@@ -1,13 +1,9 @@
-﻿using System;
-using System.Linq;
-using FarmVisitors.Datamodels;
-using FarmVisitors.Models;
-using FarmVisitors.Visit;
+﻿using FarmhouseVisits.Models;
 using StardewModdingAPI;
 using StardewValley;
-using static FarmVisitors.ModEntry;
+using static FarmhouseVisits.ModEntry;
 
-namespace FarmVisitors;
+namespace FarmhouseVisits.ModContent;
 
 internal static class Debugging
 {

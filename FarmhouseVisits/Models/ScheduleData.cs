@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace FarmVisitors.Datamodels;
+﻿namespace FarmhouseVisits.Models;
 
 /// <summary>
 /// Information for scheduled NPCs.

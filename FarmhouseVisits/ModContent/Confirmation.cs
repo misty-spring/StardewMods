@@ -1,7 +1,7 @@
 using StardewValley;
-using static FarmVisitors.ModEntry;
+using static FarmhouseVisits.ModEntry;
 
-namespace FarmVisitors.Visit;
+namespace FarmhouseVisits.ModContent;
 
 public static class Confirmation
 {

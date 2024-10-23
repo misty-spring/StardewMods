@@ -1,9 +1,7 @@
-﻿using FarmVisitors.Datamodels;
-using StardewValley;
+﻿using StardewValley;
 using StardewValley.Pathfinding;
-using System.Collections.Generic;
 
-namespace FarmVisitors.Models;
+namespace FarmhouseVisits.Models;
 
 internal class VisitData
 {

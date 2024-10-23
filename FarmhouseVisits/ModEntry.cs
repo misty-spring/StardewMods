@@ -1,22 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using FarmVisitors.Datamodels;
-using FarmVisitors.Models;
-using FarmVisitors.Visit;
-using HarmonyLib;
+﻿using FarmhouseVisits.APIs;
+using FarmhouseVisits.ModContent;
+using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
-using StardewValley.Minigames;
 using StardewValley.Pathfinding;
 
 // ReSharper disable InconsistentNaming
 
-namespace FarmVisitors;
+namespace FarmhouseVisits;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public class ModEntry : Mod
@@ -38,12 +33,9 @@ public class ModEntry : Mod
 
         Config = Helper.ReadConfig<ModConfig>();
 
-        Help = this.Helper;
+        Help = Helper;
         Logger = Monitor.Log;
         TL = Helper.Translation;
-
-        var harmony = new Harmony(ModManifest.UniqueID);
-        CharacterPatches.Apply(harmony);
 
         var isDebug = false;
 #if DEBUG
@@ -82,10 +74,8 @@ public class ModEntry : Mod
             return;
 
         var hasNonDestructive = Help.ModRegistry.IsLoaded("IamSaulC.NonDestructiveNPCs");
-        var Satchels = Help.ModRegistry.IsLoaded("IamSaulC.NonDestructiveNPCs");
 
         #region config
-        #region main
         // register mod
         configMenu.Register(
             mod: ModManifest,
@@ -172,9 +162,7 @@ public class ModEntry : Mod
             pageId: "Debug",
             text: () => TL.Get("config.Debug.name")
         );
-        #endregion
 
-        #region extras
         configMenu.AddPage(
             mod: ModManifest,
             pageId: "Extras",
@@ -266,7 +254,6 @@ public class ModEntry : Mod
             getValue: () => Config.ReplacerCompat,
             setValue: value => Config.ReplacerCompat = value
         );
-        #endregion
 
         //if the player doesn't have non destructive, don't allow walking on farm (to avoid destroying their things)
         if (hasNonDestructive == false)
@@ -317,7 +304,6 @@ public class ModEntry : Mod
                 name: () => Game1.content.LoadString("Strings/Buildings:Shed_Name")
             );
         }
-        #region debug
         configMenu.AddPage(
             mod: ModManifest,
             pageId: "Debug",
@@ -341,9 +327,7 @@ public class ModEntry : Mod
             getValue: () => Config.Verbose,
             setValue: value => Config.Verbose = value
         );
-        #endregion
 
-        #region sleepovers
         configMenu.AddPage(
             mod: ModManifest,
             pageId: "Sleepovers",
@@ -379,10 +363,9 @@ public class ModEntry : Mod
             interval: 1
         );
         #endregion
-        #endregion
     }
 
-    private void DayStarted(object sender, DayStartedEventArgs e)
+    private static void DayStarted(object sender, DayStartedEventArgs e)
     {
         PlayerHome = Utility.getHomeOfFarmer(Game1.player);
         TodaysVisitors = new();
@@ -390,7 +373,7 @@ public class ModEntry : Mod
         //if faulty config, don't do anything + mark as unvisitable
         if (!IsConfigValid)
         {
-            Monitor.Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
+            Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
             CanBeVisited = false;
             return;
         }
@@ -398,7 +381,7 @@ public class ModEntry : Mod
         //friendship data is reloaded.
         if (!FirstLoadedDay)
         {
-            Monitor.Log("Reloading data...");
+            Log("Reloading data...");
             NameAndLevel?.Clear();
             RepeatedByLV?.Clear();
 
@@ -411,7 +394,7 @@ public class ModEntry : Mod
          */
         FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season);
         var anyInLv = RepeatedByLV?.Any() ?? false;
-        Monitor.Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
+        Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
 
         if (!anyInLv || FestivalToday)
         {
@@ -437,13 +420,16 @@ public class ModEntry : Mod
         }
     }
 
-    private void OnTimeChange(object sender, TimeChangedEventArgs e)
+    private static void OnTimeChange(object sender, TimeChangedEventArgs e)
     {
+#if DEBUG
+        Log("Time changed.");
+#endif
         if (!CanBeVisited)
         {
-            #if DEBUG
+#if DEBUG
             Log("Player can't be visited.");
-            #endif
+#endif
             return;
         }
 
@@ -503,7 +489,7 @@ public class ModEntry : Mod
 
                     if (data.Extras is not null & data.Extras.Force)
                     {
-                        Monitor.Log($"Adding NPC {Visitor.Name} by force (Force.Enable = {data.Extras.Force})");
+                        Log($"Adding NPC {Visitor.Name} by force (Force.Enable = {data.Extras.Force})");
 
                         //add and set forced
                         Actions.AddWhileOutside(Visitor);
@@ -520,7 +506,7 @@ public class ModEntry : Mod
                         //add them to farmhouse (last to avoid issues)
                         Actions.AddCustom(Visitor, PlayerHome, data, false);
 
-                        Monitor.Log($"HasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {VContext.TimeOfArrival};\nControllerTime = {VContext.ControllerTime};", Level);
+                        Log($"HasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {VContext.TimeOfArrival};\nControllerTime = {VContext.ControllerTime};", Level);
                     }
 
                     //break, since we already found a schedule
@@ -873,20 +859,15 @@ public class ModEntry : Mod
     #endregion
 
     #region used by mod
-    internal static LogLevel Level
-    {
-        get
-        {
-            var lvl = Config.Verbose ? LogLevel.Debug : LogLevel.Trace;
 #if DEBUG
-            lvl = LogLevel.Debug;
+    internal const LogLevel Level = LogLevel.Debug;
+#else
+    // ReSharper disable once UnusedMember.Local
+    internal const LogLevel Level =  LogLevel.Trace;
 #endif
-            return lvl;
-        }
-    }
 
     internal static Action<string, LogLevel> Logger { get; private set; }
-    internal static void Log(string data, LogLevel type = LogLevel.Trace) => Logger(data, type);
+    internal static void Log(string data, LogLevel type = Level) => Logger(data, type);
 
     internal static ITranslationHelper TL { get; private set; }
     internal static IModHelper Help { get; set; }
@@ -910,7 +891,7 @@ public class ModEntry : Mod
     internal static List<string> BlacklistParsed { get; set; } = new();
     internal static FarmHouse PlayerHome { get; set; }
     internal static bool FirstLoadedDay;
-    private static bool CanBeVisited;
+    private static bool CanBeVisited { get; set; }
     internal static ModConfig Config;
     #endregion
 

@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using FarmVisitors.Datamodels;
+using FarmhouseVisits.Models;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
-using static FarmVisitors.ModEntry;
+using static FarmhouseVisits.ModEntry;
 
-namespace FarmVisitors.Visit;
+namespace FarmhouseVisits.ModContent;
 
 internal static class Content
 {

@@ -4,7 +4,7 @@
   "Version": "1.8.1",
   "Description": "Mod that allows villagers to visit you.",
   "UniqueID": "mistyspring.farmhousevisits",
-  "EntryDll": "FarmVisitors.dll",
+  "EntryDll": "FarmhouseVisits.dll",
   "MinimumApiVersion": "3.14.0",
   "UpdateKeys": ["nexus:12457"]
 }

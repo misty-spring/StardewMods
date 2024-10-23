@@ -1,7 +1,6 @@
-using System.Collections.Generic;
 using StardewValley;
 
-namespace FarmVisitors.Datamodels;
+namespace FarmhouseVisits.Models;
 
 internal class DupeNPC
 {

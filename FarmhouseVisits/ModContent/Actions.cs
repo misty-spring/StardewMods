@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using FarmVisitors.Datamodels;
-using FarmVisitors.Models;
+﻿using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -10,7 +6,7 @@ using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.Pathfinding;
 
-namespace FarmVisitors.Visit;
+namespace FarmhouseVisits.ModContent;
 
 internal static class Actions
 {

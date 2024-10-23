@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using FarmVisitors.Datamodels;
+using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.GameData.Characters;
 
-namespace FarmVisitors.Visit;
+namespace FarmhouseVisits.ModContent;
 
 public class Data
 {

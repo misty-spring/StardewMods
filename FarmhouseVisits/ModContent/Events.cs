@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FarmVisitors.Datamodels;
-using FarmVisitors.Visit;
+﻿using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -9,7 +6,7 @@ using StardewValley;
 using StardewValley.GameData.Characters;
 using StardewValley.Pathfinding;
 
-namespace FarmVisitors;
+namespace FarmhouseVisits.ModContent;
 
 /* Events *
  * placing these here so modentry.cs isn't so clogged */
@@ -32,9 +29,7 @@ internal static class Events
         //check config
         if (!isTimeCoherent)
         {
-            ModEntry.Log(
-                "Starting hours can't happen after ending hours! To use the mod, fix this and reload savefile.",
-                LogLevel.Warn);
+            ModEntry.Log("Starting hours can't happen after ending hours! To use the mod, fix this and reload savefile.", LogLevel.Warn);
             return;
         }
 

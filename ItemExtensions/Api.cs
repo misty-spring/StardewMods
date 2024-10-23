@@ -87,6 +87,7 @@ public interface IApi
     Dictionary<string,(double,int)> GetObjectDrops(Object node, bool parseConditions = false);
 
     bool GetResourceData(string id, bool isClump, out object data);
+    bool GetBreakingTool(string id, bool isClump, out string tool);
 }
 
 //remove all of this ↓ when copying to your mod
@@ -304,6 +305,27 @@ public class Api : IApi
         if (ModEntry.BigClumps.TryGetValue(id, out var clump))
         {
             data = clump;
+            return true;
+        }
+        return false;
+    }
+
+    public bool GetBreakingTool(string id, bool isClump, out string tool)
+    {
+        tool = null;
+
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+        
+        if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
+        {
+            tool = node.Tool;
+            return true;
+        }
+
+        if (ModEntry.BigClumps.TryGetValue(id, out var clump))
+        {
+            tool = clump.Tool;
             return true;
         }
         return false;
