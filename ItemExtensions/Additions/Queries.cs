@@ -1,6 +1,7 @@
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Delegates;
+using StardewValley.Internal;
 using StardewValley.Objects;
 
 namespace ItemExtensions.Additions;
@@ -65,7 +66,8 @@ public static class Queries
                 // chests
                 if (obj is Chest chest && chest.playerChest.Value)
                 {
-                    chest.ForEachItem(HandleMatch);
+                    //This may cause bugs, but I'm not sure of the use of GetPath as of now.
+                    chest.ForEachItem(HandleMatch, GetPath);
                 }
             }
 
@@ -74,9 +76,9 @@ public static class Queries
 
         return result;
 
-        bool HandleMatch(Item item, Action remove, Action<Item> replaceWith)
+        bool HandleMatch(in ForEachItemContext context)
         {
-            if (item is not Tool t) 
+            if (context.Item is not Tool t) 
                 return true;
 
             if (matchOwner && t.getLastFarmerToUse() != who)
@@ -89,6 +91,11 @@ public static class Queries
             flag = false;
             return false;
         }
+    }
+
+    private static IList<object> GetPath()
+    {
+        return new List<object>();
     }
 
     /// <summary>

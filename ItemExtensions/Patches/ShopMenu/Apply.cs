@@ -36,7 +36,7 @@ public partial class ShopMenuPatches
         
         Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"ShopMenu.cleanupBeforeExit\".");
         harmony.Patch(
-            original: AccessTools.Method(typeof(ShopMenu), "cleanupBeforeExit"),
+            original: AccessTools.Method(typeof(IClickableMenu), "cleanupBeforeExit"),
             postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_cleanupBeforeExit))
         );
         
@@ -100,6 +100,9 @@ public partial class ShopMenuPatches
         #if DEBUG
         Log("Resetting extra trades dictionary...");
         #endif
+
+        if (Game1.activeClickableMenu is not ShopMenu)
+            return;
         
         ExtraBySalable = new Dictionary<ISalable, List<ExtraTrade>>();
     }
@@ -155,7 +158,7 @@ public partial class ShopMenuPatches
             return null;
         }
 
-        var identifier = stock != null ? stock.Value.SyncedKey : item.QualifiedItemId;
+        var identifier = stock != null ? stock.SyncedKey : item.QualifiedItemId;
         
         foreach (var dataItem in shopData.Items)
         {
@@ -173,7 +176,7 @@ public partial class ShopMenuPatches
             }
             
             //compare stocks' Ids
-            if(dataItem.Id.Equals(stock.Value.SyncedKey) == false)
+            if(dataItem.Id.Equals(stock.SyncedKey) == false)
                 continue;
 
             if (dataItem.CustomFields is null || dataItem.CustomFields.Any() == false)

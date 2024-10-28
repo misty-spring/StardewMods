@@ -32,6 +32,12 @@ public class ResourceClumpPatches
             original: AccessTools.Method(typeof(ResourceClump), nameof(ResourceClump.performToolAction)),
             prefix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Pre_performToolAction))
         );
+        
+        Log($"Applying Harmony patch \"{nameof(ResourceClumpPatches)}\": prefixing SDV method \"TerrainFeature.performToolAction\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(TerrainFeature), nameof(TerrainFeature.performToolAction)),
+            prefix: new HarmonyMethod(typeof(ResourceClumpPatches), nameof(Pre_performToolActionTF))
+        );
     }
     
     public static void Post_OnAddedToLocation(TerrainFeature __instance, GameLocation location, Vector2 tile)
@@ -89,9 +95,8 @@ public class ResourceClumpPatches
 
             //set
             var fixedPosition = new Vector2(tile.X + r.width.Value / 2, tile.Y * r.height.Value / 2);
-            var lightSource = new LightSource(4, fixedPosition, size, color);
-
-            r.modData.Add(ModKeys.LightId, $"{lightSource.Identifier}");
+            var lightSource = new LightSource($"{Game1.random.NextInt64()}", 1, fixedPosition, size, color);
+            r.modData.Add(ModKeys.LightId, $"{lightSource.Id}");
         }
         catch (Exception e)
         {
@@ -108,6 +113,26 @@ public class ResourceClumpPatches
                 return true;
 
             __result = ExtensionClump.DoCustom(ref __instance, t, damage, tileLocation);
+            return false;
+        }
+        catch (Exception e)
+        {
+            Log($"Error: {e}");
+            return true;
+        }
+    }
+    
+    public static bool Pre_performToolActionTF(ref TerrainFeature __instance, Tool t, int damage, Vector2 tileLocation, ref bool __result)
+    {
+        try
+        {
+            if (__instance is not ResourceClump r)
+                return true;
+            
+            if (ExtensionClump.IsCustom(r) == false)
+                return true;
+
+            __result = ExtensionClump.DoCustom(ref r, t, damage, tileLocation);
             return false;
         }
         catch (Exception e)

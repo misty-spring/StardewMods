@@ -125,7 +125,7 @@ public partial class ObjectPatches
             var position = new Vector2(tileLocation.X * 64f + 16f, tileLocation.Y * 64f + 16f);
 
             //var identifier = (int)(tileLocation.X * 2000f + tileLocation.Y);
-            __instance.lightSource = new LightSource(4, position, rad, color);
+            __instance.lightSource = new LightSource($"{Game1.random.NextInt64()}",1, position, rad, color);
         }
         catch (Exception e)
         {

@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
 	  <EnableHarmony>true</EnableHarmony>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GamePath>/home/programar/Escritorio/SDV_169/</GamePath>
   </PropertyGroup>
 
   <ItemGroup>

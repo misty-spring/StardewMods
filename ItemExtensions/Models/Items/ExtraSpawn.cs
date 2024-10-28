@@ -26,6 +26,7 @@ public class ExtraSpawn : ISpawnItemData
 
     public string ObjectInternalName { get; set; }
     public string ObjectDisplayName { get; set; }
+    public string ObjectColor { get; set; }
     public int ToolUpgradeLevel { get; set; }
     public bool IsRecipe { get; set; }
     public List<QuantityModifier> StackModifiers { get; set; }

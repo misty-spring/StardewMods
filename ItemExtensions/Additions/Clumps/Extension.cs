@@ -172,10 +172,7 @@ public static class ExtensionClump
             //if has a light ID, remove
             if (clump.modData.TryGetValue(ModKeys.LightId, out var lightSourceRaw))
             {
-                if (int.TryParse(lightSourceRaw, out var lightSource))
-                {
-                    clump.Location.removeLightSource(lightSource);
-                }
+                clump.Location.removeLightSource(lightSourceRaw);
             }
 
             return true;

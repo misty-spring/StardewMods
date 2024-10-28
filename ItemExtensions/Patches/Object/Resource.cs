@@ -127,7 +127,7 @@ public partial class ObjectPatches
         {
             if (o.lightSource is not null)
             {
-                var id = o.lightSource.Identifier;
+                var id = o.lightSource.Id;
                 o.Location.removeLightSource(id);
             }    
         

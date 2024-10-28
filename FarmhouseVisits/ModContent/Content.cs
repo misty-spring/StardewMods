@@ -173,14 +173,17 @@ internal static class Content
             return;
         }
 
-        var logLV = Config.Verbose ? LogLevel.Debug : LogLevel.Trace;
+        var logLevel = Config.Verbose ? LogLevel.Debug : LogLevel.Trace;
+#if DEBUG
+        logLV = LogLevel.Debug;
+#endif
 
-        Log("Began obtaining all visitors.", logLV);
+        Log("Began obtaining all visitors.", logLevel);
         if (!string.IsNullOrWhiteSpace(Config.Blacklist))
             ParseBlacklist();
         
         MaxTimeStay = Config.Duration - 1;
-        Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};", logLV);
+        Log($"MaxTimeStay = {MaxTimeStay}; Config.Duration = {Config.Duration};", logLevel);
 
         PlayerHome = Utility.getHomeOfFarmer(Game1.player);
 
@@ -237,7 +240,7 @@ internal static class Content
                 }
                 if (isDivorced)
                 {
-                    Log($"{pair.Key} is Divorced. They won't visit the player", logLV);
+                    Log($"{pair.Key} is Divorced. They won't visit the player", logLevel);
                 }
             }
         }
@@ -246,7 +249,9 @@ internal static class Content
         var call = "\n Name   | Hearts\n--------------------";
         foreach (var pair in NameAndLevel)
         {
-            var fixedstr = pair.Key + "               ".Remove(0, pair.Key.Length);
+            var separator = pair.Key.Length > 15 ? " " : "               ".Remove(0, pair.Key.Length);
+            
+            var fixedstr = pair.Key + separator;
             
             call += $"\n   {fixedstr} {pair.Value}";
 
@@ -254,7 +259,7 @@ internal static class Content
             RepeatedByLV.AddRange(tempdict);
         }
        
-        Log(call, logLV);
+        Log(call, logLevel);
         #endregion
 
         Log("Finished obtaining all visitors.");

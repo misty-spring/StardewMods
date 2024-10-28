@@ -1,7 +1,10 @@
+using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Items;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley.Internal;
 using StardewValley;
+using StardewValley.Monsters;
 using xTile.Dimensions;
 
 namespace ItemExtensions.Additions;
@@ -15,6 +18,7 @@ public static class Sorter
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
+    private static Stack<Monster> MonsterQueue { get; set; } = new();
     
     internal static int GetMaxFeatures(int level)
     {
@@ -63,7 +67,7 @@ public static class Sorter
                 var current = convertedSorted[i];
                 var next = convertedSorted[i + 1];
 #if DEBUG
-                Log($"Added node with {convertedSorted[i]} chance to list.");
+                Log($"Added {convertedSorted[i]} node to list.");
 #endif
 
                 //if next one has higher %
@@ -135,5 +139,157 @@ public static class Sorter
             Log($"Exception while sorting item query: {ex}.", LogLevel.Warn);
             return false;
         }
+    }
+
+    public static Monster GetMonster(MonsterSpawnData monster, Vector2 tile, int facing)
+    {
+        var name = monster.Name.ToLower().Replace(" ", "");
+        Monster mon = name switch
+        {
+            "bat" => new Bat(tile, 0),
+            "frostbat" => new Bat(tile, 40),
+            "lavabat" => new Bat(tile, 80),
+            "iridiumbat" => new Bat(tile, 171),
+            "doll" or "curseddoll" => new Bat(tile, -666),
+            "skull" or "hauntedskull" => new Bat(tile, 77377),
+            "magmasprite" => new Bat(tile, -555),
+            "magmasparker" => new Bat(tile, -556),
+            "bigslime" or "biggreenslime" => new BigSlime(tile, 0),
+            "bigblueslime" => new BigSlime(tile, 40),
+            "bigredslime" => new BigSlime(tile, 80),
+            "bigpurpleslime" => new BigSlime(tile, 121),
+            "bluesquid" => new BlueSquid(tile),
+            "bug" => new Bug(tile, 0),
+            "armoredbug" => new Bug(tile, 121),
+            "dino" or "dinomonster" or "pepper" or "pepperrex" or "rex" => new DinoMonster(tile),
+            "duggy" => new Duggy(tile),
+            "magmaduggy" => new Duggy(tile, true),
+            "dust" or "sprite" or "dustsprite" or "spirit" or "dustspirit" => new DustSpirit(tile),
+            "dwarvishsentry" or "dwarvish" or "sentry" => new DwarvishSentry(tile),
+            "ghost" => new Ghost(tile),
+            "carbonghost" => new Ghost(tile, "Carbon Ghost"),
+            "putridghost" => new Ghost(tile, "Putrid Ghost"),
+            "slime" or "greenslime" => new GreenSlime(tile, 0),
+            "blueslime" => new GreenSlime(tile, 40),
+            "redslime" => new GreenSlime(tile, 80),
+            "purpleslime" => new GreenSlime(tile, 121),
+            "tigerslime" => new GreenSlime(tile, 0),
+            "prismaticslime"=> new GreenSlime(tile, 0),
+            "grub" or "cavegrub" => new Grub(tile, false),
+            "fly" or "cavefly" => new Fly(tile, false),
+            "mutantgrub" => new Grub(tile, true),
+            "mutantfly" => new Fly(tile, true),
+            "metalhead" => new MetalHead(tile, 0),
+            "hothead" => new HotHead(tile),
+            "lavalurk" => new LavaLurk(tile),
+            "mummy" => new Mummy(tile),
+            "rockcrab" => new RockCrab(tile),
+            "lavacrab" => new RockCrab(tile, "Lava Crab"),
+            "iridiumcrab" => new RockCrab(tile, "Iridium Crab"),
+            "falsemagmacap" or "magmacap" => new RockCrab(tile, "False Magma Cap"),
+            "stickbug" => new RockCrab(tile),
+            "trufflecrab" => new RockCrab(tile, "Truffle Crab"),
+            "rockgolem" or "stonegolem" or "wildernessgolem" => new RockGolem(tile),
+            "iridiumgolem" => new RockGolem(tile, Game1.player.CombatLevel),
+            "serpent" => new Serpent(tile),
+            "royalserpent" => new Serpent(tile, "Royal Serpent"),
+            "brute" or "shadowbrute" => new ShadowBrute(tile),
+            "shaman" or "shadowshaman" => new ShadowShaman(tile),
+            "sniper" or "shadowsniper" => new Shooter(tile),
+            "skeleton" => new Skeleton(tile),
+            "skeletonmage" or "mage" => new Skeleton(tile, true),
+            "spider" or "leaper" => new Leaper(tile),
+            "spiker" => new Spiker(tile, facing),
+            "squidkid" => new SquidKid(tile),
+            _ => new Monster(monster.Name, tile, facing),
+        };
+
+        //disable ranged attack if applies, turn specific monsters
+        switch (name)
+        {
+            case "shadowsniper":
+            case "sniper":
+                if(monster.RangedAttacks == false)
+                    ((Shooter)mon).nextShot = float.MaxValue;
+                break;
+            case "shaman":
+            case "shadowshaman":
+                if(monster.RangedAttacks == false)
+                    ModEntry.Help.Reflection.GetField<int>(mon, "coolDown", false).SetValue(int.MaxValue);
+                break;
+            case "squid":
+            case "squidkid":  
+                if(monster.RangedAttacks == false)
+                    ModEntry.Help.Reflection.GetField<int>(mon, "lastFireball", false).SetValue(int.MaxValue);
+                break;         
+            case "pepper":
+            case "pepperrex":
+            case "pepper rex":
+            case "rex":
+                if (monster.RangedAttacks == false)
+                {
+                    ((DinoMonster)mon).nextFireTime = int.MaxValue;
+                    ((DinoMonster)mon).timeUntilNextAttack = int.MaxValue;
+                }
+                break;
+            case "stickbug":
+                (mon as RockCrab)?.makeStickBug();
+                break;
+            case "tigerslime" or "tiger":
+                ((GreenSlime)mon).makeTigerSlime();
+                break;
+            case "prismaticslime":
+                ((GreenSlime)mon).makePrismatic();
+                break;
+            case "wildernessgolem":
+                break;
+        }
+
+        if (monster.FollowPlayer == false)
+        {
+            var spotted = ModEntry.Help.Reflection.GetField<bool>(mon, "spottedPlayer", false);
+            spotted.SetValue(false);
+            mon.IsWalkingTowardPlayer = false;
+        }
+
+        if (monster.GracePeriod > 0)
+        {
+            MonsterQueue.Push(mon);
+            Game1.delayedActions.Add(new DelayedAction(monster.GracePeriod, AttackPlayer));
+        }
+        
+        if (monster.HideShadow || name.Contains("magma") || name.Contains("truffle"))
+        {
+            mon.HideShadow = true;
+        }
+        
+        
+        if (monster.Color.HasValue && (name.Contains("slime") || name.Contains("hothead"))) //if it's a slime or hothead, color is used
+        {
+            ((GreenSlime)mon).color.Value = monster.Color.Value;
+        }
+        
+        if(monster.Hardmode)
+            mon.isHardModeMonster.Set(true);
+        
+        if (monster.Health > 0)
+        {
+            mon.MaxHealth = monster.Health;
+            mon.Health = monster.Health;
+        }
+
+        return mon;
+    }
+
+    private static void AttackPlayer()
+    {
+        if (MonsterQueue.Count <= 0)
+            return;
+
+        var who = MonsterQueue.Pop();
+
+        var spotted = ModEntry.Help.Reflection.GetField<bool>(who, "spottedPlayer", false);
+        spotted.SetValue(false);
+        who.IsWalkingTowardPlayer = false;
     }
 }

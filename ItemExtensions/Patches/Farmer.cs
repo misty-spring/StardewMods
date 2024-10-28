@@ -358,10 +358,10 @@ public class FarmerPatches
         
         if (animation.Food.Light != null && animation.Food.Light != new LightData())
         {
-            animatedSprite.light = true;
+            //animatedSprite.light = true;
             animatedSprite.lightcolor = animation.Food.Light.GetColor();
             animatedSprite.lightRadius = animation.Food.Light.Size;
-            animatedSprite.lightID = (int)Game1.random.NextInt64();
+            animatedSprite.lightId = $"{Game1.random.NextInt64()}";
         }
         
         Game1.Multiplayer.broadcastSprites(who.currentLocation, animatedSprite);

@@ -51,6 +51,9 @@ public class MineShaftPatches
 
             CheckResourceNodes(__instance);
             
+            //test
+            //Log($"Level {__instance.mineLevel}. Difficulty: {__instance.GetAdditionalDifficulty()}, Clumps here? {__instance.resourceClumps?.Count > 0}", LogLevel.Info);
+            
             //clumps aren't changed here to avoid issues because the zone is special
             if(__instance.mineLevel != 77377)
                 CheckResourceClumps(__instance);
@@ -96,6 +99,12 @@ public class MineShaftPatches
         {
             Log($"Error when postfixing populate for level {__instance.mineLevel}: {e}", LogLevel.Error);
         }
+    }
+
+    private static bool CanClumpsSpawnHere(MineShaft mineShaft)
+    {
+        //if it's NOT the quarry, or NOT hardmode qi mines
+        return mineShaft.mineLevel != 77377 || !(mineShaft.mineLevel > 120 && mineShaft.GetAdditionalDifficulty() > 0);
     }
 
     private static void CheckResourceNodes(MineShaft mineShaft)
@@ -214,6 +223,9 @@ public class MineShaftPatches
 
         foreach (var (index,clump) in toReplace)
         {
+#if DEBUG
+            Log($"Replacing clump at index {index} ({mineShaft.resourceClumps[index].parentSheetIndex.Value}) by clump with id {clump}");
+#endif
             mineShaft.resourceClumps[index] = clump;
         }
     }
@@ -226,6 +238,9 @@ public class MineShaftPatches
     /// <returns>An unsorted list with all available spawns.</returns>
     private static Dictionary<string, double> GetAllForThisLevel(MineShaft mine, bool isClump = false)
     {
+#if DEBUG
+        Log($"{mine.mineLevel}, clump? {isClump}, difficulty {mine.GetAdditionalDifficulty()}");
+#endif
         var mineLevel = mine.mineLevel;
         var all = new Dictionary<string, double>();
         //check every ore

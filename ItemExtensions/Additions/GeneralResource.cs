@@ -343,21 +343,20 @@ public static class GeneralResource
             {
                 foreach (var monster in monsters)
                 {
-                    var mon = new Monster(monster.Name, tileLocation + monster.Distance, Game1.random.Next(0, 3))
+                    var tile = tileLocation + monster.Distance;
+                    if (location.IsTileOccupiedBy(tile))
                     {
-                        isHardModeMonster = { monster.Hardmode }
-                    };
-
-                    if (monster.Health > 0)
-                    {
-                        mon.MaxHealth = monster.Health;
-                        mon.Health = monster.Health;
+                        tile = ClosestOpenTile(location,tile);
+                        Log($"Changing tile position to {tile}...");
                     }
+
+                    var mon = Sorter.GetMonster(monster, tile * 64, Game1.random.Next(0, 3));
                     
                     //calculates drops
                     var drops = new List<string>();
                     if(monster.ExcludeOriginalDrops == false)
                         drops.AddRange(mon.objectsToDrop);
+        
                     var context = new ItemQueryContext(location, who, Game1.random);
                     //for each one do chance & parse query
                     foreach (var drop in monster.ExtraDrops)
@@ -372,9 +371,6 @@ public static class GeneralResource
                     }
 
                     mon.objectsToDrop.Set(drops);
-
-                    if (location.IsTileOccupiedBy(mon.Tile))
-                        mon.setTileLocation(ClosestOpenTile(location,mon.Tile));
                     
                     location.characters.Add(mon);
                 }
