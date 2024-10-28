@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.11.0
+- Updated for 1.6.9
+- If an enchanted item is traded, the game will give you a prismatic shard as compensation.
+- Fixed bug about clumps not spawning in Qi's skull cavern.
+- Fixed bug about ore's monsters spawning in the wrong coordinates.
+- Added new API method
+
 ## 1.10.0
 - Added `ChanceDropOnFront` for train drops.
 

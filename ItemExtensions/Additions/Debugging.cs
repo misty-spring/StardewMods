@@ -2,6 +2,7 @@ using ItemExtensions.Additions.Clumps;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using Object = StardewValley.Object;
@@ -190,5 +191,18 @@ public static class Debugging
             animationLength = 8
         };
         Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, dust);
+    }
+
+    public static void CountClumps(string arg1, string[] arg2)
+    {
+        Log($"{Game1.player.currentLocation.resourceClumps?.Count}, is mine? {Game1.player.currentLocation is MineShaft}", LogLevel.Info);
+    }
+
+    public static void Stairs(string arg1, string[] arg2)
+    {
+        if (Game1.player.currentLocation is not MineShaft)
+            Log("You must be in the mines for this!", LogLevel.Warn);
+        else
+            Game1.player.addItemByMenuIfNecessaryElseHoldUp(ItemRegistry.Create("(BC)71"));
     }
 }

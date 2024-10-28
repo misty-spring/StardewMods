@@ -253,13 +253,24 @@ public partial class ShopMenuPatches
         foreach (var item in allTools)
         {
             var tool = item as Tool;
-            if (!(tool?.enchantments?.Count > 0)) 
+            if (tool?.enchantments?.Count <= 0) 
+                continue;
+
+            if (tool?.enchantments is null)
                 continue;
             
             foreach (var enchantment in tool.enchantments)
+            {
+#if DEBUG
+                Log($"Enchantment: {enchantment.GetDisplayName()}, level: {enchantment.Level}");
+#endif
                 num++;
+            }
         }
 
+        if (num * count <= 0)
+            return;
+        
         var prismaticShard = ItemRegistry.Create("(O)74", num * count);
         Game1.player.addItemByMenuIfNecessary(prismaticShard);
     }

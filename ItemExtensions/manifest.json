@@ -1,11 +1,11 @@
 ﻿{
   "Name": "Item extensions",
   "Author": "mistyspring",
-  "Version": "1.11.2",
+  "Version": "1.11.0",
   "Description": "Framework which allows for more item capability.",
   "UniqueID": "mistyspring.ItemExtensions",
   "EntryDll": "ItemExtensions.dll",
-  "MinimumApiVersion": "4.0.0-alpha",
+  "MinimumApiVersion": "4.1.0-beta",
   "UpdateKeys": ["nexus:20357"],
   "Dependencies": [
     {

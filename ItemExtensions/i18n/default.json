@@ -19,5 +19,9 @@
   "config.Drops.title":"Drop-related",
   "config.Resources.title":"Resources",
   "config.VanillaExt.title":"Vanilla extension",
-  "config.Customization.title":"Customization"
+  "config.Customization.title":"Customization",
+  "config.Advanced.title":"Advanced",
+  "config.MaxClumpsInQuarry.name": "Max clumps \nin quarry",
+  "config.MaxClumpsInQiCave.name": "Max clumps in\n Qi Skull Cavern",
+  "config.MaxClumps.description": "Max tries to spawn clumps. Doesn't affect minimum."
 }

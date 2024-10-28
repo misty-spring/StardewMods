@@ -18,4 +18,6 @@ internal class ModConfig
     public bool TerrainFeatures { get; set; } = true;
     public bool QualityChanges { get; set; } = true;
     public bool Treasure { get; set; } = true;
+    public int MaxClumpsInQuarry { get; set; } = 10;
+    public int MaxClumpsInQiCave { get; set; } = 6;
 }

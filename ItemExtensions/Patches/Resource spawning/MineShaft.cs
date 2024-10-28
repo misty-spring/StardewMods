@@ -55,7 +55,7 @@ public class MineShaftPatches
             //Log($"Level {__instance.mineLevel}. Difficulty: {__instance.GetAdditionalDifficulty()}, Clumps here? {__instance.resourceClumps?.Count > 0}", LogLevel.Info);
             
             //clumps aren't changed here to avoid issues because the zone is special
-            if(__instance.mineLevel != 77377)
+            if(CanClumpsSpawnHere(__instance))
                 CheckResourceClumps(__instance);
             else
             {
@@ -68,7 +68,7 @@ public class MineShaftPatches
                     if(Game1.random.NextDouble() > chance)
                         continue;
                     
-                    for (var i = 0; i < 10; i++)
+                    for (var i = 0; i < GetMaxClumps(__instance); i++)
                     {
                         var placeable = true;
                         var tile = __instance.getRandomTile();
@@ -88,7 +88,9 @@ public class MineShaftPatches
                         }
                         if(!placeable)
                             continue;
-
+#if DEBUG
+                        Log($"Adding clump with id {id} at tile {tile}.");
+#endif
                         __instance.resourceClumps.Add(ExtensionClump.Create(id, ModEntry.BigClumps[id],tile));
                         break;
                     }
@@ -101,10 +103,28 @@ public class MineShaftPatches
         }
     }
 
+    private static int GetMaxClumps(MineShaft mineShaft)
+    {
+        return mineShaft.mineLevel == 77377 ? ModEntry.Config.MaxClumpsInQuarry : ModEntry.Config.MaxClumpsInQiCave;
+    }
+
     private static bool CanClumpsSpawnHere(MineShaft mineShaft)
     {
-        //if it's NOT the quarry, or NOT hardmode qi mines
-        return mineShaft.mineLevel != 77377 || !(mineShaft.mineLevel > 120 && mineShaft.GetAdditionalDifficulty() > 0);
+        //if there's no clumps here, return to false. this will force them to spawn per our code
+        if (mineShaft.resourceClumps?.Count <= 0)
+        {
+#if DEBUG
+            Log("Clumps can't spawn here.");
+#endif
+            return false;
+        }
+#if DEBUG
+        Log("Checking if level is quarry (77377)...");
+#endif
+        //if there are clumps
+        //return whether it's not the quarry
+        // (the quarry can spawn clumps, but we do it this way to avoid bugs)
+        return mineShaft.mineLevel != 77377;
     }
 
     private static void CheckResourceNodes(MineShaft mineShaft)
@@ -239,7 +259,7 @@ public class MineShaftPatches
     private static Dictionary<string, double> GetAllForThisLevel(MineShaft mine, bool isClump = false)
     {
 #if DEBUG
-        Log($"{mine.mineLevel}, clump? {isClump}, difficulty {mine.GetAdditionalDifficulty()}");
+        Log($"{mine.mineLevel}, clump? {isClump}, difficulty {mine.GetAdditionalDifficulty()}", LogLevel.Info);
 #endif
         var mineLevel = mine.mineLevel;
         var all = new Dictionary<string, double>();

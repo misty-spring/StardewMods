@@ -18,5 +18,9 @@
   "config.Ores.tooltip": "Debe estar activado para permitir las otras opciones.",
   "config.Resources.title":"Recursos",
   "config.Drops.title":"De ítems extra",
-  "config.Customization.title":"Personalización"
+  "config.Customization.title":"Personalización",
+  "config.Advanced.title":"Avanzado",
+  "config.MaxClumpsInQuarry.name": "Máx. masa de recursos\n(Cantera)",
+  "config.MaxClumpsInQiCave.name": "Máx. masa de recursos\n(Caverna Calavera de Qi)",
+  "config.MaxClumps.description": "Máximo de intentos para generar una masa de recursos. No afecta el mínimo."
 }

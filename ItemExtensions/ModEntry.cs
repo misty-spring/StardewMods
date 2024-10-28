@@ -129,8 +129,10 @@ public sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
         helper.ConsoleCommands.Add("dump", "Exports ItemExtension's internal data", Debugging.Dump);
         helper.ConsoleCommands.Add("tas", "Tests animated sprite", Debugging.DoTas);
+        helper.ConsoleCommands.Add("count_clumps", "Count clumps in this location.", Debugging.CountClumps);
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed mod packs. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
+        helper.ConsoleCommands.Add("stairs", "Gives the player a staircase item.", Debugging.Stairs);
     }
 
     public override object GetApi() =>new Api();
@@ -289,6 +291,34 @@ public sealed class ModEntry : Mod
             name: () => Help.Translation.Get("config.TerrainFeatures.name"),
             getValue: () => Config.TerrainFeatures,
             setValue: value => Config.TerrainFeatures = value
+        );
+        
+        configMenu?.AddPageLink(
+            ModManifest,
+            "Advanced",
+            text: () => Helper.Translation.Get("config.Advanced.title")
+        );
+        
+        configMenu?.AddPage(ModManifest, "Advanced", () => Helper.Translation.Get("config.Advanced.title"));
+        
+        configMenu?.AddNumberOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.MaxClumpsInQuarry.name"),
+            tooltip: () => Help.Translation.Get("config.MaxClumps.description"),
+            getValue: () => Config.MaxClumpsInQuarry,
+            setValue: value => Config.MaxClumpsInQuarry = value,
+            min: 0,
+            max: 25
+        );
+        
+        configMenu?.AddNumberOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.MaxClumpsInQiCave.name"),
+            tooltip: () => Help.Translation.Get("config.MaxClumps.description"),
+            getValue: () => Config.MaxClumpsInQiCave,
+            setValue: value => Config.MaxClumpsInQiCave = value,
+            min: 0,
+            max: 25
         );
     }
 
