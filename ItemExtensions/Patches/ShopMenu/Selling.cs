@@ -161,7 +161,7 @@ public partial class ShopMenuPatches
         {
             Log($"Reducing {extra.Data.DisplayName} by {extra.Count * stockToBuy}...");
 
-            Pre_ConsumeTradeItem(extra.QualifiedItemId, extra.Count * stockToBuy);
+            Compensation.Pre_ConsumeTradeItem(extra.QualifiedItemId, extra.Count * stockToBuy);
             Game1.player.Items.ReduceId(extra.QualifiedItemId, extra.Count * stockToBuy);
         }
     }

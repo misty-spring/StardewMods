@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.11.1
+- Added korean by yuuyeeyii
+
 ## 1.11.0
 - Updated for 1.6.9
 - If an enchanted item is traded, the game will give you a prismatic shard as compensation.

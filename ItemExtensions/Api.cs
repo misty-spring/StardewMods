@@ -319,15 +319,33 @@ public class Api : IApi
         
         if (!isClump && ModEntry.Ores.TryGetValue(id, out var node))
         {
-            tool = node.Tool;
+            tool = GetRealTool(node.Tool);
             return true;
         }
 
         if (ModEntry.BigClumps.TryGetValue(id, out var clump))
         {
-            tool = clump.Tool;
+            tool = GetRealTool(clump.Tool);
             return true;
         }
         return false;
+    }
+
+    private static string GetRealTool(string tool)
+    {
+        return tool switch {
+            //aliases
+            "pick" or "Pick" => "Pickaxe",
+            "club" or "Club" => "Hammer",
+            "sword" => "Sword",
+            "slash" => "Slash",
+            "meleeweapon" or "weapon" => "Weapon",
+            //capitalization
+            "pickaxe" => "Pickaxe",
+            "axe" => "Axe",
+            "hoe" => "Hoe",
+            "wateringcan" or "wateringCan" => "WateringCan",
+            _ => tool
+        };
     }
 }

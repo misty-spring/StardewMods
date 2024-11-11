@@ -1,0 +1,10 @@
+{
+  "Name": "Configurable mastery points",
+  "Author": "mistyspring",
+  "Version": "1.0.0",
+  "Description": "Allows configuration of mastery points.",
+  "UniqueID": "mistyspring.ConfigurableMasteryPoints",
+  "EntryDll": "ConfigurableMasteryPoints.dll",
+  "MinimumApiVersion": "4.0.0-alpha",
+  "UpdateKeys": ["nexus:28987"]
+}
