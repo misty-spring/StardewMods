@@ -87,6 +87,12 @@ public partial class ShopMenuPatches
             original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveRightClick)),
             prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_receiveLeftClick))
         );
+        
+        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"ShopMenu.tryToPurchaseItem\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(ShopMenu), "tryToPurchaseItem"),
+            postfix: new HarmonyMethod(typeof(Compensation), nameof(Compensation.Post_tryToPurchaseItem))
+        );
     }
 
     internal static void Post_Initialize(ShopMenu __instance, int currency, Func<ISalable, Farmer, int, bool> onPurchase, Func<ISalable, bool> onSell, bool playOpenSound)

@@ -1,10 +1,20 @@
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Enchantments;
+using StardewValley.Menus;
 
 namespace ItemExtensions.Patches;
 
 public class Compensation
 {
+    private static ISalable _heldItem;
+#if DEBUG
+    private const LogLevel Level = LogLevel.Debug;
+#else
+    private const LogLevel Level =  LogLevel.Trace;
+#endif
+    
+    private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
 
     private static int _totalCount;
     private static List<BaseEnchantment> AllEnchantments { get; set; }= new();
@@ -16,9 +26,6 @@ public class Compensation
     /// <param name="count">How many to consume.</param>
     public static void Pre_ConsumeTradeItem(string itemId, int count)
     {
-        _totalCount = 0;
-        AllEnchantments.Clear();
-        
         var qualifiedItemId = ItemRegistry.QualifyItemId(itemId);
 #if DEBUG
         Log($"Item id: {qualifiedItemId}");
@@ -42,9 +49,10 @@ public class Compensation
             foreach (var enchantment in tool.enchantments)
             {
 #if DEBUG
-                Log($"Enchantment: {enchantment.GetDisplayName()}, level: {enchantment.Level}");
+                Log($"Adding enchantment: {enchantment.GetDisplayName()}, level: {enchantment.Level}");
 #endif
-                AllEnchantments.Add(enchantment);
+                //get active menu's item as tool, add enchantment
+                ((Game1.activeClickableMenu as ShopMenu)?.heldItem as Tool)?.enchantments.Add(enchantment);
                 num++;
             }
         }
@@ -53,12 +61,11 @@ public class Compensation
             return;
 
         _totalCount = num * count;
-        Game1.delayedActions.Add(new DelayedAction(10, ReEnchant));
     }
 
     private static void ReEnchant()
     {
-        var item = Game1.player.ActiveItem;
+        var item = (Game1.activeClickableMenu as ShopMenu)?.heldItem;
 
         if (item is not Tool t)
         {
@@ -78,9 +85,24 @@ public class Compensation
         _totalCount = 0;
     }
 
-    private void Post_tryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y, bool __result)
+    internal static void Post_tryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y, bool __result)
     {
-        if (__result == false || held_item is not Tool t)
+#if DEBUG
+        Log($"item: {item?.QualifiedItemId}, held item {held_item?.QualifiedItemId}, stock {stockToBuy}, x {x}, y {y}\n          result {__result} and total count {_totalCount}. Enchantments count {AllEnchantments.Count}");
+#endif
+        /*
+        //if no item bought
+        if (__result == false)
             return;
+        
+        //if it's not a tool, compensate
+        if (held_item is not Tool t)
+        {
+            if (_totalCount <= 0)
+                return;
+
+            var prismaticShard = ItemRegistry.Create("(O)74", _totalCount);
+            Game1.player.addItemByMenuIfNecessary(prismaticShard);
+        }*/
     }
 }

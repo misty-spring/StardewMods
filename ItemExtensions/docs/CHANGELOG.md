@@ -2,6 +2,8 @@
 
 ## 1.11.1
 - Added korean by yuuyeeyii
+- Traded tools are re-enchanted
+- API method updates
 
 ## 1.11.0
 - Updated for 1.6.9
