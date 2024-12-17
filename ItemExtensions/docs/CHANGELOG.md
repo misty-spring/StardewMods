@@ -1,5 +1,8 @@
 # CHANGELOG
 
+# 1.11.2
+- Updated chinese by 2228091075
+
 ## 1.11.1
 - Added korean by yuuyeeyii
 - Traded tools are re-enchanted
