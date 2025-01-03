@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<EnableHarmony>true</EnableHarmony>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="i18n\default.json\**" />
+	  <EmbeddedResource Remove="i18n\default.json\**" />
+	  <None Remove="i18n\default.json\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.3.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="i18n\default.json" />
+	</ItemGroup>
+
+</Project>
