@@ -1,0 +1,10 @@
+﻿{
+  "config.change_@.name": "Changer '@' dans les bulles textuelles",
+	"config.change_@.description": "Échange le caractère '@' dans les bulles avec le nom du joueur.",
+	"config.Debug.name": "Debug",
+	"config.Debug.description": "Options de développeur",
+	"config.Verbose.name": "Verbose ?",
+	"config.Verbose.description": "Enregistre davantage d’informations dans la console.",
+	"config.QuestChance.name": "Probabilité de quête pour les PNJ",
+	"config.QuestChance.description": "Probabilité que les PNJ vous demandent quelque chose (toutes les 20 minutes). Les quêtes de PNJ sont ajoutées par des mods."
+}
