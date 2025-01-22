@@ -82,7 +82,6 @@ public sealed class ModEntry : Mod
         {
             GameLocationPatches.Apply(harmony);
             MineShaftPatches.Apply(harmony);
-            CjbCheat.Apply(harmony);
             ResourceClumpPatches.Apply(harmony);
 
             if (Config.ResourcesMtn)
@@ -90,6 +89,10 @@ public sealed class ModEntry : Mod
 
             if (Config.ResourcesVolcano)
                 VolcanoPatches.Apply(harmony);
+            
+            //if the user has CJB cheats menu
+            if(helper.ModRegistry.Get("CJBok.CheatsMenu") is not null)
+                CjbCheat.Apply(harmony);
         }
 
         if (Config.ShopTrades)
@@ -126,6 +129,7 @@ public sealed class ModEntry : Mod
         TriggerActionManager.RegisterTrigger($"{Id}_AddedToStack");
         
         #if DEBUG
+        helper.ConsoleCommands.Add("dump_mastery", "Checks mastery for all skills.", Debugging.Mastery);
         helper.ConsoleCommands.Add("ie", "Tests ItemExtension's mod capabilities", Debugging.Tester);
         helper.ConsoleCommands.Add("dump", "Exports ItemExtension's internal data", Debugging.Dump);
         helper.ConsoleCommands.Add("tas", "Tests animated sprite", Debugging.DoTas);

@@ -5,9 +5,11 @@ using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Constants;
 using StardewValley.Extensions;
+using StardewValley.GameData.Objects;
 using StardewValley.Internal;
-using StardewValley.Monsters;
+using StardewValley.Locations;
 using StardewValley.Tools;
 
 namespace ItemExtensions.Additions;
@@ -69,8 +71,8 @@ public static class GeneralResource
 
         #if DEBUG
         var toolName = tool?.GetToolData()?.ClassName;
-        if (tool is MeleeWeapon debug_weapon)
-            toolName = debug_weapon.DisplayName + " (weapon)";
+        if (tool is MeleeWeapon debugWeapon)
+            toolName = debugWeapon.DisplayName + " (weapon)";
         Log($"Tool: {toolName}, required: {data.Tool}");
         #endif
         
@@ -144,7 +146,7 @@ public static class GeneralResource
         return className.Equals(data.Tool, IgnoreCase);
     }
 
-    internal static void CreateRadialDebris(GameLocation location, string debrisType, int xTile, int yTile, int numberOfChunks, bool resource, bool item = false, int quality = 0)
+    private static void CreateRadialDebris(GameLocation location, string debrisType, int xTile, int yTile, int numberOfChunks, bool resource, bool item = false, int quality = 0)
     {
         var vector = new Vector2(xTile * 64 + 64, yTile * 64 + 64);
         var tileLocation = new Vector2(xTile, yTile);
@@ -308,7 +310,7 @@ public static class GeneralResource
 
     internal static void CreateItemDebris(string itemId, int howMuchDebris, int xTile, int yTile, GameLocation where, int quality = 0) => CreateRadialDebris(where, itemId, xTile, yTile, howMuchDebris, true, quality > 0, quality);
 
-    internal static void AddHay(ResourceData resource, GameLocation location, Vector2 tileLocation)
+    private static void AddHay(ResourceData resource, GameLocation location, Vector2 tileLocation)
     {
         //store hay
         GameLocation.StoreHayInAnySilo(resource.AddHay, location);
@@ -327,6 +329,7 @@ public static class GeneralResource
 
     public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t)
     {
+        // ReSharper disable once RedundantArgumentDefaultValue
         Log("Checking resource drops...", LogLevel.Debug);
         
         var who = t?.getLastFarmerToUse() ?? Game1.player;
@@ -357,7 +360,7 @@ public static class GeneralResource
                     if(monster.ExcludeOriginalDrops == false)
                         drops.AddRange(mon.objectsToDrop);
         
-                    var context = new ItemQueryContext(location, who, Game1.random);
+                    var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' CheckDrops method");
                     //for each one do chance & parse query
                     foreach (var drop in monster.ExtraDrops)
                     {
@@ -393,6 +396,18 @@ public static class GeneralResource
 
         if (!string.IsNullOrWhiteSpace(resource.ItemDropped))
         {
+            //if a vanilla ore
+            if (IsVanillaOre(resource.ItemDropped) && who.hasBuff("dwarfStatue_0"))
+            {
+                Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
+                num2++;
+            }
+            else if (IsGem(resource.ItemDropped) && Game1.player.stats.Get(StatKeys.Mastery(3)) > 0)
+            {
+                Log("Found mining mastery and gem item. Multiplying amount by 2...", LogLevel.Trace);
+                num2 = num2 * 2;
+            }
+
             CreateItemDebris(resource.ItemDropped, num2, (int)tileLocation.X, (int)tileLocation.Y, location);
         }
 
@@ -414,6 +429,64 @@ public static class GeneralResource
 
         if (resource.CountTowards is not StatCounter.None)
             AddStats(resource.CountTowards);
+
+        if (location is MineShaft shaft && Game1.random.NextDouble() < ModEntry.Config.ChanceForStairs)
+            shaft?.createLadderDown((int)tileLocation.X, (int)tileLocation.Y);
+
+    }
+
+    /// <summary>
+    /// Uses item IDs to check for geode data.
+    /// </summary>
+    /// <param name="item">Item id.</param>
+    /// <returns>Whether the item is a geode.</returns>
+    /// See <see cref="Utility.IsGeode(Item, bool)"/>
+    private static bool IsGeode(string item)
+    {
+        if(string.IsNullOrWhiteSpace(item))
+            return false;
+        
+        if (!item.Contains("MysteryBox"))
+        {
+            if (Game1.objectData.TryGetValue(item, out var value))
+            {
+                if (!value.GeodeDropsDefaultItems)
+                {
+                    List<ObjectGeodeDropData> geodeDrops = value.GeodeDrops;
+                    if (geodeDrops == null)
+                    {
+                        return false;
+                    }
+
+                    return geodeDrops.Count > 0;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+        return false;
+    }
+
+    private static bool IsGem(string item)
+    {
+        if(string.IsNullOrWhiteSpace(item))
+            return false;
+        
+        var data = ItemRegistry.GetData(item);
+        return data.Category == -2;
+    }
+
+    private static bool IsVanillaOre(string item)
+    {
+        if(string.IsNullOrWhiteSpace(item))
+            return false;
+        
+        //both qualified and unqualified: copper, iron, gold, iridium and radioactive
+        var ores = new[] { "378", "380", "384", "386", "909", "(O)378", "(O)380", "(O)384", "(O)386", "(O)909" };
+
+        return ores.Contains(item);
     }
 
     private static Vector2 ClosestOpenTile(GameLocation location, Vector2 tile)
@@ -474,9 +547,21 @@ public static class GeneralResource
 
     private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)
     {
+        var geodeChanceMultiplier = who.hasBuff("dwarfStatue_4") ? 1.25 : 1.0;
+        var addedCoalChance = who.hasBuff("dwarfStatue_2") ? 0.1 : 0.0;
+
         foreach (var item in data)
         {
             var chance = Game1.random.NextDouble();
+
+            //if coal, add coal chance
+            if (item.ItemId is "(O)382" or "382")
+                chance += addedCoalChance;
+
+            //if geode, multiply chance
+            if (IsGeode(item.ItemId))
+                chance = chance * geodeChanceMultiplier;
+
             if(GameStateQuery.CheckConditions(item.Condition, location, who) == false)
                 continue;
                 
@@ -486,7 +571,7 @@ public static class GeneralResource
 
             Log($"Chance and condition match. Spawning extra item(s)...({item.ItemId})");
                 
-            var context = new ItemQueryContext(location, who, Game1.random);
+            var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' TryExtraDrops");
             var itemQuery = ItemQueryResolver.TryResolve(item, context, item.Filter, item.AvoidRepeat);
             foreach (var result in itemQuery)
             {
@@ -496,7 +581,18 @@ public static class GeneralResource
                     
                 var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
                 parsedItem.Stack *= multiplier;
-                
+
+                if (IsVanillaOre(parsedItem.QualifiedItemId) && who.hasBuff("dwarfStatue_0"))
+                {
+                    Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
+                    parsedItem.Stack++;
+                }
+                else if (IsGem(parsedItem.QualifiedItemId) && Game1.player.stats.Get(StatKeys.Mastery(3)) > 0)
+                {
+                    Log("Found mining mastery and gem item. Multiplying amount by 2...", LogLevel.Trace);
+                    parsedItem.Stack = parsedItem.Stack * 2;
+                }
+
                 var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
                 var y = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });
                 var vector = new Vector2((int)tileLocation.X, (int)tileLocation.Y) * 64;

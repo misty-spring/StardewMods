@@ -152,15 +152,15 @@ internal static class CropPatches
         if (all.Any() == false)
             return seedId;
 
-
-        if (seedId == "MixedFlowerSeeds")
+        /* this was overriding AddMainSeedBy behavior
+        if (all.Any() == false && seedId == "MixedFlowerSeeds")
         {
             all.AddRange(GetVanillaFlowersForSeason(location.GetSeason(), location.IsOutdoors));
         }
-        else if (seedId == "770")
+        else if (all.Any() == false && seedId == "770")
         {
             all.AddRange(GetVanillaCropsForSeason(location.GetSeason(), location));
-        }
+        }*/
 
 #if DEBUG
             var allData = new StringBuilder();
@@ -271,12 +271,14 @@ internal static class CropPatches
 
     private static int AddMainSeedBy(string itemId, List<string> allFields)
     {
+        var mixedSeeds = itemId is "770" or "MixedFlowerSeeds";
+        
         //if not an object
         if (Game1.objectData.TryGetValue(itemId, out var objData) == false)
             return 0;
 
-        //if no crop data
-        if (Game1.cropData.TryGetValue(itemId, out _) == false)
+        //if no crop data AND not mixed seeds
+        if (Game1.cropData.TryGetValue(itemId, out _) == false && !mixedSeeds)
             return 0;
 
         var fields = objData.CustomFields;

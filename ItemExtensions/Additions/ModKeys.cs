@@ -22,6 +22,8 @@ public static class ModKeys
     public const string CustomEating = "mistyspring.ItemExtensions/EatingAnimation";
     /// <summary> Customizes drink color in animation. </summary>
     public const string DrinkColor = "mistyspring.ItemExtensions/DrinkColor";
+    /// <summary> Customizes drink animation. </summary>
+    public const string CustomDrinkingSprite = "mistyspring.ItemExtensions/CustomDrinkingSprite";
     
     //small changes via customfields
     /// <summary> Modifies item's maximum stack. </summary>

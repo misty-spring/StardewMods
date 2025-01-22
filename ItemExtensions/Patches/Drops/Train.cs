@@ -74,7 +74,7 @@ public partial class TrainPatches
          * presents = 9
          */
 
-        var context = new ItemQueryContext(location, who, Game1.random);
+        var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' TryExtraDrops");
         var y = 2592;
 
         for (var i = 0; i < train.cars.Count; i++)

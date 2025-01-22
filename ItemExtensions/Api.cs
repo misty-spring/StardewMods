@@ -213,7 +213,7 @@ public class Api : IApi
         var result = new Dictionary<string,(double, int)>();
         var location = Game1.player.currentLocation;
         var who = Game1.player;
-        var context = new ItemQueryContext(location, who, Game1.random);
+        var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' GetClumpDrops");
 
         if (clump is null)
             return result;
@@ -255,7 +255,7 @@ public class Api : IApi
         var result = new Dictionary<string,(double, int)>();
         var location = Game1.player.currentLocation;
         var who = Game1.player;
-        var context = new ItemQueryContext(location, who, Game1.random);
+        var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' GetObjectDrops");
 
         if (node is null)
             return result;

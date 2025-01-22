@@ -1,4 +1,5 @@
 using HarmonyLib;
+using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Items;
@@ -80,6 +81,7 @@ public class FarmerPatches
                 //if also none in moddata, run og
                 var flag1 = objectData.CustomFields.TryGetValue(CustomEating, out var customField);
                 var flag2 = objectData.CustomFields.TryGetValue(DrinkColor, out var drinkColor);
+                //var flag3 = objectData.CustomFields.TryGetValue(CustomDrinkingSprite, out _);
 
                 //if you have a drink color set, it will prioritize that over animation
                 if (flag2)
@@ -456,7 +458,7 @@ public class FarmerPatches
     private static void Animate(Color color, int frame, int duration, int delay, Farmer who)
     {
         var position = new Vector2(who.Position.X, who.Position.Y - who.FarmerSprite.SpriteHeight * 3);
-        var texture = $"Mods/{ModEntry.Id}/Textures/Drink";
+        var texture = GetTexture(who.ActiveObject);
         var rect = new Rectangle(16 * frame, 0, 16, 32);
         
         var animatedSprite = new TemporaryAnimatedSprite(
@@ -482,6 +484,29 @@ public class FarmerPatches
         
         Game1.Multiplayer.broadcastSprites(who.currentLocation, animatedSprite);
     }
+
+    private static string GetTexture(Object item)
+    {
+        var defaultSprite = $"Mods/{ModEntry.Id}/Textures/Drink";
+        
+        if (Game1.objectData.TryGetValue(item.ItemId, out var objData) == false)
+            return defaultSprite;
+        
+        var fields = objData.CustomFields;
+        
+        // if there's any custom fields
+        if (fields.Any())
+        {
+            // if it has specific count
+            if (fields.TryGetValue(CustomDrinkingSprite, out var texturePath))
+            {
+                return texturePath;
+            }
+        }
+        
+        return defaultSprite;
+    }
+
     #endregion
 
     #region default

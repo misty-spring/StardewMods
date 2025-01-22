@@ -205,4 +205,14 @@ public static class Debugging
         else
             Game1.player.addItemByMenuIfNecessaryElseHoldUp(ItemRegistry.Create("(BC)71"));
     }
+
+    public static void Mastery(string arg1, string[] arg2)
+    {
+        var text = "Farming: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(0));
+        text += ", Fishing: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(1));
+        text += ", Foraging: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(2));
+        text +=", Mining: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(3));
+        text += ", Combat: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(3));
+        Log(text, LogLevel.Info);
+    }
 }

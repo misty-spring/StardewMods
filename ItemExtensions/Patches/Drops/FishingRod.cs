@@ -43,7 +43,7 @@ internal class FishingRodPatches
         if (menu.source != 3)
             return;
         
-        var context = new ItemQueryContext(__instance.lastUser.currentLocation, __instance.lastUser, Game1.random);
+        var context = new ItemQueryContext(__instance.lastUser.currentLocation, __instance.lastUser, Game1.random, "ItemExtensions' Post_openTreasureMenuEndFunction");
         
         foreach (var (entry, data) in ModEntry.Treasure)
         {

@@ -30,7 +30,7 @@ public class PanPatches
     {
         try
         {
-            var context = new ItemQueryContext(location, who, Game1.random);
+            var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' Post_getPanItems");
 
             foreach (var data in ModEntry.Panning)
             {

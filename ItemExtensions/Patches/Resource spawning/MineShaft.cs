@@ -42,8 +42,8 @@ public class MineShaftPatches
     {
         try
         {
-            //don't patch anything that's negative
-            if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0)
+            //don't patch anything that's negative, an elevator level, OR a monster level
+            if (__instance.mineLevel < 1 || __instance.mineLevel % 10 == 0 || __instance.mustKillAllMonstersToAdvance())
                 return;
 
             if (ModEntry.Config.TerrainFeatures)
@@ -76,7 +76,7 @@ public class MineShaftPatches
                         {
                             for (var k = 1; k < ModEntry.BigClumps[id].Height; k++)
                             {
-                                if(__instance.isTileClearForMineObjects(tile + new Vector2(j,k)))
+                                if(__instance.isTileClearForMineObjects(tile + new Vector2(j,k)) && IsTileBackground(__instance, j,k) == false)
                                     continue;
                                 
                                 placeable = false;
@@ -101,6 +101,14 @@ public class MineShaftPatches
         {
             Log($"Error when postfixing populate for level {__instance.mineLevel}: {e}", LogLevel.Error);
         }
+    }
+
+    private static bool IsTileBackground(MineShaft mineShaft, int x, int y)
+    {
+        var tiles = new[] { 9, 10, 11, 12, 13, 14, 15, 25, 26, 27, 28, 29, 30, 31, 41, 42, 43, 44, 45, 46, 47, 57, 58, 59, 60, 61, 62, 63, 77, 78, 79, 95 };
+        var index = mineShaft.Map.RequireLayer("Back")?.Tiles[x, y]?.TileIndex;
+        
+        return index is null || tiles.Contains((int)index);
     }
 
     private static int GetMaxClumps(MineShaft mineShaft)

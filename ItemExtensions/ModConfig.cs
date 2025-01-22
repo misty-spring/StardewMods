@@ -20,4 +20,5 @@ internal class ModConfig
     public bool Treasure { get; set; } = true;
     public int MaxClumpsInQuarry { get; set; } = 10;
     public int MaxClumpsInQiCave { get; set; } = 6;
+    public double ChanceForStairs { get; set; } = 0.1;
 }
