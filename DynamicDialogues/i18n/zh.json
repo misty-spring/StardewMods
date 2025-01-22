@@ -1,0 +1,10 @@
+{
+	"config.change_@.name": "更改 '@' 在气泡文本中",
+	"config.change_@.description": "将气泡中的 '@' 换成玩家姓名.",
+	"config.Debug.name": "调试",
+	"config.Debug.description": "开发人员选项.",
+	"config.Verbose.name": "冗长?",
+	"config.Verbose.description": "向控制台记录更多信息.",
+	"config.QuestChance.name": "NPC任务几率",
+	"config.QuestChance.description": "NPC向您提出要求的几率(每20分钟一次).NPC任务由模组添加."
+}
