@@ -1,6 +1,15 @@
 # CHANGELOG
 
-# 1.11.2
+## 1.12.1
+- Fixed bug in breaking clumps related to null string
+
+## 1.12.0
+- Custom ores/clumps can now spawn stairs (10%, configurable via config file if needed)
+- Fixed mixed seeds behavior
+- Added compatibility with mining blessings and mastery
+- Can now customize the drinking sprite animation
+
+## 1.11.2
 - Updated chinese by 2228091075
 
 ## 1.11.1
