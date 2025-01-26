@@ -26,7 +26,7 @@ If your held item has "custom behavior" for the clicked one, it'll be called.
 | PriceChange       | `string`       | false    | How the price should be changed. (E.g 5x for 5 times original price) |
 | TextureIndex      | `int`          | false    | Changes the index in spritesheet.                                    |
 | PlaySound         | `string`       | false    | Plays a sound.                                                       |
-| TriggerActionID   | `string`       | false    | Trigger action to call.                                              |
+| TriggerAction     | `string`       | false    | Trigger action to cause.                                             |
 | Conditions        | `string`       | false    | Game state query to check.                                           |
 
 ## How to use

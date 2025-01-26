@@ -231,7 +231,8 @@ public static class InventoryPatches
     {
         shouldNullResult = false;
 
-        if (behavior.TargetId != affectedItem.QualifiedItemId)
+        //if not the target id AND not the appropriate context tag
+        if (behavior.TargetId != affectedItem.QualifiedItemId && affectedItem.HasContextTag(behavior.TargetContextTag) == false)
         {
             return true;
         }

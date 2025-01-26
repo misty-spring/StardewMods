@@ -296,8 +296,8 @@ internal static class AnimatedSprites
                 interval = 50f,
                 totalNumberOfLoops = 99999,
                 animationLength = 4,
-                light = false,
-                lightRadius = 1f,
+                //light = false,
+                //lightRadius = 1f,
                 scale = 4f,
                 layerDepth = 0.5f
             };

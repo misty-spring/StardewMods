@@ -1,0 +1,16 @@
+﻿{
+  "Name": "Iridium scythe ginger",
+  "Author": "mistyspring",
+  "Version": "1.0.0",
+  "Description": "Iridium scythe harvests ginger",
+  "UniqueID": "mistyspring.IridiumScytheGinger",
+  "EntryDll": "IridiumScytheGinger.dll",
+  "MinimumApiVersion": "3.14.0",
+  "UpdateKeys": ["nexus:?"],
+  "Dependencies": [
+    {
+      "UniqueID": "Pathoschild.ContentPatcher",
+      "IsRequired": false
+    }
+  ]
+}
