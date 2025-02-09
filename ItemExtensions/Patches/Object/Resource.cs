@@ -161,24 +161,10 @@ public partial class ObjectPatches
             if (resource.ImmuneToBombs)
                 return;
             
-            //var sheetName = ItemRegistry.GetData(data.ItemDropped).TextureName;
             var where = __instance.Location;
             var tile = __instance.TileLocation;
-            var num2 = Game1.random.Next(resource.MinDrops, resource.MaxDrops + 1);
 
-            if (string.IsNullOrWhiteSpace(resource.ItemDropped))
-                return;
-
-            if (Game1.IsMultiplayer)
-            {
-                Game1.recentMultiplayerRandom = Utility.CreateRandom(tile.X * 1000.0, tile.Y);
-                for (var index = 0; index < Game1.random.Next(2, 4); ++index)
-                    CreateItemDebris(resource.ItemDropped, num2, (int)tile.X, (int)tile.Y, where);
-            }
-            else
-            {
-                CreateItemDebris(resource.ItemDropped, num2, (int)tile.X, (int)tile.Y, where);
-            }
+            CheckDrops(resource, where, tile, null);
 
             Destroy(__instance, true);
         }

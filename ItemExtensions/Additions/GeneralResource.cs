@@ -397,7 +397,7 @@ public static class GeneralResource
         if (!string.IsNullOrWhiteSpace(resource.ItemDropped))
         {
             //if a vanilla ore
-            if (IsVanillaOre(resource.ItemDropped) && who.hasBuff("dwarfStatue_0"))
+            if (IsVanillaOre(resource.ItemDropped) && HasBuff(who , "dwarfStatue_0"))
             {
                 Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
                 num2++;
@@ -547,8 +547,8 @@ public static class GeneralResource
 
     private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)
     {
-        var geodeChanceMultiplier = who.hasBuff("dwarfStatue_4") ? 1.25 : 1.0;
-        var addedCoalChance = who.hasBuff("dwarfStatue_2") ? 0.1 : 0.0;
+        var geodeChanceMultiplier = HasBuff(who,"dwarfStatue_4") ? 1.25 : 1.0;
+        var addedCoalChance = HasBuff(who, "dwarfStatue_2") ? 0.1 : 0.0;
 
         foreach (var item in data)
         {
@@ -582,7 +582,7 @@ public static class GeneralResource
                 var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
                 parsedItem.Stack *= multiplier;
 
-                if (IsVanillaOre(parsedItem.QualifiedItemId) && who.hasBuff("dwarfStatue_0"))
+                if (IsVanillaOre(parsedItem.QualifiedItemId) && HasBuff(who, "dwarfStatue_0"))
                 {
                     Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
                     parsedItem.Stack++;
@@ -600,6 +600,19 @@ public static class GeneralResource
             }
         }
     }
+
+    private static bool HasBuff(Farmer who, string buff)
+    {
+        try
+        {
+            return who.hasBuff(buff);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     private static void AddStats(StatCounter stat)
     {
         switch (stat)

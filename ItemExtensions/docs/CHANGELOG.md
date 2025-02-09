@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.12.2
+- Fixed error where explosions wouldn't drop ladders
+- Fixed error where explosions wouldn't drop extra items
+- Fixed NRE error when calling who.HasBuff in TryExtraDrops
+
 ## 1.12.1
 - Fixed bug in breaking clumps related to null string
 
