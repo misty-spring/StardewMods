@@ -1,9 +1,11 @@
 using ItemExtensions.Additions;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Internal;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Internal;
 using StardewValley.Menus;
 using StardewValley.TokenizableStrings;
 
@@ -29,10 +31,10 @@ public static class ActionButton
         if (data.OnUse == null)
             return;
         
-        CheckBehavior(data.OnUse);
+        CheckBehavior(data.OnUse, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
     }
 
-    public static void CheckBehavior(OnBehavior behavior)
+    public static void CheckBehavior(OnBehavior behavior, int xTile, int yTile, GameLocation location)
     {
         if (!string.IsNullOrWhiteSpace(behavior.Conditions) && !GameStateQuery.CheckConditions(behavior.Conditions))
         {
@@ -56,18 +58,18 @@ public static class ActionButton
             void AfterDialogueBehavior(Farmer who, string whichanswer)
             {
                 if(whichanswer == "Yes")
-                    RunBehavior(behavior, false);
+                    RunBehavior(behavior, xTile, yTile, location, false);
             }
 
             Game1.currentLocation.createQuestionDialogue(TokenParser.ParseText(behavior.Message), responses, AfterDialogueBehavior);
         }
         else
         {
-            RunBehavior(behavior);
+            RunBehavior(behavior, xTile, yTile, location);
         }
     }
 
-    private static void RunBehavior(OnBehavior behavior, bool directAction = true)
+    private static void RunBehavior(OnBehavior behavior, int xTile, int yTile, GameLocation location, bool directAction = true)
     {
         if (behavior.ReduceBy > 0)
             Game1.player.ActiveObject.ConsumeStack(behavior.ReduceBy);
@@ -79,13 +81,12 @@ public static class ActionButton
         
         IWorldChangeData.Solve(behavior);
         
-        #region menus
         if(directAction && !string.IsNullOrWhiteSpace(behavior.Message))
         {
-            Game1.addHUDMessage(new HUDMessage(TokenParser.ParseText(behavior.Message)));
+            Game1.addHUDMessage(new HUDMessage(TokenParser.ParseText(behavior.Message),2));
         }
 
-        if (behavior.ShowNote != null)
+        if (behavior.ShowNote != null && GameStateQuery.CheckConditions(behavior.ShowNote.Condition))
         {
             var note = behavior.ShowNote;
             if (!string.IsNullOrWhiteSpace(note.MailId))
@@ -96,22 +97,116 @@ public static class ActionButton
                     Game1.activeClickableMenu = new LetterViewerMenu(mail);
                 }
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(note.Message) || !string.IsNullOrWhiteSpace(note.Image))
             {
-                ShowNote(note);
+                var menu = new LetterWithImage(note);
+                Game1.activeClickableMenu = menu;
+            }
+
+            if (note.AddFlags != null)
+            {
+                foreach (var flag in note.AddFlags)
+                {
+                    Game1.player.mailReceived.Add(flag);
+                }
             }
         }
-        #endregion
-    }
+        
+        var monsters = behavior.SpawnMonsters;
+        
+        if (monsters is null) 
+            return;
 
-    /// <summary>
-    /// Shows a note.
-    /// </summary>
-    /// <param name="note">Note data.</param>
-    /// <see cref="StardewValley.Menus.LetterViewerMenu"/>
-    private static void ShowNote(NoteData note)
+        var tileLocation = new Vector2(xTile, yTile);
+        
+        foreach (var monster in monsters)
+        {
+            var tile = tileLocation + monster.Distance;
+            if (location.IsTileOccupiedBy(tile))
+            {
+                tile = ClosestOpenTile(location,tile);
+                Log($"Changing tile position to {tile}...");
+            }
+
+            var mon = Sorter.GetMonster(monster, tile * 64, Game1.random.Next(0, 3));
+                    
+            //calculates drops
+            var drops = new List<string>();
+            if(monster.ExcludeOriginalDrops == false)
+                drops.AddRange(mon.objectsToDrop);
+        
+            var context = new ItemQueryContext(location, Game1.player, Game1.random, "ItemExtensions' RunBehavior method");
+            //for each one do chance & parse query
+            foreach (var drop in monster.ExtraDrops)
+            {
+                if(drop.Chance < Game1.random.NextDouble())
+                    continue;
+
+                if (Sorter.GetItem(drop, context, out var item) == false)
+                    continue;
+                        
+                drops.Add(item.QualifiedItemId);
+            }
+
+            mon.objectsToDrop.Set(drops);
+                    
+            location.characters.Add(mon);
+        }
+    }
+    
+    internal static Vector2 ClosestOpenTile(GameLocation location, Vector2 tile)
     {
-        var menu = new LetterWithImage(note);
-        Game1.activeClickableMenu = menu;
+        for (var i = 1; i < 30; i++)
+        {
+            var toLeft = new Vector2(tile.X - i, tile.Y);
+            if (!location.IsTileOccupiedBy(toLeft))
+            {
+                return toLeft;
+            }
+            
+            var toRight = new Vector2(tile.X + i, tile.Y);
+            if (!location.IsTileOccupiedBy(toRight))
+            {
+                return toRight;
+            }
+            
+            var toUp = new Vector2(tile.X, tile.Y - i);
+            if (!location.IsTileOccupiedBy(toUp))
+            {
+                return toUp;
+            }
+            
+            var toDown = new Vector2(tile.X, tile.Y + i);
+            if (!location.IsTileOccupiedBy(toDown))
+            {
+                return toDown;
+            }
+
+            var upperLeft= new Vector2(tile.X - i, tile.Y - 1);
+            if (!location.IsTileOccupiedBy(upperLeft))
+            {
+                return upperLeft;
+            }
+            
+            var lowerLeft= new Vector2(tile.X - i, tile.Y + 1);
+            if (!location.IsTileOccupiedBy(lowerLeft))
+            {
+                return lowerLeft;
+            }
+            
+            var upperRight= new Vector2(tile.X + i, tile.Y - 1);
+            if (!location.IsTileOccupiedBy(upperRight))
+            {
+                return upperRight;
+            }
+            
+            var lowerRight= new Vector2(tile.X + i, tile.Y + 1);
+            if (!location.IsTileOccupiedBy(lowerRight))
+            {
+                return lowerRight;
+            }
+        }
+
+        return tile;
     }
 }

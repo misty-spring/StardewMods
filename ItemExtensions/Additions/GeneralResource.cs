@@ -1,3 +1,4 @@
+using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Internal;
@@ -337,75 +338,7 @@ public static class GeneralResource
 
         if (resource.OnDestroy != null)
         {
-            var hasConfirm = !string.IsNullOrWhiteSpace(resource.OnDestroy.Confirm);
-            var hasReject = !string.IsNullOrWhiteSpace(resource.OnDestroy.Reject);
-        
-            //if there's a message + confirm/reject, create a question to trigger OnDestroy behavior. Otherwise, run it normally (and if there's a message *without* confirm/reject, show it too)
-            if (!string.IsNullOrWhiteSpace(resource.OnDestroy.Message) && (hasConfirm || hasReject))
-            {
-                var defaultResponse = Game1.currentLocation.createYesNoResponses();
-            
-                var responses = new[]
-                {
-                    hasConfirm ? new Response("Yes", TokenParser.ParseText(resource.OnDestroy.Confirm)) : defaultResponse[0],
-                    hasReject ? new Response("No", TokenParser.ParseText(resource.OnDestroy.Reject)) : defaultResponse[1]
-                };
-
-                void AfterDialogueBehavior(Farmer farmer, string whichanswer)
-                {
-                    if(whichanswer == "Yes")
-                        IWorldChangeData.Solve(resource.OnDestroy);
-                }
-
-                Game1.currentLocation.createQuestionDialogue(TokenParser.ParseText(resource.OnDestroy.Message), responses, AfterDialogueBehavior);
-            }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(resource.OnDestroy.Message))
-                {
-                    Game1.addHUDMessage(new HUDMessage(TokenParser.ParseText(resource.OnDestroy.Message), 2));
-                }
-                
-                IWorldChangeData.Solve(resource.OnDestroy);
-            }
-            
-            var monsters = resource.OnDestroy.SpawnMonsters;
-            if (monsters is not null)
-            {
-                foreach (var monster in monsters)
-                {
-                    var tile = tileLocation + monster.Distance;
-                    if (location.IsTileOccupiedBy(tile))
-                    {
-                        tile = ClosestOpenTile(location,tile);
-                        Log($"Changing tile position to {tile}...");
-                    }
-
-                    var mon = Sorter.GetMonster(monster, tile * 64, Game1.random.Next(0, 3));
-                    
-                    //calculates drops
-                    var drops = new List<string>();
-                    if(monster.ExcludeOriginalDrops == false)
-                        drops.AddRange(mon.objectsToDrop);
-        
-                    var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' CheckDrops method");
-                    //for each one do chance & parse query
-                    foreach (var drop in monster.ExtraDrops)
-                    {
-                        if(drop.Chance < Game1.random.NextDouble())
-                            continue;
-
-                        if (Sorter.GetItem(drop, context, out var item) == false)
-                            continue;
-                        
-                        drops.Add(item.QualifiedItemId);
-                    }
-
-                    mon.objectsToDrop.Set(drops);
-                    
-                    location.characters.Add(mon);
-                }
-            }
+            ActionButton.CheckBehavior(resource.OnDestroy, (int)tileLocation.X, (int)tileLocation.Y, location);
         }
         
         //create notes
@@ -531,62 +464,6 @@ public static class GeneralResource
         var ores = new[] { "378", "380", "384", "386", "909", "(O)378", "(O)380", "(O)384", "(O)386", "(O)909" };
 
         return ores.Contains(item);
-    }
-
-    private static Vector2 ClosestOpenTile(GameLocation location, Vector2 tile)
-    {
-        for (var i = 1; i < 30; i++)
-        {
-            var toLeft = new Vector2(tile.X - i, tile.Y);
-            if (!location.IsTileOccupiedBy(toLeft))
-            {
-                return toLeft;
-            }
-            
-            var toRight = new Vector2(tile.X + i, tile.Y);
-            if (!location.IsTileOccupiedBy(toRight))
-            {
-                return toRight;
-            }
-            
-            var toUp = new Vector2(tile.X, tile.Y - i);
-            if (!location.IsTileOccupiedBy(toUp))
-            {
-                return toUp;
-            }
-            
-            var toDown = new Vector2(tile.X, tile.Y + i);
-            if (!location.IsTileOccupiedBy(toDown))
-            {
-                return toDown;
-            }
-
-            var upperLeft= new Vector2(tile.X - i, tile.Y - 1);
-            if (!location.IsTileOccupiedBy(upperLeft))
-            {
-                return upperLeft;
-            }
-            
-            var lowerLeft= new Vector2(tile.X - i, tile.Y + 1);
-            if (!location.IsTileOccupiedBy(lowerLeft))
-            {
-                return lowerLeft;
-            }
-            
-            var upperRight= new Vector2(tile.X + i, tile.Y - 1);
-            if (!location.IsTileOccupiedBy(upperRight))
-            {
-                return upperRight;
-            }
-            
-            var lowerRight= new Vector2(tile.X + i, tile.Y + 1);
-            if (!location.IsTileOccupiedBy(lowerRight))
-            {
-                return lowerRight;
-            }
-        }
-
-        return tile;
     }
 
     private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)

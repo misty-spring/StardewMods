@@ -99,7 +99,7 @@ public static class InventoryPatches
             if (dataDetached.OnDetached == null)
                 return;
 
-            ActionButton.CheckBehavior(dataDetached.OnDetached);
+            ActionButton.CheckBehavior(dataDetached.OnDetached, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
             
             return;
         }
@@ -122,7 +122,7 @@ public static class InventoryPatches
         if (mainData.OnAttached == null)
             return;
 
-        ActionButton.CheckBehavior(mainData.OnAttached);
+        ActionButton.CheckBehavior(mainData.OnAttached, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
     }
 
     /// <summary>

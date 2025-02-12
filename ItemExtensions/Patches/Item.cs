@@ -103,7 +103,7 @@ public class ItemPatches
             if (mainData.OnPurchase == null)
                 return;
 
-            ActionButton.CheckBehavior(mainData.OnPurchase);
+            ActionButton.CheckBehavior(mainData.OnPurchase, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
         }
         catch (Exception e)
         {
@@ -126,7 +126,7 @@ public class ItemPatches
             if (mainData.OnEquip == null)
                 return;
 
-            ActionButton.CheckBehavior(mainData.OnEquip);
+            ActionButton.CheckBehavior(mainData.OnEquip, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
         }
         catch (Exception e)
         {
@@ -149,7 +149,7 @@ public class ItemPatches
             if (mainData.OnUnequip == null)
                 return;
 
-            ActionButton.CheckBehavior(mainData.OnUnequip);
+            ActionButton.CheckBehavior(mainData.OnUnequip, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
         }
         catch (Exception e)
         {

@@ -16,11 +16,11 @@ public class LetterWithImage : LetterViewerMenu
 
     private NoteData RawData { get; set; }
     private bool HasImage { get; set; }
-    private Vector2 ImagePosition { get; set; } = new Vector2(-999);
-    private Vector2 TextPosition { get; set; } = new Vector2(-999);
+    private Vector2 ImagePosition { get; set; } = new Vector2(-999, -999);
+    private Vector2 TextPosition { get; set; } = new Vector2(-999, -999);
     private string Text { get; set; }
     
-    public LetterWithImage(NoteData note) : base(null)
+    public LetterWithImage(NoteData note) : base(note.Message)
     {
         if (int.TryParse(note.LetterTexture, out var which))
         {
@@ -80,8 +80,8 @@ public class LetterWithImage : LetterViewerMenu
 
             position.Y = alignment switch
             {
-                "top" => 0,
-                "bot" or "bottom" => h - tex.Height * 4,
+                "top" or "up" => 0,
+                "bot" or "bottom" or "down" => h - tex.Height * 4,
                 _ => middleY - tex.Height * 2,
             };
 
@@ -124,6 +124,9 @@ public class LetterWithImage : LetterViewerMenu
     
     public override void draw(SpriteBatch b)
     {
+        if (!Game1.options.showClearBackgrounds)
+            b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
+        
         //draw note
         b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
         b.Draw(letterTexture, new Vector2(xPositionOnScreen + width / 2, yPositionOnScreen + height / 2), new Rectangle(whichBG * 320, 0, 320, 180), Color.White, 0.0f, new Vector2(160f, 90f), 4f * scale, SpriteEffects.None, 0.86f);
@@ -157,7 +160,7 @@ public class LetterWithImage : LetterViewerMenu
         }
         if (!string.IsNullOrWhiteSpace(Text))
         {
-            var textPosition = GetTextRect();
+            var textPosition = new Rectangle(xPositionOnScreen + 200, yPositionOnScreen + 100, SpriteText.getWidthOfString(Text), SpriteText.getHeightOfString(Text));
             SpriteText.drawString(
                 b: b, 
                 s: Text, 
@@ -188,14 +191,16 @@ public class LetterWithImage : LetterViewerMenu
         var h = Game1.viewport.Height;
         var imageHeight = secretNoteImageTexture?.Height ?? 0;
         var imageWidth = secretNoteImageTexture?.Width ?? 0;
+
+        var imgPos = RawData.ImagePosition?.ToLower() ?? "";
         
-        var result = GetOpposite(RawData.ImagePosition.ToLower()) switch
+        var result = GetOpposite(imgPos) switch
         {
             "left" => new Rectangle(x, y, letterWidth - imageWidth, letterHeight),
-            "top" => new Rectangle(x, y, letterWidth, letterHeight - imageHeight),
-            "bottom" or "bot" => new Rectangle(x,y + imageHeight, letterWidth, letterHeight - imageHeight),
+            "top" or "up" => new Rectangle(x, y, letterWidth, letterHeight - imageHeight),
+            "bottom" or "bot" or "down" => new Rectangle(x,y + imageHeight, letterWidth, letterHeight - imageHeight),
             "right" => new Rectangle(x + imageWidth, y, letterWidth - imageWidth, letterHeight),
-            _ => new Rectangle()
+            _ => new Rectangle(x, y, w, h)
         };
         
         return result;

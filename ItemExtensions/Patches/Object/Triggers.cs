@@ -69,7 +69,7 @@ public partial class ObjectPatches
             if (mainData.OnDrop == null)
                 return;
 
-            ActionButton.CheckBehavior(mainData.OnDrop);
+            ActionButton.CheckBehavior(mainData.OnDrop, Game1.player.TilePoint.X, Game1.player.TilePoint.Y, Game1.player.currentLocation);
         }
         catch (Exception e)
         {

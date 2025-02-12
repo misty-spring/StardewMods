@@ -121,7 +121,7 @@ public partial class ObjectPatches
         }
     }
     
-    private static void Destroy(Object o, bool onlySetDestroyable = false)
+    internal static void Destroy(Object o, bool onlySetDestroyable = false)
     {
         try
         {
@@ -140,7 +140,6 @@ public partial class ObjectPatches
         
             //o.performRemoveAction();
             o.Location.removeObject(o.TileLocation,false);
-            o = null;
         }
         catch (Exception e)
         {

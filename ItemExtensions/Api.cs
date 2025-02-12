@@ -2,6 +2,7 @@ using ItemExtensions.Additions;
 using ItemExtensions.Additions.Clumps;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
+using ItemExtensions.Patches;
 using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.Internal;
@@ -71,20 +72,18 @@ public interface IApi
     List<string> GetCustomSeeds(string itemId, bool includeSource, bool parseConditions = true);
 
     /// <summary>
-    /// Gets drops for a clump.
+    /// Does checks for a clump's drops, including monster spawning and other behavior.
     /// </summary>
     /// <param name="clump">The clump instance.</param>
-    /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
-    /// <returns>All possible drops, with %.</returns>
-    Dictionary<string, int> GetClumpDrops(ResourceClump clump, bool parseConditions = false);
+    /// <param name="remove">whether to remove the clump from the map.</param>
+    void CheckClumpDrops(ResourceClump clump, bool remove = false);
 
     /// <summary>
-    /// Gets drops for a node.
+    /// Does checks for a node's drops, including monster spawning and other behavior.
     /// </summary>
     /// <param name="node">The node instance.</param>
-    /// <param name="parseConditions">Whether to pase GSQs before adding to list.</param>
-    /// <returns>All possible drops, with %.</returns>
-    Dictionary<string, int> GetObjectDrops(Object node, bool parseConditions = false);
+    /// <param name="remove">whether to remove the node from the map.</param>
+    void CheckObjectDrops(Object node, bool remove = false);
 
     bool GetResourceData(string id, bool isClump, out object data);
     bool GetBreakingTool(string id, bool isClump, out string tool);
@@ -208,97 +207,31 @@ public class Api : IApi
         return result;
     }
 
-    public Dictionary<string, int> GetClumpDrops(ResourceClump clump, bool parseConditions = false)
+    public void CheckClumpDrops(ResourceClump clump, bool remove = false)
     {
-        var result = new Dictionary<string, int>();
-        var location = Game1.player.currentLocation;
-        var who = Game1.player;
-        var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' GetClumpDrops");
+        var location = clump?.Location ?? Game1.player.currentLocation;
 
-        if (clump is null)
-            return result;
-        
-        if (clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false)
-            return result;
-    
-        if (!ModEntry.BigClumps.TryGetValue(id, out var resource))
-            return result;
-
-        if (resource is null || resource == new ResourceData())
-            return result;
+        //if null, no id, not in data, or null/default resource
+        if (clump is null || clump.modData.TryGetValue(ModKeys.ClumpId, out var id) == false ||!ModEntry.BigClumps.TryGetValue(id, out var resource) || resource is null || resource == new ResourceData())
+            return;
             
-        if(string.IsNullOrWhiteSpace(resource.ItemDropped) == false)
-        {
-            result.Add(resource.ItemDropped, Game1.random.Next(resource.MinDrops, resource.MaxDrops));
-        }
+        GeneralResource.CheckDrops(resource, location, clump.Tile, null);
 
-        foreach(var drop in resource.ExtraItems)
-        {
-            if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
-                continue;
-                
-            var itemQuery = ItemQueryResolver.TryResolve(drop, context, drop.Filter, drop.AvoidRepeat);
-            foreach (var queryResult in itemQuery)
-            {
-                var item = queryResult.Item;
-
-                if (Game1.random.NextDouble() > drop.Chance)
-                    continue;
-                
-                //if it exists, add another count. else add normally
-                if(result.ContainsKey(item.QualifiedItemId))
-                    result[item.QualifiedItemId] += Game1.random.Next(drop.MinStack, drop.MaxStack);
-                else
-                    result.Add(item.QualifiedItemId, Game1.random.Next(drop.MinStack, drop.MaxStack));
-            }
-        }
-
-        return result;
+        if (remove)
+            location.resourceClumps.Remove(clump);
     }
 
-    public Dictionary<string, int> GetObjectDrops(Object node, bool parseConditions = false)
+    public void CheckObjectDrops(Object node, bool remove = false)
     {
-        var result = new Dictionary<string, int>();
-        var location = Game1.player.currentLocation;
-        var who = Game1.player;
-        var context = new ItemQueryContext(location, who, Game1.random, "ItemExtensions' GetObjectDrops");
+        var location = node?.Location ?? Game1.player.currentLocation;
 
-        if (node is null)
-            return result;
+        if (node is null || !ModEntry.Ores.TryGetValue(node.QualifiedItemId, out var resource) || resource is null || resource == new ResourceData())
+            return;
         
-        if (!ModEntry.Ores.TryGetValue(node.QualifiedItemId, out var resource))
-            return result;
+        GeneralResource.CheckDrops(resource, location, node.TileLocation, null);
 
-        if (resource is null || resource == new ResourceData())
-            return result;
-
-        if (string.IsNullOrWhiteSpace(resource.ItemDropped) == false)
-        {
-            result.Add(resource.ItemDropped, Game1.random.Next(resource.MinDrops, resource.MaxDrops));
-        }
-
-        foreach (var drop in resource.ExtraItems)
-        {
-            if(parseConditions && string.IsNullOrWhiteSpace(drop.Condition) == false && GameStateQuery.CheckConditions(drop.Condition, location, who) == false)
-                continue;
-                
-            var itemQuery = ItemQueryResolver.TryResolve(drop, context, drop.Filter, drop.AvoidRepeat);
-            foreach (var queryResult in itemQuery)
-            {
-                var item = queryResult.Item;
-
-                if (Game1.random.NextDouble() > drop.Chance)
-                    continue;
-                
-                //if it exists, add another count. else add normally
-                if(result.ContainsKey(item.QualifiedItemId))
-                    result[item.QualifiedItemId] += Game1.random.Next(drop.MinStack, drop.MaxStack);
-                else
-                    result.Add(item.QualifiedItemId, Game1.random.Next(drop.MinStack, drop.MaxStack));
-            }
-        }
-
-        return result;
+        if (remove)
+            ObjectPatches.Destroy(node);
     }
     
     public bool GetResourceData(string id, bool isClump, out object data)
