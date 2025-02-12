@@ -329,7 +329,7 @@ public static class GeneralResource
         });
     }
 
-    public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t)
+    public static void CheckDrops(ResourceData resource, GameLocation location, Vector2 tileLocation, Tool t, bool bomb = false)
     {
         // ReSharper disable once RedundantArgumentDefaultValue
         Log("Checking resource drops...", LogLevel.Debug);
@@ -377,7 +377,7 @@ public static class GeneralResource
             TryExtraDrops(resource.ExtraItems, location, who, tileLocation);
         }
 
-        if(!string.IsNullOrWhiteSpace(resource.BreakingSound))
+        if(!string.IsNullOrWhiteSpace(resource.BreakingSound) && bomb == false)
             location.playSound(resource.BreakingSound, tileLocation);
 
         if (resource.AddHay > 0)

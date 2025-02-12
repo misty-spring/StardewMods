@@ -1,5 +1,6 @@
 using ItemExtensions.Additions;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.GameData;
 using StardewValley.GameData.Objects;
@@ -36,11 +37,6 @@ public interface IWorldChangeData
 
     public static void Solve(IWorldChangeData data)
     {
-        /*
-        if (string.IsNullOrWhiteSpace(data.Conditions) == false &&
-            GameStateQuery.CheckConditions(data.Conditions) == false)
-            return;*/
-        
         #region player values
         if (!string.IsNullOrWhiteSpace(data.Health))
         {

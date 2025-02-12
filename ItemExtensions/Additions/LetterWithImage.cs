@@ -182,27 +182,4 @@ public class LetterWithImage : LetterViewerMenu
         
         drawMouse(b);
     }
-
-    private Rectangle GetTextRect()
-    {
-        var x = xPositionOnScreen + 200;
-        var y = yPositionOnScreen + 200;
-        var w = Game1.viewport.Width;
-        var h = Game1.viewport.Height;
-        var imageHeight = secretNoteImageTexture?.Height ?? 0;
-        var imageWidth = secretNoteImageTexture?.Width ?? 0;
-
-        var imgPos = RawData.ImagePosition?.ToLower() ?? "";
-        
-        var result = GetOpposite(imgPos) switch
-        {
-            "left" => new Rectangle(x, y, letterWidth - imageWidth, letterHeight),
-            "top" or "up" => new Rectangle(x, y, letterWidth, letterHeight - imageHeight),
-            "bottom" or "bot" or "down" => new Rectangle(x,y + imageHeight, letterWidth, letterHeight - imageHeight),
-            "right" => new Rectangle(x + imageWidth, y, letterWidth - imageWidth, letterHeight),
-            _ => new Rectangle(x, y, w, h)
-        };
-        
-        return result;
-    }
 }

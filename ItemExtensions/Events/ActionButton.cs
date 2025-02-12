@@ -65,11 +65,11 @@ public static class ActionButton
         }
         else
         {
-            RunBehavior(behavior, xTile, yTile, location);
+            RunBehavior(behavior, xTile, yTile, location, true);
         }
     }
 
-    private static void RunBehavior(OnBehavior behavior, int xTile, int yTile, GameLocation location, bool directAction = true)
+    private static void RunBehavior(OnBehavior behavior, int xTile, int yTile, GameLocation location, bool directAction)
     {
         if (behavior.ReduceBy > 0)
             Game1.player.ActiveObject.ConsumeStack(behavior.ReduceBy);

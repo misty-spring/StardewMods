@@ -4,6 +4,8 @@
 - Changes to API methods
 - Added code to (hopefully) avoid players being stuck in a mine level, and to stop multiple stairs from spawning
 - Fixed certain behavior not working on destroying nodes/clumps
+- Fixed LetterWithImage not working in-game
+- Other small fixes
 
 ## 1.12.2
 - Fixed error where explosions wouldn't drop ladders
