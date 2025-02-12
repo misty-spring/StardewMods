@@ -1,6 +1,7 @@
 using ItemExtensions.Additions;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.GameData;
 using StardewValley.GameData.Objects;
 using StardewValley.Triggers;
 
@@ -31,6 +32,7 @@ public interface IWorldChangeData
     
     string Conditions { get; set; }
     string TriggerAction { get; set; }
+    //string TriggerActionId { get; set; }
 
     public static void Solve(IWorldChangeData data)
     {
@@ -140,6 +142,37 @@ public interface IWorldChangeData
             Game1.changeMusicTrack(data.PlayMusic);
         #endregion
 
+        /*if (string.IsNullOrWhiteSpace(data.TriggerActionId) == false)
+        {
+            //get action
+            var triggerAction = Sorter.GetTriggerAction(data.TriggerActionId);
+            if (triggerAction != null && TriggerActionManager.CanApply(triggerAction))
+            {
+                //run everything inside Actions
+                foreach (var singleAction in triggerAction.Actions)
+                {
+                    //try to run
+                    TriggerActionManager.TryRunAction(singleAction, out var error, out var exception);
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        ModEntry.Mon.Log($"Error: {error}. {exception}", StardewModdingAPI.LogLevel.Warn);
+                    }
+                }
+                
+                //also run the singular Action if it exists
+                TriggerActionManager.TryRunAction(triggerAction.Action, out var error2, out var exception2);
+                if (!string.IsNullOrWhiteSpace(error2))
+                {
+                    ModEntry.Mon.Log($"Error: {error2}. {exception2}", StardewModdingAPI.LogLevel.Warn);
+                }
+                
+                //if we should mark it as applied
+                if (triggerAction.MarkActionApplied)
+                    Game1.player.triggerActionsRun.Add(triggerAction.Id);
+
+            }
+        }*/
+        
         if (string.IsNullOrWhiteSpace(data.TriggerAction)) 
             return;
 

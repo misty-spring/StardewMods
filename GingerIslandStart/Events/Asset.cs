@@ -163,8 +163,8 @@ public static class Asset
                     CustomFields = new Dictionary<string, string>
                     {
                         { ItemExtensions.Additions.ModKeys.ExtraTradesKey, "(O)390 50, (O)72 1" }
-                    },
-                    Condition = "!PLAYER_STAT Current geodesCracked 1"
+                    }
+                    //Condition = "!PLAYER_STAT Current geodesCracked 1"
                 };
 
                 volcanoShop.Items.Insert(0, newItem);

@@ -10,6 +10,7 @@ using StardewValley.Extensions;
 using StardewValley.GameData.Objects;
 using StardewValley.Internal;
 using StardewValley.Locations;
+using StardewValley.TokenizableStrings;
 using StardewValley.Tools;
 
 namespace ItemExtensions.Additions;
@@ -308,7 +309,7 @@ public static class GeneralResource
         }
     }
 
-    internal static void CreateItemDebris(string itemId, int howMuchDebris, int xTile, int yTile, GameLocation where, int quality = 0) => CreateRadialDebris(where, itemId, xTile, yTile, howMuchDebris, true, quality > 0, quality);
+    private static void CreateItemDebris(string itemId, int howMuchDebris, int xTile, int yTile, GameLocation where, int quality = 0) => CreateRadialDebris(where, itemId, xTile, yTile, howMuchDebris, true, quality > 0, quality);
 
     private static void AddHay(ResourceData resource, GameLocation location, Vector2 tileLocation)
     {
@@ -336,11 +337,38 @@ public static class GeneralResource
 
         if (resource.OnDestroy != null)
         {
-            IWorldChangeData.Solve(resource.OnDestroy);
-            if (!string.IsNullOrWhiteSpace(resource.OnDestroy.ChangeMoney))
+            var hasConfirm = !string.IsNullOrWhiteSpace(resource.OnDestroy.Confirm);
+            var hasReject = !string.IsNullOrWhiteSpace(resource.OnDestroy.Reject);
+        
+            //if there's a message + confirm/reject, create a question to trigger OnDestroy behavior. Otherwise, run it normally (and if there's a message *without* confirm/reject, show it too)
+            if (!string.IsNullOrWhiteSpace(resource.OnDestroy.Message) && (hasConfirm || hasReject))
             {
-                Game1.player.Money = IWorldChangeData.ChangeValues(resource.OnDestroy.ChangeMoney, Game1.player.Money, Game1.player.Money);
+                var defaultResponse = Game1.currentLocation.createYesNoResponses();
+            
+                var responses = new[]
+                {
+                    hasConfirm ? new Response("Yes", TokenParser.ParseText(resource.OnDestroy.Confirm)) : defaultResponse[0],
+                    hasReject ? new Response("No", TokenParser.ParseText(resource.OnDestroy.Reject)) : defaultResponse[1]
+                };
+
+                void AfterDialogueBehavior(Farmer farmer, string whichanswer)
+                {
+                    if(whichanswer == "Yes")
+                        IWorldChangeData.Solve(resource.OnDestroy);
+                }
+
+                Game1.currentLocation.createQuestionDialogue(TokenParser.ParseText(resource.OnDestroy.Message), responses, AfterDialogueBehavior);
             }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(resource.OnDestroy.Message))
+                {
+                    Game1.addHUDMessage(new HUDMessage(TokenParser.ParseText(resource.OnDestroy.Message), 2));
+                }
+                
+                IWorldChangeData.Solve(resource.OnDestroy);
+            }
+            
             var monsters = resource.OnDestroy.SpawnMonsters;
             if (monsters is not null)
             {
@@ -430,8 +458,24 @@ public static class GeneralResource
         if (resource.CountTowards is not StatCounter.None)
             AddStats(resource.CountTowards);
 
-        if (location is MineShaft shaft && Game1.random.NextDouble() < ModEntry.Config.ChanceForStairs)
+        if (location is not MineShaft shaft) 
+            return;
+        
+        if (shaft.ladderHasSpawned)
+            return;
+        
+        if (Game1.random.NextDouble() < ModEntry.Config.ChanceForStairs || IsLastNode(shaft))
             shaft?.createLadderDown((int)tileLocation.X, (int)tileLocation.Y);
+    }
+
+    private static bool IsLastNode(MineShaft shaft)
+    {
+        if (shaft.Objects.Length != 1) 
+            return false;
+#if DEBUG
+        Log("Is last node on mineshaft.");
+#endif
+        return true;
 
     }
 

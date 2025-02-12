@@ -7,6 +7,7 @@ public class OnBehavior : IWorldChangeData
 {
     public string Conditions { get; set; } = "TRUE";
     public string TriggerAction { get; set; } = null;
+    //public string TriggerActionId { get; set; } = null;
     
     //messaging
     public string Message { get; set; } = null;

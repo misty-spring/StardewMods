@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley.Internal;
 using StardewValley;
+using StardewValley.GameData;
 using StardewValley.Monsters;
 using xTile.Dimensions;
 
@@ -291,5 +292,16 @@ public static class Sorter
         var spotted = ModEntry.Help.Reflection.GetField<bool>(who, "spottedPlayer", false);
         spotted.SetValue(false);
         who.IsWalkingTowardPlayer = false;
+    }
+
+    public static TriggerActionData GetTriggerAction(string id)
+    {
+        var triggerActions = Game1.content.Load<List<TriggerActionData>>("Data/TriggerActions");
+        foreach (var triggerData in triggerActions)
+        {
+            if (triggerData.Id.Equals(id))
+                return triggerData;
+        }
+        return null;
     }
 }

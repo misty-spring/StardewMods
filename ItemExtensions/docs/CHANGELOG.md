@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.12.3
+- Changes to API methods
+- Added code to (hopefully) avoid players being stuck in a mine level, and to stop multiple stairs from spawning
+- Fixed certain behavior not working on destroying nodes/clumps
+
 ## 1.12.2
 - Fixed error where explosions wouldn't drop ladders
 - Fixed error where explosions wouldn't drop extra items
