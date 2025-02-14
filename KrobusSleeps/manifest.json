@@ -1,7 +1,7 @@
 ﻿{
   "Name": "Krobus sleeps",
   "Author": "mistyspring",
-  "Version": "1.0.0",
+  "Version": "1.1.0",
   "Description": "Makes krobus sleep in the double bed at night.",
   "UniqueID": "mistyspring.KrobusSleeps",
   "EntryDll": "KrobusSleeps.dll",
