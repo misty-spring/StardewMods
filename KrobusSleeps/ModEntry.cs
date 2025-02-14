@@ -1,87 +1,47 @@
-﻿using StardewModdingAPI;
-using StardewModdingAPI.Events;
+﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Locations;
+using StardewValley.Objects;
 
 namespace KrobusSleeps;
 
 public class ModEntry : Mod
 {
-    public bool Enabled { get; set; }
-
-    public static IMonitor Mon { get; set; }
-    public ModConfig Config { get; private set; }
-    
     public override void Entry(IModHelper helper)
     {
-        Config = Helper.ReadConfig<ModConfig>();
-
-        helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-        helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-        helper.Events.GameLoop.TimeChanged += OnTimeChange;
-
-        Mon = Monitor;
-    }
-
-    private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
-    {
-        var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
-        
-        if (configMenu is null)
-            return;
-        
-        configMenu?.Register(
-            mod: ModManifest,
-            reset: () => Config = new ModConfig(),
-            save: () => Helper.WriteConfig(Config)
-        );
-        
-        configMenu?.AddNumberOption(
-            mod: ModManifest,
-            name: () => Helper.Translation.Get("config.SleepHour.name"),
-            tooltip: () => Helper.Translation.Get("config.SleepHour.description"),
-            getValue: () => Config.SleepHour,
-            setValue: value => Config.SleepHour = value,
-            min: 600,
-            max: 2400,
-            interval: 100
+        var harmony = new Harmony(ModManifest.UniqueID);
+        Monitor.Log($"Applying Harmony patch \"{nameof(ModEntry)}\": postfixing SDV method \"FarmHouse.getSpouseBedSpot\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(FarmHouse), nameof(FarmHouse.getSpouseBedSpot)),
+            postfix: new HarmonyMethod(typeof(ModEntry), nameof(Post_getSpouseBedSpot))
         );
     }
 
-    private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+    public static void Post_getSpouseBedSpot(string spouseName, ref Point __result)
     {
-        Enabled = IsMarriedToKrobus();
-    }
-
-    private void OnTimeChange(object? sender, TimeChangedEventArgs e)
-    {
-        //if it's not time yet
-        if (e.NewTime < Config.SleepHour)
+        if (spouseName != "Krobus")
             return;
 
-        var krobus = Game1.getCharacterFromName("Krobus");
-        
-        //if no krobus
-        if (krobus is null)
-            return;
-
+        //get farmer house's bed
         var farmHouse = Utility.getHomeOfFarmer(Game1.player);
-        
-        //if not home
-        if (!krobus.currentLocation.Equals(farmHouse))
-            return;
-        
-        //if sleeping
-        if (krobus.isSleeping.Value)
-            return;
-        
-        ModContent.RouteToBed(krobus, farmHouse);
-    }
+        var bed = farmHouse.GetBed(BedFurniture.BedType.Double);
 
-    private static bool IsMarriedToKrobus()
-    {
-        if (Game1.player.friendshipData.TryGetValue("Krobus", out var krobus) == false)
-            return false;
-
-        return krobus.IsMarried() || krobus.RoommateMarriage;
+        //if it doesn't exist
+        if (bed is null)
+        {
+            bed = farmHouse.GetBed(BedFurniture.BedType.Single);
+            
+            if (bed is null)
+                return;
+        }
+        
+        Point bed_spot = bed.GetBedSpot();
+        if (bed.bedType == BedFurniture.BedType.Double)
+        {
+            bed_spot.X++;
+        }
+        __result = bed_spot;
     }
 }

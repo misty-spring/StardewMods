@@ -82,12 +82,6 @@ public partial class ShopMenuPatches
             prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_receiveLeftClick))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.receiveLeftClick\".");
-        harmony.Patch(
-            original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveRightClick)),
-            prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_receiveLeftClick))
-        );
-        
         Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"ShopMenu.tryToPurchaseItem\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(ShopMenu), "tryToPurchaseItem"),
