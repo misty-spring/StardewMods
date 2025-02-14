@@ -1,4 +1,4 @@
-﻿using FarmhouseVisits.APIs;
+using FarmhouseVisits.APIs;
 using FarmhouseVisits.ModContent;
 using FarmhouseVisits.Models;
 using Microsoft.Xna.Framework;
@@ -367,43 +367,46 @@ public class ModEntry : Mod
 
     private static void DayStarted(object sender, DayStartedEventArgs e)
     {
-        PlayerHome = Utility.getHomeOfFarmer(Game1.player);
-        TodaysVisitors = new();
-
-        //if faulty config, don't do anything + mark as unvisitable
-        if (!IsConfigValid)
+        foreach (var player in Game1.getAllFarmers())
         {
-            Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
-            CanBeVisited = false;
-            return;
+            PlayerHome[player.UniqueMultiplayerID] = Utility.getHomeOfFarmer(player);
+            TodaysVisitors[player.UniqueMultiplayerID] = new List<string>();
+
+            //if faulty config, don't do anything + mark as unvisitable
+            if (!IsConfigValid)
+            {
+                Log("Configuration isn't valid. Mod will not work.", LogLevel.Warn);
+                CanBeVisited = false;
+                return;
+            }
+
+            //friendship data is reloaded.
+            if (!FirstLoadedDay)
+            {
+                Log("Reloading data...");
+                NameAndLevel?[player.UniqueMultiplayerID].Clear();
+                RepeatedByLV?[player.UniqueMultiplayerID].Clear();
+
+                Content.GetAllVisitors();
+            }
+
+            #region festival check
+            /* if no friendship with anyone OR festival day:
+             * make unvisitable & return
+             */
+            FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || Utility.IsPassiveFestivalDay(Game1.dayOfMonth, Game1.season, Game1.player.currentLocation.locationContextId);
+            var anyInLv = RepeatedByLV?[player.UniqueMultiplayerID].Any() ?? false;
+            Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
+
+            if (!anyInLv || FestivalToday)
+            {
+                CanBeVisited = false;
+                return;
+            }
+            #endregion
+
+            CanBeVisited = true;
         }
-
-        //friendship data is reloaded.
-        if (!FirstLoadedDay)
-        {
-            Log("Reloading data...");
-            NameAndLevel?.Clear();
-            RepeatedByLV?.Clear();
-
-            Content.GetAllVisitors();
-        }
-
-        #region festival check
-        /* if no friendship with anyone OR festival day:
-         * make unvisitable & return
-         */
-        FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || Utility.IsPassiveFestivalDay(Game1.dayOfMonth, Game1.season, Game1.player.currentLocation.locationContextId);
-        var anyInLv = RepeatedByLV?.Any() ?? false;
-        Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
-
-        if (!anyInLv || FestivalToday)
-        {
-            CanBeVisited = false;
-            return;
-        }
-        #endregion
-
-        CanBeVisited = true;
 
         //on winter, remove crop/animal data
         if (Game1.currentSeason == "winter")
@@ -444,9 +447,17 @@ public class ModEntry : Mod
         var hasReachedMax = CounterToday >= Config.MaxVisitsPerDay;
 #if DEBUG
         Log($"visitsOpen {visitsOpen}, hasReachedMax {hasReachedMax}, HasAnyVisitors {HasAnyVisitors}");
-#endif 
+#endif
+        foreach (var player in Game1.getAllFarmers())
+        {
+            CheckVisitor(player, visitsOpen, hasReachedMax, e.NewTime, player.UniqueMultiplayerID);
+        }
+    }
+
+    private static void CheckVisitor(Farmer player, bool visitsOpen, bool hasReachedMax, int newTime, long uid)
+    {
         //if can visit & hasn't reached MAX
-        if (visitsOpen && !hasReachedMax && !HasAnyVisitors)
+        if (visitsOpen && !hasReachedMax && !HasAnyVisitors[uid])
         {
             var choseOne = false;
 
@@ -473,40 +484,40 @@ public class ModEntry : Mod
                     var visit = Game1.getCharacterFromName(pair.Key);
 
                     //whether npc is free or is forced schedule
-                    var canVisit = Values.IsFree(visit, false) || (data.Extras is not null && data.Extras.Force);
+                    var canVisit = Values.IsFree(visit, uid, false) || (data.Extras is not null && data.Extras.Force);
 
                     //if must be exact, checks that time matches. if not, checks if you're in time range.
-                    var inTimeRange = data.MustBeExact ? e.NewTime.Equals(data.From) : e.NewTime >= data.From && e.NewTime < data.To - 10;
+                    var inTimeRange = data.MustBeExact ? newTime.Equals(data.From) : newTime >= data.From && newTime < data.To - 10;
 
                     //if it's not starting time OR they're not free
                     if (!inTimeRange || !canVisit)
                         continue;
 
                     //duplicate NPC, and set visiting
-                    VContext = new VisitData(visit, true, data);
-                    Visitor = DupeNPC.Duplicate(visit);
-                    HasAnyVisitors = true;
+                    VContext[uid] = new VisitData(visit, true, data);
+                    Visitor[uid] = DupeNPC.Duplicate(visit);
+                    HasAnyVisitors[uid] = true;
 
                     if (data.Extras is not null & data.Extras.Force)
                     {
-                        Log($"Adding NPC {Visitor.Name} by force (Force.Enable = {data.Extras.Force})");
+                        Log($"Adding NPC {Visitor[uid].Name} by force (Force.Enable = {data.Extras.Force})");
 
                         //add and set forced
-                        Actions.AddWhileOutside(Visitor);
+                        Actions.AddWhileOutside(Visitor[uid], Utility.getHomeOfFarmer(player));
                         ForcedSchedule = true; //avoids certain behavior
                         return;
                     }
 
                     if (Config.NeedsConfirmation)
                     {
-                        Confirmation.AskToEnter();
+                        Confirmation.AskToEnter(uid);
                     }
                     else
                     {
                         //add them to farmhouse (last to avoid issues)
-                        Actions.AddCustom(Visitor, PlayerHome, data, false);
+                        Actions.AddCustom(Visitor[uid], Utility.getHomeOfFarmer(player), data, false);
 
-                        Log($"HasAnyVisitors set to true.\n{Visitor.Name} will begin visiting player.\nTimeOfArrival = {VContext.TimeOfArrival};\nControllerTime = {VContext.ControllerTime};", Level);
+                        Log($"HasAnyVisitors set to true.\n{Visitor[uid].Name} will begin visiting player.\nTimeOfArrival = {VContext[uid].TimeOfArrival};\nControllerTime = {VContext[uid].ControllerTime};", Level);
                     }
 
                     //break, since we already found a schedule
@@ -517,108 +528,110 @@ public class ModEntry : Mod
             //if none matched, do random
             if (!choseOne)
             {
-                var inFarmhouse = Game1.player.currentLocation.Equals(PlayerHome);
+                var inFarmhouse = Game1.player.currentLocation.Equals(Utility.getHomeOfFarmer(player));
                 var chanceMatch = Random.Next(1, 101) <= Config.CustomChance;
 
                 if (chanceMatch && inFarmhouse)
-                    Content.ChooseRandom();
+                    Content.ChooseRandom(uid);
             }
             return;
         }
 
 
         //if they're going to sleep, return
-        if (Visitor == null || VContext.IsGoingToSleep)
+        if (Visitor[uid] == null || VContext[uid].IsGoingToSleep)
             return;
 
         //in the future, add dialogue for when characters fall asleep.
-        var soonToSleep = Values.IsCloseToSleepTime(VContext);
+        var soonToSleep = Values.IsCloseToSleepTime(VContext[uid]);
 
         //if custom visit and reached max time
-        var maxCustomTime = VContext.CustomVisiting && e.NewTime >= VContext.CustomData?.To;
+        var maxCustomTime = VContext[uid].CustomVisiting && newTime >= VContext[uid].CustomData?.To;
 
         //if npc has stayed too long, check how to retire
-        if (VContext.DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
+        if (VContext[uid].DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
         {
             //if on a minigame and same location as visit (multiplayer)
-            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(Visitor.currentLocation))
+            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(Visitor[uid].currentLocation))
                 return;
             
             //sleepover bool checks: soon to sleep, enabled, % match, min hearts OK
-            var shouldSleepOver = soonToSleep && Config.Sleepover && Game1.random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= NameAndLevel[Visitor.Name];
+            var shouldSleepOver = soonToSleep && Config.Sleepover && Game1.random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= NameAndLevel[uid][Visitor[uid].Name];
 
             //log, LV depends on config
             var action = shouldSleepOver ? "resting" : "retiring";
-            Log($"{Visitor.Name} is {action} for the day.", Level);
+            Log($"{Visitor[uid].Name} is {action} for the day.", Level);
 
             //update info
             //ModEntry.Visitors?.Remove(Name);
             CounterToday++;
-            TodaysVisitors.Add(Visitor.Name);
+            TodaysVisitors[uid].Add(Visitor[uid].Name);
 
             //get data before we remove it
-            var durationSoFar = VContext.DurationSoFar;
-            var controllerTime = VContext.ControllerTime;
+            var durationSoFar = VContext[uid].DurationSoFar;
+            var controllerTime = VContext[uid].ControllerTime;
             ForcedSchedule = false;
 
             if (Config.Debug)
             {
-                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(TodaysVisitors)}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {Visitor?.Name}", Level);
+                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(TodaysVisitors[uid])}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {Visitor?[uid].Name}", Level);
             }
 
             //if custom has dialogue: exit with it. else, normal
-            if (VContext.CustomVisiting)
+            if (VContext[uid].CustomVisiting)
             {
                 //if there's a mail string, add for tomorrow
-                var mail = VContext.CustomData?.Extras.Mail;
+                var mail = VContext[uid].CustomData?.Extras.Mail;
                 if (!string.IsNullOrWhiteSpace(mail))
                 {
                     Game1.player.mailForTomorrow.Add(mail);
                 }
 
-                var exitd = VContext.CustomData?.ExitDialogue;
-                if (!string.IsNullOrWhiteSpace(exitd))
-                    Actions.RetireCustom(Visitor, exitd);
+                var exitd = VContext[uid].CustomData?.ExitDialogue;
+                if (!string.IsNullOrWhiteSpace(exitd) && Visitor?[uid] != null)
+                    Actions.RetireCustom(Visitor[uid], exitd, uid);
                 else
-                    Actions.Retire(Visitor);
+                    Actions.Retire(Visitor[uid], uid);
             }
             else if (shouldSleepOver)
             {
-                Actions.GoToSleep(Visitor, VContext);
+                if(Visitor?[uid] != null)
+                    Actions.GoToSleep(Visitor[uid], VContext[uid], uid);
             }
             else
             {
-                Actions.Retire(Visitor);
+                if(Visitor?[uid] != null)
+                    Actions.Retire(Visitor[uid], uid);
             }
 
             return;
         }
 
         //otherwise, they'll try to move around.
-        Log($"{Visitor.Name} will move around.", Level);
+        Log($"{Visitor?[uid].Name} will move around.", Level);
 
         if (Config.Verbose)
         {
-            var endPoint = Visitor.controller?.pathToEndPoint;
+            var endPoint = Visitor?[uid].controller?.pathToEndPoint;
             if (endPoint != null)
-                Log($"Current endpoint: {Data.TurnToString(endPoint)},moving: {Visitor.isMovingOnPathFindPath}", LogLevel.Debug);
+                Log($"Current endpoint: {Data.TurnToString(endPoint)},moving: {Visitor?[uid].isMovingOnPathFindPath}", LogLevel.Debug);
         }
 
         //if they just arrived they won't move.
-        if (e.NewTime == VContext.TimeOfArrival)
+        if (newTime == VContext?[uid].TimeOfArrival)
         {
             Log($"Time of arrival equals current time. NPC won't move around", Level);
         }
         //if they've been moving too long, they'll stop
-        else if (VContext.ControllerTime != 0)
+        else if (VContext?[uid] != null && Visitor?[uid] != null && VContext[uid].ControllerTime != 0)
         {
-            VContext.ControllerTime = 0;
-            Visitor.Halt();
-            Visitor.temporaryController = null;
-            Visitor.controller = null;
+            VContext[uid].ControllerTime = 0;
+            Visitor[uid].Halt();
+            Visitor[uid].temporaryController = null;
+            Visitor[uid].controller = null;
             if (Config.Debug)
             {
-                Log($"ControllerTime = {VContext.ControllerTime}", Level);
+                Log($"ControllerTime = {VContext[uid].ControllerTime}", Level);
             }
             /*
             var isAnimating = Visitor.Sprite.CurrentAnimation?.Count > 0;
@@ -643,24 +656,24 @@ public class ModEntry : Mod
         //otherwise, will try moving.
         else
         {
-            Visitor.resetCurrentDialogue();
+            Visitor[uid].resetCurrentDialogue();
             //DurationSoFar++;
-            VContext.ControllerTime++;
+            VContext[uid].ControllerTime++;
             //temporaryController = null;
             //var isBarnOrCoop = Visitor.currentLocation.Name.Contains("Coop") || Visitor.currentLocation.Name.Contains("Barn");
             var newtile = Point.Zero;
 
             //walk on farm OR house
-            if (Visitor.currentLocation.Name == "Farm")
+            if (Visitor[uid].currentLocation.Name == "Farm")
             {
                 if (Config.Verbose)
                     Log("Current is farm.");
 
                 //Visitor.Idle = true;
-                newtile = Data.RandomSpotInSquare(Visitor, 10);
-                Visitor.controller = new PathFindController(
-                    Visitor,
-                    Visitor.currentLocation,
+                newtile = Data.RandomSpotInSquare(Visitor[uid], 10);
+                Visitor[uid].controller = new PathFindController(
+                    Visitor[uid],
+                    Visitor[uid].currentLocation,
                     newtile,
                     Game1.random.Next(0, 4)
                 )
@@ -668,15 +681,15 @@ public class ModEntry : Mod
                     endPoint = newtile
                 };
             }
-            else if (Visitor.currentLocation is FarmHouse f)
+            else if (Visitor[uid].currentLocation is FarmHouse f)
             {
                 if (Config.Verbose)
                     Log("Current is farmhouse.");
 
                 newtile = f.getRandomOpenPointInHouse(Game1.random);
-                Visitor.controller = new PathFindController(
-                    Visitor,
-                    Visitor.currentLocation,
+                Visitor[uid].controller = new PathFindController(
+                    Visitor[uid],
+                    Visitor[uid].currentLocation,
                     newtile,
                     Game1.random.Next(0, 4)
                 );
@@ -686,16 +699,16 @@ public class ModEntry : Mod
                 if (Config.Verbose)
                     Log("Current is probably a shed or greenhouse.");
 
-                newtile = Data.RandomTile(Visitor.currentLocation, Visitor).ToPoint();
+                newtile = Data.RandomTile(Visitor[uid].currentLocation, Visitor[uid]).ToPoint();
 
                 //stop JIC
-                Visitor.Halt();
-                Visitor.temporaryController = null;
-                Visitor.controller = null;
+                Visitor[uid].Halt();
+                Visitor[uid].temporaryController = null;
+                Visitor[uid].controller = null;
 
-                Visitor.controller = new PathFindController(
-                    Visitor,
-                    Visitor.currentLocation,
+                Visitor[uid].controller = new PathFindController(
+                    Visitor[uid],
+                    Visitor[uid].currentLocation,
                     newtile,
                     Game1.random.Next(0, 4)
                 )
@@ -705,54 +718,54 @@ public class ModEntry : Mod
             }
 
             if (Config.Debug)
-                Log($"New position: {newtile}, pathing to {Visitor.controller.endPoint}", LogLevel.Debug);
+                Log($"New position: {newtile}, pathing to {Visitor[uid].controller.endPoint}", LogLevel.Debug);
 
-            if (VContext.CustomVisiting)
+            if (VContext[uid].CustomVisiting)
             {
                 Log("Checking if NPC has any custom dialogue...", Level);
 
-                var hasCustomDialogue = VContext.CustomData?.Dialogues?.Any() ?? false;
+                var hasCustomDialogue = VContext[uid].CustomData?.Dialogues?.Any() ?? false;
                 if (hasCustomDialogue)
                 {
-                    Actions.SetDialogue(Visitor, VContext.CustomData.Dialogues[0]);
+                    Actions.SetDialogue(Visitor[uid], VContext[uid].CustomData.Dialogues[0]);
 
-                    Log($"Adding custom dialogue for {Visitor.Name}...");
+                    Log($"Adding custom dialogue for {Visitor[uid].Name}...");
 
                     if (Config.Debug)
-                        Log($"({Visitor.Name}) C. Dialogue: {VContext.CustomData.Dialogues[0]}", Level);
+                        Log($"({Visitor[uid].Name}) C. Dialogue: {VContext[uid].CustomData.Dialogues[0]}", Level);
 
                     //remove this dialogue from the queue
-                    VContext.CustomData.Dialogues.RemoveAt(0);
+                    VContext[uid].CustomData.Dialogues.RemoveAt(0);
                 }
             }
         }
 
-        CheckForDialogue();
+        CheckForDialogue(uid);
 
-        VContext.DurationSoFar++;
+        VContext[uid].DurationSoFar++;
         if (Config.Debug)
-            Log($"ControllerTime = {VContext.ControllerTime}, DurationSoFar = {VContext.DurationSoFar} ({VContext.DurationSoFar * 10} minutes).", Level);
+            Log($"ControllerTime = {VContext[uid].ControllerTime}, DurationSoFar = {VContext[uid].DurationSoFar} ({VContext[uid].DurationSoFar * 10} minutes).", Level);
     }
 
-    private static void CheckForDialogue()
+    private static void CheckForDialogue(long uid)
     {
         //if custom, check for dialogue
-        if (VContext.CustomVisiting)
+        if (VContext[uid].CustomVisiting)
         {
             Log("Checking if NPC has any custom dialogue...", Level);
 
-            var hasCustomDialogue = VContext.CustomData?.Dialogues?.Any() ?? false;
+            var hasCustomDialogue = VContext[uid].CustomData?.Dialogues?.Any() ?? false;
             if (hasCustomDialogue)
             {
-                Actions.SetDialogue(Visitor, VContext.CustomData.Dialogues[0]);
+                Actions.SetDialogue(Visitor[uid], VContext[uid].CustomData.Dialogues[0]);
 
-                Log($"Adding custom dialogue for {Visitor.Name}...");
+                Log($"Adding custom dialogue for {Visitor[uid].Name}...");
 
                 if (Config.Debug)
-                    Log($"C. Dialogue: {VContext.CustomData.Dialogues[0]}", Level);
+                    Log($"C. Dialogue: {VContext[uid].CustomData.Dialogues[0]}", Level);
 
                 //remove this dialogue from the queue
-                VContext.CustomData.Dialogues.RemoveAt(0);
+                VContext[uid].CustomData.Dialogues.RemoveAt(0);
             }
         }
 
@@ -760,10 +773,10 @@ public class ModEntry : Mod
         else if (Game1.random.Next(0, 11) > 5)
             return;
 
-        var isFarm = Visitor.currentLocation.Name == "Farm";
-        var furniture = Visitor.currentLocation.furniture;
-        var isFarmhouse = Visitor.currentLocation is FarmHouse;
-        var isShed = Visitor.currentLocation is Shed;
+        var isFarm = Visitor[uid].currentLocation.Name == "Farm";
+        var furniture = Visitor[uid].currentLocation.furniture;
+        var isFarmhouse = Visitor[uid].currentLocation is FarmHouse;
+        var isShed = Visitor[uid].currentLocation is Shed;
         //if in farm
         if (isFarm)
         {
@@ -771,41 +784,41 @@ public class ModEntry : Mod
 
             if (Game1.currentSeason == "winter")
             {
-                Actions.SetDialogue(Visitor, Values.GetDialogueType(Visitor, DialogueType.Winter));
+                Actions.SetDialogue(Visitor[uid], Values.GetDialogueType(Visitor[uid], DialogueType.Winter));
             }
             else if ((Game1.random.Next(0, 2) <= 0 || !anyCrops) && Animals.Any())
             {
                 var animal = Game1.random.ChooseFrom(Animals);
-                var rawtext = Values.GetDialogueType(Visitor, DialogueType.Animal);
+                var rawtext = Values.GetDialogueType(Visitor[uid], DialogueType.Animal);
                 var formatted = string.Format(rawtext, animal);
-                Actions.SetDialogue(Visitor, formatted);
+                Actions.SetDialogue(Visitor[uid], formatted);
             }
             else if (anyCrops)
             {
                 var crop = Game1.random.ChooseFrom(Crops);
-                var rawtext = Values.GetDialogueType(Visitor, DialogueType.Crop);
+                var rawtext = Values.GetDialogueType(Visitor[uid], DialogueType.Crop);
                 var formatted = string.Format(rawtext, crop);
-                Actions.SetDialogue(Visitor, formatted);
+                Actions.SetDialogue(Visitor[uid], formatted);
             }
             else
             {
-                Actions.SetDialogue(Visitor, Values.GetDialogueType(Visitor, DialogueType.NoneYet));
+                Actions.SetDialogue(Visitor[uid], Values.GetDialogueType(Visitor[uid], DialogueType.NoneYet));
             }
         }
         //if in shed/house and any furniture
         else if ((isFarmhouse || isShed) && furniture.Any())
         {
-            var text = Values.GetDialogueType(Visitor, DialogueType.Furniture);
+            var text = Values.GetDialogueType(Visitor[uid], DialogueType.Furniture);
             var formatted = string.Format(text, Game1.random.ChooseFrom(furniture).DisplayName);
-            Actions.SetDialogue(Visitor, formatted);
+            Actions.SetDialogue(Visitor[uid], formatted);
 
             if (Config.Debug)
-                Log($"Adding dialogue for {Visitor.Name}...", Level);
+                Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
         }
         else
         {
-            var isCoopOrBarn = Visitor.currentLocation.Name.Contains("Coop") || Visitor.currentLocation.Name.Contains("Barn");
-            var isGreenHouse = Visitor.currentLocation.Name == "Greenhouse";
+            var isCoopOrBarn = Visitor[uid].currentLocation.Name.Contains("Coop") || Visitor[uid].currentLocation.Name.Contains("Barn");
+            var isGreenHouse = Visitor[uid].currentLocation.Name == "Greenhouse";
 
             if (isGreenHouse)
             {
@@ -814,25 +827,25 @@ public class ModEntry : Mod
                     return;
 
                 var chosen = Game1.random.ChooseFrom(crops);
-                var text = Values.GetDialogueType(Visitor, DialogueType.Crop);
+                var text = Values.GetDialogueType(Visitor[uid], DialogueType.Crop);
                 var formatted = string.Format(text, chosen);
-                Actions.SetDialogue(Visitor, formatted);
+                Actions.SetDialogue(Visitor[uid], formatted);
                 if (Config.Debug)
-                    Log($"Adding dialogue for {Visitor.Name}...", Level);
+                    Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
             }
             else if (isCoopOrBarn)
             {
-                var animals = Visitor.currentLocation.getAllFarmAnimals();
+                var animals = Visitor[uid].currentLocation.getAllFarmAnimals();
 
                 if (animals == null || animals.Count == 0)
                     return;
 
                 var chosen = Game1.random.ChooseFrom(animals);
-                var text = Values.GetDialogueType(Visitor, DialogueType.Animal);
+                var text = Values.GetDialogueType(Visitor[uid], DialogueType.Animal);
                 var formatted = string.Format(text, chosen.displayName);
-                Actions.SetDialogue(Visitor, formatted);
+                Actions.SetDialogue(Visitor[uid], formatted);
                 if (Config.Debug)
-                    Log($"Adding dialogue for {Visitor.Name}...", Level);
+                    Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
             }
         }
     }
@@ -841,11 +854,11 @@ public class ModEntry : Mod
     /// Set all used visitor variables to null.
     /// </summary>
     //its here because i'd rather have a single call than repeat through code and forget one of them
-    internal static void SetNoVisitor()
+    internal static void SetNoVisitor(long uid)
     {
-        HasAnyVisitors = false;
-        Visitor = null;
-        VContext = null;
+        HasAnyVisitors[uid] = false;
+        Visitor[uid] = null;
+        VContext[uid] = null;
     }
 
     #region used by visitors
@@ -885,11 +898,11 @@ public class ModEntry : Mod
 
     #region player data
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
-    internal static Dictionary<string, List<string>> InLaws { get; private set; } = new();
-    internal static Dictionary<string, int> NameAndLevel { get; private set; } = new();
-    internal static List<string> RepeatedByLV = new();
+    internal static Dictionary<long, Dictionary<string, List<string>>> InLaws { get; private set; } = new();
+    internal static Dictionary<long, Dictionary<string, int>> NameAndLevel { get; private set; } = new();
+    internal static Dictionary<long, List<string>> RepeatedByLV = new();
     internal static List<string> BlacklistParsed { get; set; } = new();
-    internal static FarmHouse PlayerHome { get; set; }
+    internal static Dictionary<long,FarmHouse> PlayerHome { get; set; }
     internal static bool FirstLoadedDay;
     private static bool CanBeVisited { get; set; }
     internal static ModConfig Config;
@@ -898,17 +911,17 @@ public class ModEntry : Mod
     #region configurable
     internal static string BlacklistRaw { get; set; }
     internal static bool IsConfigValid { get; set; }
-    internal static bool HasAnyVisitors { get; set; }
+    internal static Dictionary<long,bool> HasAnyVisitors { get; set; }
     internal static bool HasCustomSchedules { get; set; }
     #endregion
 
     #region visitdata
-    internal static NPC Visitor { get; set; }
-    internal static VisitData VContext { get; set; }
+    internal static Dictionary<long, NPC> Visitor { get; set; }
+    internal static Dictionary<long,VisitData> VContext { get; set; }
     internal static int MaxTimeStay { get; set; }
     internal static int CounterToday { get; set; }
     public static bool ForcedSchedule { get; internal set; }
-    internal static List<string> TodaysVisitors { get; set; } = new();
+    internal static Dictionary<long, List<string>> TodaysVisitors { get; set; } = new();
     #endregion
 
     #region game information
