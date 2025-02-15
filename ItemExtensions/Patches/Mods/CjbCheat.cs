@@ -1,6 +1,10 @@
 using System.Reflection.Emit;
 using HarmonyLib;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
 
 namespace ItemExtensions.Patches.Mods;
 
@@ -39,6 +43,23 @@ internal static class CjbCheat
             transpiler: new HarmonyMethod(typeof(CjbCheat), nameof(CJB_Transpiler))
         );
     }
+
+    /*private static void Post_OnUpdated(CheatContext context, UpdateTickedEventArgs e)
+    {
+        if (!Context.IsPlayerFree || !Game1.player.UsingTool || Game1.player.CurrentTool is not (Axe or Pickaxe))
+            return;
+        
+        var player = Game1.player;
+        var location = Game1.player.currentLocation;
+        if (location == null)
+            return;
+        
+        foreach (ResourceClump? clump in location.resourceClumps)
+        {
+            if (clump != null && clump.getBoundingBox().Contains((int)player.GetToolLocation().X, (int)player.GetToolLocation().Y) && clump.health.Value == 0)
+                clump.health.Value = 1;
+        }
+    }*/
     
     private static IEnumerable<CodeInstruction> CJB_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
     {
@@ -50,6 +71,7 @@ internal static class CjbCheat
         
         var replaceThis = codes.Find(ci => codes.IndexOf(ci) == prevIndex - 1);
         var index = codes.IndexOf(replaceThis);
+        var indexCallMethod = codes.Count - 1;
 #if DEBUG
         Log($"index: {index}", LogLevel.Info);
 #endif
@@ -65,8 +87,16 @@ internal static class CjbCheat
          * ((NetFieldBase<float, NetFloat>)(object)clump.health).set_Value(1f);
          */
         
-        Log("Inserting method");
+        Log("Replacing value in code");
         codes[index] = newInstruction;
+        
+        var lastCode = codes[indexCallMethod];
+        
+        Log("Inserting method");
+        codes[indexCallMethod] = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(CjbCheat), nameof(ResetClumpHealth)));
+        
+        Log("Inserting ret at last index");
+        codes.Add(lastCode);
         
         /* print the IL code
          * courtesy of atravita
@@ -88,5 +118,21 @@ internal static class CjbCheat
         Log(sb.ToString(), LogLevel.Info);
         */
         return codes.AsEnumerable();
+    }
+
+    public static void ResetClumpHealth()
+    {
+        var player = Game1.player;
+        var location = Game1.player.currentLocation;
+        if (location == null)
+            return;
+        
+        foreach (ResourceClump? clump in location.resourceClumps)
+        {
+            if (clump != null && clump.getBoundingBox().Contains((int)player.GetToolLocation().X, (int)player.GetToolLocation().Y))
+                clump.health.Value = 1;
+        }
+
+        return;
     }
 }
