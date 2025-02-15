@@ -212,7 +212,7 @@ public static class Debugging
         text += ", Fishing: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(1));
         text += ", Foraging: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(2));
         text +=", Mining: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(3));
-        text += ", Combat: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(3));
+        text += ", Combat: " + Game1.player.stats.Get(StardewValley.Constants.StatKeys.Mastery(4));
         Log(text, LogLevel.Info);
     }
 }

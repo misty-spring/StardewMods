@@ -29,7 +29,7 @@ public static class InventoryPatches
     
     internal static void Apply(Harmony harmony)
     {
-        if (ModEntry.Config.MenuActions)
+        if (ModEntry.Config.MenuActions && OperatingSystem.IsAndroid() == false)
         {
             Log($"Applying Harmony patch \"{nameof(InventoryPatches)}\": postfixing SDV method \"InventoryMenu.rightClick(int, int, Item, bool, bool)\".");
             harmony.Patch(

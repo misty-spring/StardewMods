@@ -96,13 +96,6 @@ public class MenuBehavior : IWorldChangeData
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(PlaySound) && !Game1.soundBank.Exists(PlaySound))
-        {
-            Log($"Error: Sound doesn't exist. ({PlaySound})", LogLevel.Error);
-            o = null;
-            return false;
-        }
-
         var target = ItemRegistry.GetDataOrErrorItem(TargetId);
         if (target.DisplayName == ItemRegistry.GetErrorItemName())
         {

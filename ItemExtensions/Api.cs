@@ -85,7 +85,22 @@ public interface IApi
     /// <param name="remove">whether to remove the node from the map.</param>
     void CheckObjectDrops(Object node, bool remove = false);
 
+    /// <summary>
+    /// Gets data for a specific resource.
+    /// </summary>
+    /// <param name="id">The ID if the resource.</param>
+    /// <param name="isClump">Whether it's a clump (instead of a node).</param>
+    /// <param name="data">The resource data.</param>
+    /// <returns>Whether the data was found.</returns>
     bool GetResourceData(string id, bool isClump, out object data);
+    
+    /// <summary>
+    /// Gets breaking tool for a specific resource.
+    /// </summary>
+    /// <param name="id">The ID if the resource.</param>
+    /// <param name="isClump">Whether it's a clump (instead of a node).</param>
+    /// <param name="tool">The breaking tool.</param>
+    /// <returns>Whether the resource data was found.</returns>
     bool GetBreakingTool(string id, bool isClump, out string tool);
 }
 

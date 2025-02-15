@@ -87,7 +87,14 @@ public partial class ShopMenuPatches
 
                 __instance.currentItemIndex =
                     Math.Max(0, Math.Min(__instance.forSale.Count - 4, __instance.currentItemIndex));
-                __instance.updateSaleButtonNeighbors();
+                
+                //android compatibility. code will run if it exists, otherwise ignore
+                var method = __instance.GetType().GetMethod("updateSaleButtonNeighbors");
+                if (method != null)
+                {
+                    method.Invoke(__instance, null);
+                } 
+                
                 Reflection.GetMethod(__instance, "setScrollBarToCurrentIndex").Invoke();
                 return false;
             }

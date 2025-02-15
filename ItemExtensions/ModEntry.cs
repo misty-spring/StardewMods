@@ -89,10 +89,6 @@ public sealed class ModEntry : Mod
 
             if (Config.ResourcesVolcano)
                 VolcanoPatches.Apply(harmony);
-            
-            //if the user has CJB cheats menu
-            if(helper.ModRegistry.Get("CJBok.CheatsMenu") is not null)
-                CjbCheat.Apply(harmony);
         }
 
         if (Config.ShopTrades)
@@ -201,12 +197,15 @@ public sealed class ModEntry : Mod
             setValue: value => Config.EatingAnimations = value
         );
          
-        configMenu?.AddBoolOption(
-            mod: ModManifest,
-            name: () => Help.Translation.Get("config.MenuActions.name"),
-            getValue: () => Config.MenuActions,
-            setValue: value => Config.MenuActions = value
-        );
+        if (OperatingSystem.IsAndroid() == false)
+        {
+            configMenu?.AddBoolOption(
+                mod: ModManifest,
+                name: () => Help.Translation.Get("config.MenuActions.name"),
+                getValue: () => Config.MenuActions,
+                setValue: value => Config.MenuActions = value
+            );
+        }
          
         //vanilla function extension
         configMenu?.AddPage( ModManifest, "Ext", () => Helper.Translation.Get("config.VanillaExt.title"));

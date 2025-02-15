@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.13.0
+- Android compatibility (beta) thanks to YourJeiJi
+- Changed MenuBehavior code
+- Fixed issue of clumps being unbreakable
+
 ## 1.12.3
 - Changes to API methods
 - Added code to (hopefully) avoid players being stuck in a mine level, and to stop multiple stairs from spawning
