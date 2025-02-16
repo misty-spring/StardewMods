@@ -8,6 +8,7 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.Pathfinding;
+using Multiplayer = FarmhouseVisits.ModContent.Multiplayer;
 
 // ReSharper disable InconsistentNaming
 
@@ -30,6 +31,8 @@ public class ModEntry : Mod
         helper.Events.GameLoop.ReturnedToTitle += Events.TitleReturn;
         helper.Events.Content.AssetRequested += Events.AssetRequest;
         helper.Events.Content.AssetsInvalidated += Events.AssetInvalidated;
+
+        helper.Events.Multiplayer.PeerConnected += Multiplayer.OnPeerConnected;
 
         Config = Helper.ReadConfig<ModConfig>();
 
@@ -367,10 +370,15 @@ public class ModEntry : Mod
 
     private static void DayStarted(object sender, DayStartedEventArgs e)
     {
+        TodaysVisitors.Clear();
+        PlayerHome.Clear();
+        NameAndLevel?.Clear();
+        RepeatedByLV?.Clear();
+        
         foreach (var player in Game1.getAllFarmers())
         {
+            TodaysVisitors.Add(player.UniqueMultiplayerID, new List<string>());
             PlayerHome[player.UniqueMultiplayerID] = Utility.getHomeOfFarmer(player);
-            TodaysVisitors[player.UniqueMultiplayerID] = new List<string>();
 
             //if faulty config, don't do anything + mark as unvisitable
             if (!IsConfigValid)
@@ -384,10 +392,10 @@ public class ModEntry : Mod
             if (!FirstLoadedDay)
             {
                 Log("Reloading data...");
-                NameAndLevel?[player.UniqueMultiplayerID].Clear();
-                RepeatedByLV?[player.UniqueMultiplayerID].Clear();
+                NameAndLevel?.Add(player.UniqueMultiplayerID, new Dictionary<string, int>());
+                RepeatedByLV?.Add(player.UniqueMultiplayerID, new List<string>());
 
-                Content.GetAllVisitors();
+                Content.GetAllVisitors(player);
             }
 
             #region festival check
@@ -459,171 +467,93 @@ public class ModEntry : Mod
         //if can visit & hasn't reached MAX
         if (visitsOpen && !hasReachedMax && !HasAnyVisitors[uid])
         {
-            var choseOne = false;
+            var inFarmhouse = Game1.player.currentLocation.Equals(Utility.getHomeOfFarmer(player));
+            var chanceMatch = Random.Next(1, 101) <= Config.CustomChance;
 
-            //prioritize scheduled
-            if (HasCustomSchedules)
-            {
-                foreach (var pair in SchedulesParsed)
-                {
-                    var data = pair.Value;
-
-                    //if GSQ and doesn't apply
-                    var hasGSQ = !string.IsNullOrWhiteSpace(data.Extras?.GameStateQuery);
-                    if (hasGSQ)
-                    {
-                        var GSQmatch = GameStateQuery.CheckConditions(data.Extras.GameStateQuery);
-
-                        if (!GSQmatch)
-                        {
-                            Log("GSQ conditions don't match. Character will be skipped", LogLevel.Debug);
-                            continue;
-                        }
-                    }
-
-                    var visit = Game1.getCharacterFromName(pair.Key);
-
-                    //whether npc is free or is forced schedule
-                    var canVisit = Values.IsFree(visit, uid, false) || (data.Extras is not null && data.Extras.Force);
-
-                    //if must be exact, checks that time matches. if not, checks if you're in time range.
-                    var inTimeRange = data.MustBeExact ? newTime.Equals(data.From) : newTime >= data.From && newTime < data.To - 10;
-
-                    //if it's not starting time OR they're not free
-                    if (!inTimeRange || !canVisit)
-                        continue;
-
-                    //duplicate NPC, and set visiting
-                    VContext[uid] = new VisitData(visit, true, data);
-                    Visitor[uid] = DupeNPC.Duplicate(visit);
-                    HasAnyVisitors[uid] = true;
-
-                    if (data.Extras is not null & data.Extras.Force)
-                    {
-                        Log($"Adding NPC {Visitor[uid].Name} by force (Force.Enable = {data.Extras.Force})");
-
-                        //add and set forced
-                        Actions.AddWhileOutside(Visitor[uid], Utility.getHomeOfFarmer(player));
-                        ForcedSchedule = true; //avoids certain behavior
-                        return;
-                    }
-
-                    if (Config.NeedsConfirmation)
-                    {
-                        Confirmation.AskToEnter(uid);
-                    }
-                    else
-                    {
-                        //add them to farmhouse (last to avoid issues)
-                        Actions.AddCustom(Visitor[uid], Utility.getHomeOfFarmer(player), data, false);
-
-                        Log($"HasAnyVisitors set to true.\n{Visitor[uid].Name} will begin visiting player.\nTimeOfArrival = {VContext[uid].TimeOfArrival};\nControllerTime = {VContext[uid].ControllerTime};", Level);
-                    }
-
-                    //break, since we already found a schedule
-                    choseOne = true;
-                    break;
-                }
-            }
-            //if none matched, do random
-            if (!choseOne)
-            {
-                var inFarmhouse = Game1.player.currentLocation.Equals(Utility.getHomeOfFarmer(player));
-                var chanceMatch = Random.Next(1, 101) <= Config.CustomChance;
-
-                if (chanceMatch && inFarmhouse)
-                    Content.ChooseRandom(uid);
-            }
+            if (chanceMatch && inFarmhouse)
+                Content.ChooseRandom(uid);
             return;
         }
 
 
         //if they're going to sleep, return
-        if (Visitor[uid] == null || VContext[uid].IsGoingToSleep)
+        if (Visitor.TryGetValue(uid, out var visitor) == false || VContext.TryGetValue(uid, out var context) == false || context.IsGoingToSleep)
             return;
 
         //in the future, add dialogue for when characters fall asleep.
-        var soonToSleep = Values.IsCloseToSleepTime(VContext[uid]);
+        var soonToSleep = Values.IsCloseToSleepTime(context);
 
         //if custom visit and reached max time
-        var maxCustomTime = VContext[uid].CustomVisiting && newTime >= VContext[uid].CustomData?.To;
+        var maxCustomTime = context.CustomVisiting && newTime >= context.CustomData?.To;
 
         //if npc has stayed too long, check how to retire
-        if (VContext[uid].DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
+        if (context.DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
         {
             //if on a minigame and same location as visit (multiplayer)
-            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(Visitor[uid].currentLocation))
+            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(visitor.currentLocation))
+                return;
+            
+            if (NameAndLevel.TryGetValue(uid, out var nameAndLevel) == false)
                 return;
             
             //sleepover bool checks: soon to sleep, enabled, % match, min hearts OK
-            var shouldSleepOver = soonToSleep && Config.Sleepover && Game1.random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= NameAndLevel[uid][Visitor[uid].Name];
+            var shouldSleepOver = soonToSleep && Config.Sleepover && Game1.random.Next(0, 100) <= Config.SleepoverChance && Config.SleepoverMinHearts <= nameAndLevel[visitor.Name];
 
             //log, LV depends on config
             var action = shouldSleepOver ? "resting" : "retiring";
-            Log($"{Visitor[uid].Name} is {action} for the day.", Level);
+            Log($"{visitor.Name} is {action} for the day.", Level);
 
             //update info
             //ModEntry.Visitors?.Remove(Name);
             CounterToday++;
-            TodaysVisitors[uid].Add(Visitor[uid].Name);
+
+            if (TodaysVisitors.TryGetValue(uid, out var todaysVisitors) == false)
+            {
+                Log($"Error: Can't find TodaysVisitors data for multiplayer ID {uid}.", LogLevel.Error);
+                return;
+            }
+            
+            TodaysVisitors[uid].Add(visitor.Name);
 
             //get data before we remove it
-            var durationSoFar = VContext[uid].DurationSoFar;
-            var controllerTime = VContext[uid].ControllerTime;
+            var durationSoFar = context.DurationSoFar;
+            var controllerTime = context.ControllerTime;
             ForcedSchedule = false;
 
             if (Config.Debug)
             {
-                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(TodaysVisitors[uid])}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {Visitor?[uid].Name}", Level);
+                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(todaysVisitors)}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {visitor.Name}", Level);
             }
 
-            //if custom has dialogue: exit with it. else, normal
-            if (VContext[uid].CustomVisiting)
+            if (shouldSleepOver)
             {
-                //if there's a mail string, add for tomorrow
-                var mail = VContext[uid].CustomData?.Extras.Mail;
-                if (!string.IsNullOrWhiteSpace(mail))
-                {
-                    Game1.player.mailForTomorrow.Add(mail);
-                }
-
-                var exitd = VContext[uid].CustomData?.ExitDialogue;
-                if (!string.IsNullOrWhiteSpace(exitd) && Visitor?[uid] != null)
-                    Actions.RetireCustom(Visitor[uid], exitd, uid);
-                else
-                    Actions.Retire(Visitor[uid], uid);
-            }
-            else if (shouldSleepOver)
-            {
-                if(Visitor?[uid] != null)
-                    Actions.GoToSleep(Visitor[uid], VContext[uid], uid);
+                Actions.GoToSleep(visitor, VContext[uid], uid);
             }
             else
             {
-                if(Visitor?[uid] != null)
-                    Actions.Retire(Visitor[uid], uid);
+                Actions.Retire(visitor, uid);
             }
 
             return;
         }
 
         //otherwise, they'll try to move around.
-        Log($"{Visitor?[uid].Name} will move around.", Level);
+        Log($"{visitor.Name} will move around.", Level);
 
         if (Config.Verbose)
         {
-            var endPoint = Visitor?[uid].controller?.pathToEndPoint;
+            var endPoint = visitor.controller?.pathToEndPoint;
             if (endPoint != null)
-                Log($"Current endpoint: {Data.TurnToString(endPoint)},moving: {Visitor?[uid].isMovingOnPathFindPath}", LogLevel.Debug);
+                Log($"Current endpoint: {Data.TurnToString(endPoint)},moving: {visitor.isMovingOnPathFindPath}", LogLevel.Debug);
         }
 
         //if they just arrived they won't move.
-        if (newTime == VContext?[uid].TimeOfArrival)
+        if (newTime == context.TimeOfArrival)
         {
-            Log($"Time of arrival equals current time. NPC won't move around", Level);
+            Log($"Time of arrival equals current time. NPC won't move around");
         }
         //if they've been moving too long, they'll stop
-        else if (VContext?[uid] != null && Visitor?[uid] != null && VContext[uid].ControllerTime != 0)
+        else if (VContext?[uid] != null && Visitor?[uid] != null && context.ControllerTime != 0)
         {
             VContext[uid].ControllerTime = 0;
             Visitor[uid].Halt();
@@ -633,35 +563,15 @@ public class ModEntry : Mod
             {
                 Log($"ControllerTime = {VContext[uid].ControllerTime}", Level);
             }
-            /*
-            var isAnimating = Visitor.Sprite.CurrentAnimation?.Count > 0;
-
-            if (Visitor.isMoving() || Visitor.isMovingOnPathFindPath.Value || Visitor.IsRemoteMoving() || isAnimating)
-            {
-                Visitor.Halt();
-                Visitor.temporaryController = null;
-                Visitor.controller = null;
-                if (Config.Debug)
-                {
-                    Log($"ControllerTime = {VisitContext.ControllerTime}", Level);
-                }
-            }
-            else
-            {
-                var newtile = Data.RandomSpotInSquare(Visitor, 2);
-                Visitor.controller = new PathFindController(Visitor, Visitor.currentLocation, newtile, Game1.random.Next(0, 4));
-                Visitor.returnToEndPoint();
-            }*/
         }
         //otherwise, will try moving.
-        else
+        else if (VContext?[uid] != null && Visitor?[uid] != null)
         {
-            Visitor[uid].resetCurrentDialogue();
-            //DurationSoFar++;
+            visitor.resetCurrentDialogue();
             VContext[uid].ControllerTime++;
-            //temporaryController = null;
-            //var isBarnOrCoop = Visitor.currentLocation.Name.Contains("Coop") || Visitor.currentLocation.Name.Contains("Barn");
-            var newtile = Point.Zero;
+            
+            // ReSharper disable once RedundantAssignment
+            var newTile = Point.Zero;
 
             //walk on farm OR house
             if (Visitor[uid].currentLocation.Name == "Farm")
@@ -670,15 +580,15 @@ public class ModEntry : Mod
                     Log("Current is farm.");
 
                 //Visitor.Idle = true;
-                newtile = Data.RandomSpotInSquare(Visitor[uid], 10);
+                newTile = Data.RandomSpotInSquare(Visitor[uid], 10);
                 Visitor[uid].controller = new PathFindController(
                     Visitor[uid],
                     Visitor[uid].currentLocation,
-                    newtile,
+                    newTile,
                     Game1.random.Next(0, 4)
                 )
                 {
-                    endPoint = newtile
+                    endPoint = newTile
                 };
             }
             else if (Visitor[uid].currentLocation is FarmHouse f)
@@ -686,11 +596,11 @@ public class ModEntry : Mod
                 if (Config.Verbose)
                     Log("Current is farmhouse.");
 
-                newtile = f.getRandomOpenPointInHouse(Game1.random);
+                newTile = f.getRandomOpenPointInHouse(Game1.random);
                 Visitor[uid].controller = new PathFindController(
                     Visitor[uid],
                     Visitor[uid].currentLocation,
-                    newtile,
+                    newTile,
                     Game1.random.Next(0, 4)
                 );
             }
@@ -699,7 +609,7 @@ public class ModEntry : Mod
                 if (Config.Verbose)
                     Log("Current is probably a shed or greenhouse.");
 
-                newtile = Data.RandomTile(Visitor[uid].currentLocation, Visitor[uid]).ToPoint();
+                newTile = Data.RandomTile(Visitor[uid].currentLocation, Visitor[uid]).ToPoint();
 
                 //stop JIC
                 Visitor[uid].Halt();
@@ -709,16 +619,16 @@ public class ModEntry : Mod
                 Visitor[uid].controller = new PathFindController(
                     Visitor[uid],
                     Visitor[uid].currentLocation,
-                    newtile,
+                    newTile,
                     Game1.random.Next(0, 4)
                 )
                 {
-                    endPoint = newtile
+                    endPoint = newTile
                 };
             }
 
             if (Config.Debug)
-                Log($"New position: {newtile}, pathing to {Visitor[uid].controller.endPoint}", LogLevel.Debug);
+                Log($"New position: {newTile}, pathing to {Visitor[uid].controller.endPoint}", LogLevel.Debug);
 
             if (VContext[uid].CustomVisiting)
             {
@@ -743,8 +653,11 @@ public class ModEntry : Mod
         CheckForDialogue(uid);
 
         VContext[uid].DurationSoFar++;
+
         if (Config.Debug)
+        {
             Log($"ControllerTime = {VContext[uid].ControllerTime}, DurationSoFar = {VContext[uid].DurationSoFar} ({VContext[uid].DurationSoFar * 10} minutes).", Level);
+        }
     }
 
     private static void CheckForDialogue(long uid)
