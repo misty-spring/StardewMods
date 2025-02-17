@@ -471,9 +471,10 @@ public class ModEntry : Mod
             return;
         }
 
+        var visitor = GetVisitor(uid);
 
         //if they're going to sleep, return
-        if (Visitor.ContainsKey(uid) == false || VContext.ContainsKey(uid) == false || Visitor.TryGetValue(uid, out var visitor) == false || VContext.TryGetValue(uid, out var context) == false || context.IsGoingToSleep|| visitor is null)
+        if (VContext.ContainsKey(uid) == false || VContext.TryGetValue(uid, out var context) == false || context.IsGoingToSleep|| visitor is null)
             return;
 
         //in the future, add dialogue for when characters fall asleep.
@@ -542,19 +543,19 @@ public class ModEntry : Mod
             Log($"Time of arrival equals current time. NPC won't move around");
         }
         //if they've been moving too long, they'll stop
-        else if (VContext?[uid] != null && Visitor?[uid] != null && context.ControllerTime != 0)
+        else if (VContext?[uid] != null && visitor != null && context.ControllerTime != 0)
         {
             VContext[uid].ControllerTime = 0;
-            Visitor[uid].Halt();
-            Visitor[uid].temporaryController = null;
-            Visitor[uid].controller = null;
+            visitor.Halt();
+            visitor.temporaryController = null;
+            visitor.controller = null;
             if (Config.Debug)
             {
                 Log($"ControllerTime = {VContext[uid].ControllerTime}", Level);
             }
         }
         //otherwise, will try moving.
-        else if (VContext?[uid] != null && Visitor?[uid] != null)
+        else if (VContext?[uid] != null && visitor != null)
         {
             visitor.resetCurrentDialogue();
             VContext[uid].ControllerTime++;
@@ -563,16 +564,16 @@ public class ModEntry : Mod
             var newTile = Point.Zero;
 
             //walk on farm OR house
-            if (Visitor[uid].currentLocation.Name == "Farm")
+            if (visitor.currentLocation.Name == "Farm")
             {
                 if (Config.Verbose)
                     Log("Current is farm.");
 
                 //Visitor.Idle = true;
-                newTile = Data.RandomSpotInSquare(Visitor[uid], 10);
-                Visitor[uid].controller = new PathFindController(
-                    Visitor[uid],
-                    Visitor[uid].currentLocation,
+                newTile = Data.RandomSpotInSquare(visitor, 10);
+                visitor.controller = new PathFindController(
+                    visitor,
+                    visitor.currentLocation,
                     newTile,
                     Game1.random.Next(0, 4)
                 )
@@ -580,15 +581,15 @@ public class ModEntry : Mod
                     endPoint = newTile
                 };
             }
-            else if (Visitor[uid].currentLocation is FarmHouse f)
+            else if (visitor.currentLocation is FarmHouse f)
             {
                 if (Config.Verbose)
                     Log("Current is farmhouse.");
 
                 newTile = f.getRandomOpenPointInHouse(Game1.random);
-                Visitor[uid].controller = new PathFindController(
-                    Visitor[uid],
-                    Visitor[uid].currentLocation,
+                visitor.controller = new PathFindController(
+                    visitor,
+                    visitor.currentLocation,
                     newTile,
                     Game1.random.Next(0, 4)
                 );
@@ -598,16 +599,16 @@ public class ModEntry : Mod
                 if (Config.Verbose)
                     Log("Current is probably a shed or greenhouse.");
 
-                newTile = Data.RandomTile(Visitor[uid].currentLocation, Visitor[uid]).ToPoint();
+                newTile = Data.RandomTile(visitor.currentLocation, visitor).ToPoint();
 
                 //stop JIC
-                Visitor[uid].Halt();
-                Visitor[uid].temporaryController = null;
-                Visitor[uid].controller = null;
+                visitor.Halt();
+                visitor.temporaryController = null;
+                visitor.controller = null;
 
-                Visitor[uid].controller = new PathFindController(
-                    Visitor[uid],
-                    Visitor[uid].currentLocation,
+                visitor.controller = new PathFindController(
+                    visitor,
+                    visitor.currentLocation,
                     newTile,
                     Game1.random.Next(0, 4)
                 )
@@ -617,7 +618,7 @@ public class ModEntry : Mod
             }
 
             if (Config.Debug)
-                Log($"New position: {newTile}, pathing to {Visitor[uid].controller.endPoint}", LogLevel.Debug);
+                Log($"New position: {newTile}, pathing to {visitor.controller.endPoint}", LogLevel.Debug);
         }
 
         CheckForDialogue(uid);
@@ -654,10 +655,11 @@ public class ModEntry : Mod
         if (Game1.random.Next(0, 11) > 5)
             return;
 
-        var isFarm = Visitor[uid].currentLocation.Name == "Farm";
-        var furniture = Visitor[uid].currentLocation.furniture;
-        var isFarmhouse = Visitor[uid].currentLocation is FarmHouse;
-        var isShed = Visitor[uid].currentLocation is Shed;
+        var visitor = GetVisitor(uid);
+        var isFarm = visitor.currentLocation.Name == "Farm";
+        var furniture = visitor.currentLocation.furniture;
+        var isFarmhouse = visitor.currentLocation is FarmHouse;
+        var isShed = visitor.currentLocation is Shed;
         //if in farm
         if (isFarm)
         {
@@ -665,41 +667,41 @@ public class ModEntry : Mod
 
             if (Game1.currentSeason == "winter")
             {
-                Actions.SetDialogue(Visitor[uid], Values.GetDialogueType(Visitor[uid], DialogueType.Winter));
+                Actions.SetDialogue(visitor, Values.GetDialogueType(visitor, DialogueType.Winter));
             }
             else if ((Game1.random.Next(0, 2) <= 0 || !anyCrops) && Animals.Any())
             {
                 var animal = Game1.random.ChooseFrom(Animals);
-                var rawtext = Values.GetDialogueType(Visitor[uid], DialogueType.Animal);
+                var rawtext = Values.GetDialogueType(visitor, DialogueType.Animal);
                 var formatted = string.Format(rawtext, animal);
-                Actions.SetDialogue(Visitor[uid], formatted);
+                Actions.SetDialogue(visitor, formatted);
             }
             else if (anyCrops)
             {
                 var crop = Game1.random.ChooseFrom(Crops);
-                var rawtext = Values.GetDialogueType(Visitor[uid], DialogueType.Crop);
+                var rawtext = Values.GetDialogueType(visitor, DialogueType.Crop);
                 var formatted = string.Format(rawtext, crop);
-                Actions.SetDialogue(Visitor[uid], formatted);
+                Actions.SetDialogue(visitor, formatted);
             }
             else
             {
-                Actions.SetDialogue(Visitor[uid], Values.GetDialogueType(Visitor[uid], DialogueType.NoneYet));
+                Actions.SetDialogue(visitor, Values.GetDialogueType(visitor, DialogueType.NoneYet));
             }
         }
         //if in shed/house and any furniture
         else if ((isFarmhouse || isShed) && furniture.Any())
         {
-            var text = Values.GetDialogueType(Visitor[uid], DialogueType.Furniture);
+            var text = Values.GetDialogueType(visitor, DialogueType.Furniture);
             var formatted = string.Format(text, Game1.random.ChooseFrom(furniture).DisplayName);
-            Actions.SetDialogue(Visitor[uid], formatted);
+            Actions.SetDialogue(visitor, formatted);
 
             if (Config.Debug)
-                Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
+                Log($"Adding dialogue for {visitor.Name}...", Level);
         }
         else
         {
-            var isCoopOrBarn = Visitor[uid].currentLocation.Name.Contains("Coop") || Visitor[uid].currentLocation.Name.Contains("Barn");
-            var isGreenHouse = Visitor[uid].currentLocation.Name == "Greenhouse";
+            var isCoopOrBarn = visitor.currentLocation.Name.Contains("Coop") || visitor.currentLocation.Name.Contains("Barn");
+            var isGreenHouse = visitor.currentLocation.Name == "Greenhouse";
 
             if (isGreenHouse)
             {
@@ -708,27 +710,52 @@ public class ModEntry : Mod
                     return;
 
                 var chosen = Game1.random.ChooseFrom(crops);
-                var text = Values.GetDialogueType(Visitor[uid], DialogueType.Crop);
+                var text = Values.GetDialogueType(visitor, DialogueType.Crop);
                 var formatted = string.Format(text, chosen);
-                Actions.SetDialogue(Visitor[uid], formatted);
+                Actions.SetDialogue(visitor, formatted);
                 if (Config.Debug)
-                    Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
+                    Log($"Adding dialogue for {visitor.Name}...", Level);
             }
             else if (isCoopOrBarn)
             {
-                var animals = Visitor[uid].currentLocation.getAllFarmAnimals();
+                var animals = visitor.currentLocation.getAllFarmAnimals();
 
                 if (animals == null || animals.Count == 0)
                     return;
 
                 var chosen = Game1.random.ChooseFrom(animals);
-                var text = Values.GetDialogueType(Visitor[uid], DialogueType.Animal);
+                var text = Values.GetDialogueType(visitor, DialogueType.Animal);
                 var formatted = string.Format(text, chosen.displayName);
-                Actions.SetDialogue(Visitor[uid], formatted);
+                Actions.SetDialogue(visitor, formatted);
                 if (Config.Debug)
-                    Log($"Adding dialogue for {Visitor[uid].Name}...", Level);
+                    Log($"Adding dialogue for {visitor.Name}...", Level);
             }
         }
+    }
+
+    internal static NPC GetVisitor(long uid)
+    {
+        var player = Game1.GetPlayer(uid);
+        if (player == null)
+        {
+            Log($"Couldn't find player with ID {uid}.", LogLevel.Warn);
+            return null;
+        }
+        
+        foreach (var npc in Utility.getHomeOfFarmer(player).characters)
+        {
+            //skip married/roommate
+            if (player.friendshipData.TryGetValue(npc.Name, out var data) && data.IsMarried())
+                continue;
+            
+            //skip pets
+            if (npc is StardewValley.Characters.Pet)
+                continue;
+            
+            return npc;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -737,9 +764,6 @@ public class ModEntry : Mod
     //its here because i'd rather have a single call than repeat through code and forget one of them
     internal static void SetNoVisitor(long uid)
     {
-        if (Visitor.TryAdd(uid, null) == false)
-            Visitor[uid] = null;
-        
         if (VContext.TryAdd(uid, null) == false)
             VContext[uid] = null;
     }
@@ -795,7 +819,6 @@ public class ModEntry : Mod
     internal static bool IsConfigValid { get; set; }
     #endregion
 
-    internal static Dictionary<long, NPC> Visitor { get; set; } = new();
     internal static Dictionary<long,VisitData> VContext { get; set; } = new();
     internal static int MaxTimeStay { get; set; }
     internal static int CounterToday { get; set; }
