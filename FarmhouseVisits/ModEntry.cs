@@ -1,6 +1,6 @@
-using FarmhouseVisits.APIs;
-using FarmhouseVisits.ModContent;
-using FarmhouseVisits.Models;
+using FarmhouseVisitsMP.APIs;
+using FarmhouseVisitsMP.ModContent;
+using FarmhouseVisitsMP.Models;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -8,11 +8,11 @@ using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.Pathfinding;
-using Multiplayer = FarmhouseVisits.ModContent.Multiplayer;
+using Multiplayer = FarmhouseVisitsMP.ModContent.Multiplayer;
 
 // ReSharper disable InconsistentNaming
 
-namespace FarmhouseVisits;
+namespace FarmhouseVisitsMP;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public class ModEntry : Mod
@@ -21,6 +21,7 @@ public class ModEntry : Mod
     {
         helper.Events.GameLoop.GameLaunched += GameLaunched;
         helper.Events.GameLoop.SaveLoaded += Events.SaveLoaded;
+        helper.Events.Multiplayer.PeerConnected += Multiplayer.OnPeerConnected;
 
         helper.Events.GameLoop.DayStarted += DayStarted;
         helper.Events.GameLoop.TimeChanged += OnTimeChange;
@@ -32,28 +33,20 @@ public class ModEntry : Mod
         helper.Events.Content.AssetRequested += Events.AssetRequest;
         helper.Events.Content.AssetsInvalidated += Events.AssetInvalidated;
 
-        helper.Events.Multiplayer.PeerConnected += Multiplayer.OnPeerConnected;
-
         Config = Helper.ReadConfig<ModConfig>();
 
         Help = Helper;
         Logger = Monitor.Log;
         TL = Helper.Translation;
-
-        var isDebug = false;
-#if DEBUG
-        isDebug = true;
-#endif
-        if (!Config.Debug && !isDebug) 
-            return;
-        
-        helper.ConsoleCommands.Add("print", "List the values requested.", Debugging.Print);
-        helper.ConsoleCommands.Add("vi_reload", "Reload visitor info.", Debugging.Reload);
-        helper.ConsoleCommands.Add("vi_force", "Force a visit to happen.", Debugging.ForceVisit);
     }
 
     private void GameLaunched(object sender, GameLaunchedEventArgs e)
     {
+        Content.ClearValues();
+        Content.CleanTemp();
+#if DEBUG
+        Log("Game launched", LogLevel.Info);
+#endif
         if (Config.Debug)
         {
             Monitor.Log("Debug has been turned on. This will change configuration for testing purposes.", LogLevel.Warn);
@@ -370,15 +363,15 @@ public class ModEntry : Mod
 
     private static void DayStarted(object sender, DayStartedEventArgs e)
     {
+#if DEBUG
+        Log("Day Started", LogLevel.Info);
+#endif
         TodaysVisitors.Clear();
-        PlayerHome.Clear();
-        NameAndLevel?.Clear();
-        RepeatedByLV?.Clear();
         
         foreach (var player in Game1.getAllFarmers())
         {
-            TodaysVisitors.Add(player.UniqueMultiplayerID, new List<string>());
-            PlayerHome[player.UniqueMultiplayerID] = Utility.getHomeOfFarmer(player);
+            //TodaysVisitors.TryAdd(player.UniqueMultiplayerID, new List<string>());
+            //PlayerHome[player.UniqueMultiplayerID] = Utility.getHomeOfFarmer(player);
 
             //if faulty config, don't do anything + mark as unvisitable
             if (!IsConfigValid)
@@ -392,8 +385,8 @@ public class ModEntry : Mod
             if (!FirstLoadedDay)
             {
                 Log("Reloading data...");
-                NameAndLevel?.Add(player.UniqueMultiplayerID, new Dictionary<string, int>());
-                RepeatedByLV?.Add(player.UniqueMultiplayerID, new List<string>());
+                NameAndLevel?.TryAdd(player.UniqueMultiplayerID, new Dictionary<string, int>());
+                RepeatedByLV?.TryAdd(player.UniqueMultiplayerID, new List<string>());
 
                 Content.GetAllVisitors(player);
             }
@@ -402,7 +395,13 @@ public class ModEntry : Mod
             /* if no friendship with anyone OR festival day:
              * make unvisitable & return
              */
-            FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || Utility.IsPassiveFestivalDay(Game1.dayOfMonth, Game1.season, Game1.player.currentLocation.locationContextId);
+            FestivalToday = Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || Utility.IsPassiveFestivalDay(Game1.dayOfMonth, Game1.season, Utility.getHomeOfFarmer(player).locationContextId);
+
+            if (RepeatedByLV?.TryGetValue(player.UniqueMultiplayerID, out var repeatedByLevel) == false)
+            {
+                RepeatedByLV.TryAdd(player.UniqueMultiplayerID, new List<string>());
+            }
+            
             var anyInLv = RepeatedByLV?[player.UniqueMultiplayerID].Any() ?? false;
             Log($"isFestivalToday = {FestivalToday}; anyInLV = {anyInLv}");
 
@@ -433,16 +432,12 @@ public class ModEntry : Mod
 
     private static void OnTimeChange(object sender, TimeChangedEventArgs e)
     {
+        if (!Game1.IsMasterGame)
+            return;
+        
 #if DEBUG
         Log("Time changed.");
 #endif
-        if (!CanBeVisited)
-        {
-#if DEBUG
-            Log("Player can't be visited.");
-#endif
-            return;
-        }
 
         //on 610, fix children data
         if (e.OldTime == 600 || e.NewTime == 610)
@@ -453,11 +448,12 @@ public class ModEntry : Mod
 
         var visitsOpen = e.NewTime > Config.StartingHours && e.NewTime < Config.EndingHours;
         var hasReachedMax = CounterToday >= Config.MaxVisitsPerDay;
-#if DEBUG
-        Log($"visitsOpen {visitsOpen}, hasReachedMax {hasReachedMax}, HasAnyVisitors {HasAnyVisitors}");
-#endif
+        
         foreach (var player in Game1.getAllFarmers())
         {
+#if DEBUG
+            Log($"visitsOpen {visitsOpen}, hasReachedMax {hasReachedMax}, HasAnyVisitors {AreThereVisits(player)}");
+#endif
             CheckVisitor(player, visitsOpen, hasReachedMax, e.NewTime, player.UniqueMultiplayerID);
         }
     }
@@ -465,9 +461,9 @@ public class ModEntry : Mod
     private static void CheckVisitor(Farmer player, bool visitsOpen, bool hasReachedMax, int newTime, long uid)
     {
         //if can visit & hasn't reached MAX
-        if (visitsOpen && !hasReachedMax && !HasAnyVisitors[uid])
+        if (visitsOpen && !hasReachedMax && !AreThereVisits(player))
         {
-            var inFarmhouse = Game1.player.currentLocation.Equals(Utility.getHomeOfFarmer(player));
+            var inFarmhouse = player.currentLocation.Equals(Utility.getHomeOfFarmer(player));
             var chanceMatch = Random.Next(1, 101) <= Config.CustomChance;
 
             if (chanceMatch && inFarmhouse)
@@ -477,20 +473,19 @@ public class ModEntry : Mod
 
 
         //if they're going to sleep, return
-        if (Visitor.TryGetValue(uid, out var visitor) == false || VContext.TryGetValue(uid, out var context) == false || context.IsGoingToSleep)
+        if (Visitor.ContainsKey(uid) == false || VContext.ContainsKey(uid) == false || Visitor.TryGetValue(uid, out var visitor) == false || VContext.TryGetValue(uid, out var context) == false || context.IsGoingToSleep|| visitor is null)
             return;
 
         //in the future, add dialogue for when characters fall asleep.
         var soonToSleep = Values.IsCloseToSleepTime(context);
 
         //if custom visit and reached max time
-        var maxCustomTime = context.CustomVisiting && newTime >= context.CustomData?.To;
 
         //if npc has stayed too long, check how to retire
-        if (context.DurationSoFar >= MaxTimeStay || maxCustomTime || soonToSleep)
+        if (context.DurationSoFar >= MaxTimeStay || soonToSleep)
         {
             //if on a minigame and same location as visit (multiplayer)
-            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && Game1.player.currentLocation.Equals(visitor.currentLocation))
+            if (Game1.IsMultiplayer && Game1.currentMinigame is not null && player.currentLocation.Equals(visitor.currentLocation))
                 return;
             
             if (NameAndLevel.TryGetValue(uid, out var nameAndLevel) == false)
@@ -506,14 +501,8 @@ public class ModEntry : Mod
             //update info
             //ModEntry.Visitors?.Remove(Name);
             CounterToday++;
-
-            if (TodaysVisitors.TryGetValue(uid, out var todaysVisitors) == false)
-            {
-                Log($"Error: Can't find TodaysVisitors data for multiplayer ID {uid}.", LogLevel.Error);
-                return;
-            }
             
-            TodaysVisitors[uid].Add(visitor.Name);
+            TodaysVisitors.Add(visitor.Name);
 
             //get data before we remove it
             var durationSoFar = context.DurationSoFar;
@@ -522,7 +511,7 @@ public class ModEntry : Mod
 
             if (Config.Debug)
             {
-                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(todaysVisitors)}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {visitor.Name}", Level);
+                Log($"HasAnyVisitors = false, CounterToday = {CounterToday}, TodaysVisitors= {Data.TurnToString(TodaysVisitors)}, DurationSoFar = {durationSoFar}, ControllerTime = {controllerTime}, VisitorName = {visitor.Name}", Level);
             }
 
             if (shouldSleepOver)
@@ -629,25 +618,6 @@ public class ModEntry : Mod
 
             if (Config.Debug)
                 Log($"New position: {newTile}, pathing to {Visitor[uid].controller.endPoint}", LogLevel.Debug);
-
-            if (VContext[uid].CustomVisiting)
-            {
-                Log("Checking if NPC has any custom dialogue...", Level);
-
-                var hasCustomDialogue = VContext[uid].CustomData?.Dialogues?.Any() ?? false;
-                if (hasCustomDialogue)
-                {
-                    Actions.SetDialogue(Visitor[uid], VContext[uid].CustomData.Dialogues[0]);
-
-                    Log($"Adding custom dialogue for {Visitor[uid].Name}...");
-
-                    if (Config.Debug)
-                        Log($"({Visitor[uid].Name}) C. Dialogue: {VContext[uid].CustomData.Dialogues[0]}", Level);
-
-                    //remove this dialogue from the queue
-                    VContext[uid].CustomData.Dialogues.RemoveAt(0);
-                }
-            }
         }
 
         CheckForDialogue(uid);
@@ -660,30 +630,28 @@ public class ModEntry : Mod
         }
     }
 
-    private static void CheckForDialogue(long uid)
+    private static bool AreThereVisits(Farmer player)
     {
-        //if custom, check for dialogue
-        if (VContext[uid].CustomVisiting)
+        foreach (var npc in Utility.getHomeOfFarmer(player).characters)
         {
-            Log("Checking if NPC has any custom dialogue...", Level);
-
-            var hasCustomDialogue = VContext[uid].CustomData?.Dialogues?.Any() ?? false;
-            if (hasCustomDialogue)
-            {
-                Actions.SetDialogue(Visitor[uid], VContext[uid].CustomData.Dialogues[0]);
-
-                Log($"Adding custom dialogue for {Visitor[uid].Name}...");
-
-                if (Config.Debug)
-                    Log($"C. Dialogue: {VContext[uid].CustomData.Dialogues[0]}", Level);
-
-                //remove this dialogue from the queue
-                VContext[uid].CustomData.Dialogues.RemoveAt(0);
-            }
+            //skip married/roommate
+            if (player.friendshipData.TryGetValue(npc.Name, out var data) && data.IsMarried())
+                continue;
+            
+            //skip pets
+            if (npc is StardewValley.Characters.Pet)
+                continue;
+            
+            return true;
         }
 
-        //otherwise, check % for random dialogue
-        else if (Game1.random.Next(0, 11) > 5)
+        return false;
+    }
+
+    private static void CheckForDialogue(long uid)
+    {
+        //check % for random dialogue
+        if (Game1.random.Next(0, 11) > 5)
             return;
 
         var isFarm = Visitor[uid].currentLocation.Name == "Farm";
@@ -769,9 +737,11 @@ public class ModEntry : Mod
     //its here because i'd rather have a single call than repeat through code and forget one of them
     internal static void SetNoVisitor(long uid)
     {
-        HasAnyVisitors[uid] = false;
-        Visitor[uid] = null;
-        VContext[uid] = null;
+        if (Visitor.TryAdd(uid, null) == false)
+            Visitor[uid] = null;
+        
+        if (VContext.TryAdd(uid, null) == false)
+            VContext[uid] = null;
     }
 
     #region used by visitors
@@ -813,9 +783,8 @@ public class ModEntry : Mod
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     internal static Dictionary<long, Dictionary<string, List<string>>> InLaws { get; private set; } = new();
     internal static Dictionary<long, Dictionary<string, int>> NameAndLevel { get; private set; } = new();
-    internal static Dictionary<long, List<string>> RepeatedByLV = new();
+    internal static Dictionary<long, List<string>> RepeatedByLV { get; set; } = new();
     internal static List<string> BlacklistParsed { get; set; } = new();
-    internal static Dictionary<long,FarmHouse> PlayerHome { get; set; }
     internal static bool FirstLoadedDay;
     private static bool CanBeVisited { get; set; }
     internal static ModConfig Config;
@@ -824,22 +793,15 @@ public class ModEntry : Mod
     #region configurable
     internal static string BlacklistRaw { get; set; }
     internal static bool IsConfigValid { get; set; }
-    internal static Dictionary<long,bool> HasAnyVisitors { get; set; }
-    internal static bool HasCustomSchedules { get; set; }
     #endregion
 
-    #region visitdata
-    internal static Dictionary<long, NPC> Visitor { get; set; }
-    internal static Dictionary<long,VisitData> VContext { get; set; }
+    internal static Dictionary<long, NPC> Visitor { get; set; } = new();
+    internal static Dictionary<long,VisitData> VContext { get; set; } = new();
     internal static int MaxTimeStay { get; set; }
     internal static int CounterToday { get; set; }
     public static bool ForcedSchedule { get; internal set; }
-    internal static Dictionary<long, List<string>> TodaysVisitors { get; set; } = new();
-    #endregion
+    internal static List<string> TodaysVisitors { get; set; } = new();
 
-    #region game information
     private static bool FestivalToday;
-    internal static Dictionary<string, ScheduleData> SchedulesParsed { get; set; } = new();
     internal static List<string> MarriedNPCs { get; private set; } = new();
-    #endregion
 }
