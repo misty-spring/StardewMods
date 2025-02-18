@@ -1,0 +1,10 @@
+﻿{
+  "Name": "Frog drops loot",
+  "Author": "mistyspring",
+  "Version": "1.0.0",
+  "Description": "Makes frog companions drop monster loot.",
+  "UniqueID": "mistyspring.FrogDropsLoot",
+  "EntryDll": "FrogDropsLoot.dll",
+  "MinimumApiVersion": "3.14.0",
+  "UpdateKeys": ["nexus:31741"]
+}
