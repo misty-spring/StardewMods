@@ -75,6 +75,7 @@ public class GameLocationPatches
         
         foreach (var sprite in sprites)
         {
+            sprite.lightId = null;
             sprite.flash = false;
             sprite.alpha = 0f;
             sprite.alphaFade = 0f;

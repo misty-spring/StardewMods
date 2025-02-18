@@ -92,9 +92,19 @@ internal static class Day
     {
         if (Status is not null && Status.Any())
         {
+#if DEBUG
+            var status = "";
+            foreach (var pair in Status)
+            {
+                status += $"{pair.Key}: {pair.Value}\n";
+            }
+            Mon.Log(status, LogLevel.Debug);
+#endif
             RandomizedInt = 0;
             IslandToday = true;
             IsFromTicket = true;
+            
+            Help.Data.WriteSaveData( $"{Id}_IslandVisit", Status);
         }
         else
         {

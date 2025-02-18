@@ -61,7 +61,7 @@ internal static class Information
 
     internal static List<string> PlayerSpouses(string id)
     {
-        var farmer = Game1.getFarmer(long.Parse(id));
+        var farmer = Game1.GetPlayer(long.Parse(id));
         var spouses = PlayerSpouses(farmer);
 
         return spouses;
@@ -74,11 +74,11 @@ internal static class Information
         foreach (var name in Game1.NPCGiftTastes.Keys)
         {
             //if universal taste OR unmet npc
-            if (name.StartsWith("Universal_") || farmer?.friendshipData?.Keys.Contains(name) == false)
+            if (name.StartsWith("Universal_") || farmer.friendshipData.Keys.Contains(name) == false)
                 continue;
 
-            var isMarried = farmer?.friendshipData[name]?.IsMarried() ?? false;
-            var isRoommate = farmer?.friendshipData[name]?.IsRoommate() ?? false;
+            var isMarried = farmer.friendshipData[name]?.IsMarried() ?? false;
+            var isRoommate = farmer.friendshipData[name]?.IsRoommate() ?? false;
             if (isMarried || isRoommate)
             {
                 spouses.Add(name);
@@ -91,7 +91,7 @@ internal static class Information
     {
         var result = new List<string>();
         
-        var married = GetAllSpouses(Game1.player);
+        var married = GetAllSpouses(player);
         foreach (var who in married)
         {
             if (!Enabled(who))

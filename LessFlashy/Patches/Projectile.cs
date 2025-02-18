@@ -34,8 +34,8 @@ public static class ProjectilePatches
             
             __instance.rotationVelocity.Set(0f);
             __instance.startingRotation.Set(0f);
-            var rotation = Helper.Reflection.GetField<float>(__instance, "rotation");
-            rotation.SetValue(0f);
+            //var rotation = Helper.Reflection.GetField<float>(__instance, "rotation");
+            //rotation.SetValue(0f);
         }
         catch (Exception e)
         {

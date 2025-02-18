@@ -20,7 +20,7 @@ public sealed class ModEntry : Mod
     {
         //adds config and loads assets
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-        helper.Events.GameLoop.SaveLoaded += SaveLoaded;
+        //helper.Events.GameLoop.SaveLoaded += SaveLoaded;
         helper.Events.Content.AssetRequested += Asset.Requested;
 
         //changes mod info (and NPCs)
@@ -36,7 +36,6 @@ public sealed class ModEntry : Mod
 
         Mon = Monitor;
         Help = Helper;
-        Id = ModManifest.UniqueID;
 
         var harmony = new Harmony(ModManifest.UniqueID);
         NpcPatches.Apply(harmony);
@@ -147,12 +146,12 @@ public sealed class ModEntry : Mod
             setValue: value => Config.ScheduleRandom = value
         );
 
-        configMenu.AddBoolOption(
+        /*configMenu.AddBoolOption(
             mod: ModManifest,
             name: () => Helper.Translation.Get("config.UseIslandClothes.name"),
             getValue: () => Config.IslandClothes,
             setValue: value => Config.IslandClothes = value
-        );
+        );*/
 
         configMenu.AddBoolOption(
             mod: ModManifest,
@@ -276,9 +275,10 @@ public sealed class ModEntry : Mod
 
         //should be a string, dictionary<string,int>
         Status = Help.Data.ReadSaveData<Dictionary<string,(int,bool)>>( $"{Id}_IslandVisit");
-
+        
         if (Status == null)
         {
+            Mon.Log("Status is null.", LogLevel.Debug);
             Status ??= new Dictionary<string, (int, bool)>();
             IsFromTicket = false;
             return;
@@ -286,6 +286,15 @@ public sealed class ModEntry : Mod
 
         IsFromTicket = true;
         IslandToday = true;
+        
+#if DEBUG
+        var status = "";
+        foreach (var pair in Status)
+        {
+            status += $"{pair.Key}: {pair.Value}\n";
+        }
+        Mon.Log(status);
+#endif
         
         var toRemove = new List<string>();
 
@@ -318,8 +327,8 @@ public sealed class ModEntry : Mod
         RandomizedInt = 0;
     }
     #endregion
-    
-    internal static string Id { get; set; }
+
+    internal const string Id = "mistyspring.spousesisland";
 
     #region helper and config
     internal static ModConfig Config;
