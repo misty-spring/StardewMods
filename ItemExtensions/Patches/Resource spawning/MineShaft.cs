@@ -342,13 +342,19 @@ public class MineShaftPatches
                             }
                             
                             //otherwise, add & break loop
-                            all.Add(id, spawns.SpawnFrequency + extraForLevel);
+                            //if we try adding it and it fails, it means the ore has been already added. So we just up its chance instead
+                            if (all.TryAdd(id, spawns.SpawnFrequency + extraForLevel) == false)
+                                all[id] += spawns.SpawnFrequency;
                             break;
                         }
 
                         //or if level is explicitly included
                         if (int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
-                            all.Add(id, spawns.SpawnFrequency + extraForLevel);
+                        {
+                            //if we try adding it and it fails, it means the ore has been already added. So we just up its chance instead
+                            if (all.TryAdd(id, spawns.SpawnFrequency + extraForLevel) == false)
+                                all[id] += spawns.SpawnFrequency;
+                        }
                     }
                 }
             }

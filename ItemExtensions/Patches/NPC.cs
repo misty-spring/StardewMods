@@ -18,7 +18,7 @@ internal static class NpcPatches
             );
     }
 
-	//if context tag has override_default, will make category smth nonexistatn
+	//if context tag has override_default, will make category smth nonexistent
 	internal static void Post_getGiftTasteForThisItem(NPC __instance, Item item, ref int __result)
 	{
         try

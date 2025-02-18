@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.14.0
+- Changed how clumps are saved/loaded internally.
+- Further android compatibility and fixes
+- Fixed issue in MineShaft.cs and Volcano.cs where adding a resource twice would skip it. Instead, now if a resource is added twice it ups the chances of spawning
+- *Might* be compatible with Save Anywhere mods
+
 ## 1.13.0
 - Android compatibility (beta) thanks to YourJeiJi
 - Changed MenuBehavior code

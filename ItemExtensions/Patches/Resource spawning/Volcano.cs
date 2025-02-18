@@ -207,13 +207,18 @@ internal class VolcanoPatches
                             }
 
                             //otherwise, add & break loop
-                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                            //if we try adding it and it fails, it means the ore has been already added. So we just up its chance instead
+                            if (all.TryAdd(id, spawns.SpawnFrequency) == false)
+                                all[id] += spawns.SpawnFrequency;
                             break;
                         }
 
                         //or if level is explicitly included
                         if (int.TryParse(floor, out var isInt) && (isInt == -999 || isInt == mineLevel))
-                            all.Add(id, spawns.SpawnFrequency + extraforLevel);
+                        {
+                            if (all.TryAdd(id, spawns.SpawnFrequency) == false)
+                                all[id] += spawns.SpawnFrequency;
+                        }
                     }
                 }
             }

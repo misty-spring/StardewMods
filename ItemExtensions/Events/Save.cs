@@ -1,4 +1,7 @@
 using ItemExtensions.Additions;
+using ItemExtensions.Models;
+using ItemExtensions.Models.Contained;
+using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -8,7 +11,7 @@ using Object = StardewValley.Object;
 
 namespace ItemExtensions.Events;
 
-public static class Day
+public class Save
 {
 #if DEBUG
     private const LogLevel Level = LogLevel.Debug;
@@ -17,13 +20,126 @@ public static class Day
 #endif
     
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
+    private static IModHelper Help => ModEntry.Help;
+    private static ModConfig Config => ModEntry.Config;
+    private static string Id => ModEntry.Id;
     
     /// <summary>
-    /// On day start, set each clump's custom texture and index.
+    /// At this point, the mod loads its files and adds contentpacks' changes. It also loads custom clump texture for the first time.
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    public static void Started(object sender, DayStartedEventArgs e)
+    internal static void OnLoad(object sender, SaveLoadedEventArgs e)
+    {
+        //get obj data
+        var objData = Help.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
+        Parser.ObjectData(objData);
+        Log($"Loaded {ModEntry.Data?.Count ?? 0} item data.", LogLevel.Debug);
+        
+        if (Config.EatingAnimations)
+        {
+            //get custom animations
+            var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
+            Parser.EatingAnimations(animations);
+            Log($"Loaded {ModEntry.EatingAnimations?.Count ?? 0} eating animations.", LogLevel.Debug);
+        }
+        
+        if (Config.Resources)
+        {
+            //get extra terrain for mineshaft
+            var trees = Help.GameContent.Load<Dictionary<string, TerrainSpawnData>>($"Mods/{Id}/Mines/Terrain");
+            Parser.Terrain(trees);
+            Log($"Loaded {ModEntry.MineTerrain?.Count ?? 0} mineshaft terrain features.", LogLevel.Debug);
+        }
+        
+        if (Config.MixedSeeds)
+        {
+            //get mixed seeds
+            var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
+            Parser.MixedSeeds(seedData);
+            Log($"Loaded {ModEntry.Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
+        }
+        
+        if (Config.Panning)
+        {
+            //get panning
+            var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
+            Parser.Panning(panData);
+            Log($"Loaded {ModEntry.Panning?.Count ?? 0} panning data.", LogLevel.Debug);
+        }
+        
+        if(Config.TrainDrops)
+        {
+            //train stuff
+            var trainData = Help.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/Train");
+            Parser.Train(trainData);
+            Log($"Loaded {ModEntry.TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
+        }
+        
+        if(Config.Treasure)
+            ModEntry.Treasure = Help.GameContent.Load<Dictionary<string, TreasureData>>($"Mods/{Id}/Treasure");
+
+        //ACTION BUTTON LIST
+        var temp = new List<SButton>();
+        foreach (var b in Game1.options.actionButton)
+        {
+            temp.Add(b.ToSButton());
+            Log("Button: " + b);
+        }
+        Log($"Total {Game1.options.actionButton?.Length ?? 0}");
+
+        ModEntry.ActionButtons = temp;
+
+        LoadClumps();
+    }
+
+    /// <summary>
+    /// Sets every custom clump to a regular vanilla clump's texture. 
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public static void BeforeSaving(object sender, SavingEventArgs e)
+    {
+        List<ResourceClump> clumps = new();
+        
+        Utility.ForEachLocation(CheckForCustomClumps, true, true);
+
+        foreach (var resource in clumps)
+        {
+            //give default values of a stone
+            resource.textureName.Set("Maps/springobjects");
+            resource.parentSheetIndex.Set(672);
+            resource.loadSprite();
+        }
+
+        return;
+
+        bool CheckForCustomClumps(GameLocation arg)
+        {
+            foreach (var resource in arg.resourceClumps)
+            {
+                //if not custom
+                if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
+                    continue;
+                    
+                clumps.Add(resource);
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Re-sets clump texture to their modded one.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public static void AfterSaving(object sender, SavedEventArgs e)
+    {
+        LoadClumps();
+    }
+
+    private static void LoadClumps()
     {
         List<ResourceClump> clumps = new();
         
@@ -108,11 +224,6 @@ public static class Day
         }
     }
 
-    /// <summary>
-    /// For each location, check forage duration.
-    /// </summary>
-    /// <param name="arg"></param>
-    /// <returns>Whether to keep iterating code, or stop.</returns>
     private static bool CheckNodeDuration(GameLocation arg)
     {
         if (arg is null)
@@ -166,41 +277,5 @@ public static class Day
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// On day ending, set all custom clumps to a default stone. This is made in case the mod (or a component) is uninstalled.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    public static void Ending(object sender, DayEndingEventArgs e)
-    {
-        List<ResourceClump> clumps = new();
-        
-        Utility.ForEachLocation(CheckForCustomClumps, true, true);
-
-        foreach (var resource in clumps)
-        {
-            //give default values of a stone
-            resource.textureName.Set("Maps/springobjects");
-            resource.parentSheetIndex.Set(672);
-            resource.loadSprite();
-        }
-
-        return;
-
-        bool CheckForCustomClumps(GameLocation arg)
-        {
-            foreach (var resource in arg.resourceClumps)
-            {
-                //if not custom
-                if(resource.modData.ContainsKey(ModKeys.ClumpId) == false)
-                    continue;
-                    
-                clumps.Add(resource);
-            }
-
-            return true;
-        }
     }
 }

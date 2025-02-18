@@ -37,3 +37,7 @@ The documentation is [here](https://github.com/misty-spring/StardewMods/tree/mai
 For templates, see [here](https://www.nexusmods.com/stardewvalley/mods/20357?tab=files).
 
 There's also an [API for C# mods](https://github.com/misty-spring/StardewMods/blob/main/ItemExtensions/Api.cs).
+
+## Caveats
+
+Menu Actions and Shop Trades don't work on android, this is due to limitations in SDV android's code.

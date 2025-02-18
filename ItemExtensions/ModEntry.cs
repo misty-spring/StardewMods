@@ -22,10 +22,10 @@ public sealed class ModEntry : Mod
         Config = Helper.ReadConfig<ModConfig>();
         
         helper.Events.GameLoop.GameLaunched += OnLaunch;
-        helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         
-        helper.Events.GameLoop.DayStarted += Day.Started;
-        helper.Events.GameLoop.DayEnding += Day.Ending;
+        helper.Events.GameLoop.SaveLoaded += Save.OnLoad;
+        helper.Events.GameLoop.Saving += Save.BeforeSaving;
+        helper.Events.GameLoop.Saved += Save.AfterSaving;
         
         helper.Events.Content.AssetRequested += Assets.OnRequest;
         helper.Events.Content.AssetsInvalidated += Assets.OnInvalidate;
@@ -91,7 +91,7 @@ public sealed class ModEntry : Mod
                 VolcanoPatches.Apply(harmony);
         }
 
-        if (Config.ShopTrades)
+        if (Config.ShopTrades && OperatingSystem.IsAndroid() == false)
         {
             ShopMenuPatches.Apply(harmony);
         }
@@ -99,7 +99,7 @@ public sealed class ModEntry : Mod
         if(helper.ModRegistry.Get("Esca.FarmTypeManager") is not null)
             FarmTypeManagerPatches.Apply(harmony);
         
-        if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is not null)
+        if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
             NpcPatches.Apply(harmony);
         
         if(helper.ModRegistry.Get("Pathoschild.TractorMod") is not null)
@@ -223,13 +223,16 @@ public sealed class ModEntry : Mod
             getValue: () => Config.FishPond,
             setValue: value => Config.FishPond = value
         );
-         
-        configMenu?.AddBoolOption(
-            mod: ModManifest,
-            name: () => Help.Translation.Get("config.ShopTrades.name"),
-            getValue: () => Config.ShopTrades,
-            setValue: value => Config.ShopTrades = value
-        );
+
+        if (OperatingSystem.IsAndroid() == false)
+        {
+            configMenu?.AddBoolOption(
+                mod: ModManifest,
+                name: () => Help.Translation.Get("config.ShopTrades.name"),
+                getValue: () => Config.ShopTrades,
+                setValue: value => Config.ShopTrades = value
+            );
+        }
 
         //extra drops
 
@@ -325,73 +328,6 @@ public sealed class ModEntry : Mod
         );
     }
 
-    /// <summary>
-    /// At this point, the mod loads its files and adds contentpacks' changes.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
-    {
-        //get obj data
-        var objData = Help.GameContent.Load<Dictionary<string, ItemData>>($"Mods/{Id}/Data");
-        Parser.ObjectData(objData);
-        Monitor.Log($"Loaded {Data?.Count ?? 0} item data.", LogLevel.Debug);
-        
-        if (Config.EatingAnimations)
-        {
-            //get custom animations
-            var animations = Help.GameContent.Load<Dictionary<string, FarmerAnimation>>($"Mods/{Id}/EatingAnimations");
-            Parser.EatingAnimations(animations);
-            Monitor.Log($"Loaded {EatingAnimations?.Count ?? 0} eating animations.", LogLevel.Debug);
-        }
-        
-        if (Config.Resources)
-        {
-            //get extra terrain for mineshaft
-            var trees = Help.GameContent.Load<Dictionary<string, TerrainSpawnData>>($"Mods/{Id}/Mines/Terrain");
-            Parser.Terrain(trees);
-            Monitor.Log($"Loaded {MineTerrain?.Count ?? 0} mineshaft terrain features.", LogLevel.Debug);
-        }
-        
-        if (Config.MixedSeeds)
-        {
-            //get mixed seeds
-            var seedData = Help.GameContent.Load<Dictionary<string, List<MixedSeedData>>>($"Mods/{Id}/MixedSeeds");
-            Parser.MixedSeeds(seedData);
-            Monitor.Log($"Loaded {Seeds?.Count ?? 0} mixed seeds data.", LogLevel.Debug);
-        }
-        
-        if (Config.Panning)
-        {
-            //get panning
-            var panData = Help.GameContent.Load<Dictionary<string, PanningData>>($"Mods/{Id}/Panning");
-            Parser.Panning(panData);
-            Monitor.Log($"Loaded {Panning?.Count ?? 0} panning data.", LogLevel.Debug);
-        }
-        
-        if(Config.TrainDrops)
-        {
-            //train stuff
-            var trainData = Help.GameContent.Load<Dictionary<string, TrainDropData>>($"Mods/{Id}/Train");
-            Parser.Train(trainData);
-            Monitor.Log($"Loaded {TrainDrops?.Count ?? 0} custom train drops.", LogLevel.Debug);
-        }
-        
-        if(Config.Treasure)
-            Treasure = Helper.GameContent.Load<Dictionary<string, TreasureData>>($"Mods/{Id}/Treasure");
-
-        //ACTION BUTTON LIST
-        var temp = new List<SButton>();
-        foreach (var b in Game1.options.actionButton)
-        {
-            temp.Add(b.ToSButton());
-            Monitor.Log("Button: " + b);
-        }
-        Monitor.Log($"Total {Game1.options.actionButton?.Length ?? 0}");
-
-        ActionButtons = temp;
-    }
-
     private static void LocaleChanged(object sender, LocaleChangedEventArgs e)
     {
         Comma = e.NewLanguage switch
@@ -403,7 +339,7 @@ public sealed class ModEntry : Mod
     }
 
     /// <summary>Buttons used for custom item actions</summary>
-    internal static List<SButton> ActionButtons { get; private set; } = new();
+    internal static List<SButton> ActionButtons { get; set; } = new();
 
     public static string Id { get; private set; }
     internal static string Comma { get; private set; } = ", ";
