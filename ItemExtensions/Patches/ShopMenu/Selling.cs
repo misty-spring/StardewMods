@@ -16,10 +16,9 @@ public partial class ShopMenuPatches
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
     {
-        //new one
         var codes = new List<CodeInstruction>(instructions);
-        //var instructionsToInsert = new List<CodeInstruction>();
 
+        //find the index of the code instruction we want
         var index = -1;
         for (var i = 2; i < codes.Count - 1; i++)
         {
@@ -39,6 +38,7 @@ public partial class ShopMenuPatches
         Log($"index: {index}", LogLevel.Info);
 #endif
         
+        //if not found return original
         if (index <= -1) 
             return codes.AsEnumerable();
         
@@ -48,6 +48,7 @@ public partial class ShopMenuPatches
          * }
          */
 
+        //create call instruction with our method
         var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
         foreach (var label in codes[index].labels)
         {
@@ -81,7 +82,7 @@ public partial class ShopMenuPatches
         {
             return false;
         }
-        ItemStockInformation stock = menu.itemPriceAndStock[item];
+        var stock = menu.itemPriceAndStock[item];
         var isStorageShop = ModEntry.Help.Reflection.GetField<bool>(menu, "_isStorageShop").GetValue();
 
         if (heldItem == null)
@@ -95,10 +96,10 @@ public partial class ShopMenuPatches
             {
                 stockToBuy = Math.Max(1, item.GetSalableInstance().maximumStackSize());
             }
-            int price = stock.Price * stockToBuy;
+            var price = stock.Price * stockToBuy;
             string extraTradeItem = null;
-            int extraTradeItemCount = 5;
-            int stacksToBuy = stockToBuy * item.Stack;
+            var extraTradeItemCount = 5;
+            var stacksToBuy = stockToBuy * item.Stack;
             if (stock.TradeItem != null)
             {
                 extraTradeItem = stock.TradeItem;
@@ -168,10 +169,10 @@ public partial class ShopMenuPatches
                         stock.ItemToSyncStack.Stack = stock.Stock;
                     }
                 }
-                List<string> actionsOnPurchase = stock.ActionsOnPurchase;
+                var actionsOnPurchase = stock.ActionsOnPurchase;
                 if (actionsOnPurchase != null && actionsOnPurchase.Count > 0)
                 {
-                    foreach (string action in stock.ActionsOnPurchase)
+                    foreach (var action in stock.ActionsOnPurchase)
                     {
                         if (!TriggerActionManager.TryRunAction(action, out var error, out var ex))
                         {
@@ -196,12 +197,12 @@ public partial class ShopMenuPatches
         else if (heldItem.canStackWith(item))
         {
             stockToBuy = Math.Min(stockToBuy, (heldItem.maximumStackSize() - heldItem.Stack) / item.Stack);
-            int stacksToBuy2 = stockToBuy * item.Stack;
+            var stacksToBuy2 = stockToBuy * item.Stack;
             if (stockToBuy > 0)
             {
-                int price2 = stock.Price * stockToBuy;
+                var price2 = stock.Price * stockToBuy;
                 string extraTradeItem2 = null;
-                int extraTradeItemCount2 = 5;
+                var extraTradeItemCount2 = 5;
                 if (stock.TradeItem != null)
                 {
                     extraTradeItem2 = stock.TradeItem;
@@ -211,7 +212,7 @@ public partial class ShopMenuPatches
                     }
                     extraTradeItemCount2 *= stockToBuy;
                 }
-                ISalable salableInstance = item.GetSalableInstance();
+                var salableInstance = item.GetSalableInstance();
                 salableInstance.Stack = stacksToBuy2;
                 if (!salableInstance.CanBuyItem(Game1.player))
                 {

@@ -29,7 +29,7 @@ public partial class ShopMenuPatches
             postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_Initialize))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.Initialize\".");
+        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.AddForSale\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(ShopMenu), "AddForSale"),
             postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_AddForSale))
@@ -76,16 +76,16 @@ public partial class ShopMenuPatches
             postfix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Post_drawHoverText))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.receiveLeftClick\".");
+        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": transpiling SDV method \"ShopMenu.receiveLeftClick\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveLeftClick)),
-            prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_receiveLeftClick))
+            transpiler: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Transpiler))
         );
         
-        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"ShopMenu.tryToPurchaseItem\".");
+        Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": transpiling SDV method \"ShopMenu.receiveRightClick\".");
         harmony.Patch(
-            original: AccessTools.Method(typeof(ShopMenu), "tryToPurchaseItem"),
-            postfix: new HarmonyMethod(typeof(Compensation), nameof(Compensation.Post_tryToPurchaseItem))
+            original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveRightClick)),
+            transpiler: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Transpiler))
         );
     }
 
@@ -183,7 +183,7 @@ public partial class ShopMenuPatches
             if (dataItem.CustomFields is null || dataItem.CustomFields.Any() == false)
             {
                 #if DEBUG
-                Log("Item seems to have no custom fields. Skipping");
+                Log($"Item {dataItem.Id} ({dataItem.ItemId}) seems to have no custom fields. Skipping");
                 #endif
                 return null;
             }

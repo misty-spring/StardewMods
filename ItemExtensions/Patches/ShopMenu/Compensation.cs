@@ -84,25 +84,4 @@ public class Compensation
         AllEnchantments.Clear();
         _totalCount = 0;
     }
-
-    internal static void Post_tryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y, bool __result)
-    {
-#if DEBUG
-        Log($"item: {item?.QualifiedItemId}, held item {held_item?.QualifiedItemId}, stock {stockToBuy}, x {x}, y {y}\n          result {__result} and total count {_totalCount}. Enchantments count {AllEnchantments.Count}");
-#endif
-        /*
-        //if no item bought
-        if (__result == false)
-            return;
-        
-        //if it's not a tool, compensate
-        if (held_item is not Tool t)
-        {
-            if (_totalCount <= 0)
-                return;
-
-            var prismaticShard = ItemRegistry.Create("(O)74", _totalCount);
-            Game1.player.addItemByMenuIfNecessary(prismaticShard);
-        }*/
-    }
 }
