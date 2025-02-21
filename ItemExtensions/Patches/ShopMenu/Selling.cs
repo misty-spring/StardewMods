@@ -1,5 +1,8 @@
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Text;
+using HarmonyLib;
 using ItemExtensions.Models.Internal;
-using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -9,105 +12,158 @@ namespace ItemExtensions.Patches;
 public partial class ShopMenuPatches
 {
     private static Dictionary<ISalable, List<ExtraTrade>> ExtraBySalable { get; set; }
-    internal static bool Pre_receiveLeftClick(ShopMenu __instance, int x, int y, bool playSound = true)
+
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
     {
-        try
+        //new one
+        var codes = new List<CodeInstruction>(instructions);
+        //var instructionsToInsert = new List<CodeInstruction>();
+
+        var index = -1;
+        for (var i = 2; i < codes.Count - 1; i++)
         {
-            if (__instance.safetyTimer > 0)
-                return true;
+            if (codes[i-1].opcode != OpCodes.Ldarg_2)
+                continue;
+            
+            if(codes[i].opcode != OpCodes.Call)
+                continue;
+            
+            if(codes[i + 1].opcode != OpCodes.Brfalse_S)
+                continue;
 
-            //if no data in neither
-            if (ExtraBySalable is not { Count: > 0 })
-                return true;
+            index = i;
+            break;
+        }
+#if DEBUG
+        Log($"index: {index}", LogLevel.Info);
+#endif
+        
+        if (index <= -1) 
+            return codes.AsEnumerable();
+        
+        /* if (TryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y))
+         * {
+         *      ...etc
+         * }
+         */
 
-            for (var index1 = 0; index1 < __instance.forSaleButtons.Count; ++index1)
+        var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
+        foreach (var label in codes[index].labels)
+        {
+            newInstruction.labels.Add(label);
+        }
+        
+        Log("Inserting method");
+        codes[index] = newInstruction;
+        
+        /* print the IL code
+         * courtesy of atravita
+         */
+        StringBuilder sb = new();
+        sb.Append("ILHelper for: ShopMenu.receiveLeftClick");
+        for (int i = 0; i < codes.Count; i++)
+        {
+            sb.AppendLine().Append(codes[i]);
+            if (index == i)
             {
-                if (__instance.currentItemIndex + index1 >= __instance.forSale.Count ||
-                    !__instance.forSaleButtons[index1].containsPoint(x, y))
-                    continue;
-
-                var index2 = __instance.currentItemIndex + index1;
-                var thisItem = __instance.forSale[index2];
-
-                //if holding item AND not same as one buying
-                if (__instance.heldItem != null && __instance.heldItem.QualifiedItemId != thisItem.QualifiedItemId)
-                    return true;
-
-                //if item not in salable list
-                if (!ExtraBySalable.ContainsKey(thisItem))
-                    return true;
-
-                if (__instance.forSale[index2] != null)
-                {
-                    var val1 = Game1.oldKBState.IsKeyDown(Keys.LeftShift)
-                        ? Math.Min(
-                            Math.Min(Game1.oldKBState.IsKeyDown(Keys.LeftControl) ? 25 : 5,
-                                ShopMenu.getPlayerCurrencyAmount(Game1.player, __instance.currency) / Math.Max(1,
-                                    __instance.itemPriceAndStock[__instance.forSale[index2]].Price)),
-                            Math.Max(1, __instance.itemPriceAndStock[__instance.forSale[index2]].Stock))
-                        : 1;
-
-                    if (__instance.ShopId == "ReturnedDonations")
-                        val1 = __instance.itemPriceAndStock[__instance.forSale[index2]].Stock;
-
-                    var stockToBuy = Math.Min(val1, __instance.forSale[index2].maximumStackSize());
-                    if (stockToBuy == -1)
-                        stockToBuy = 1;
-
-                    if (__instance.canPurchaseCheck != null && !__instance.canPurchaseCheck(index2))
-                        return true;
-
-                    var valid = CanPurchase(__instance.forSale[index2], stockToBuy);
-
-                    if (stockToBuy > 0 && valid)
-                    {
-                        var tryPurchase = Reflection.GetMethod(__instance, "tryToPurchaseItem");
-                        tryPurchase.Invoke<bool>(__instance.forSale[index2], __instance.heldItem, stockToBuy, x, y);
-                        ReduceExtraItems(__instance.forSale[index2], stockToBuy);
-                    }
-                    else
-                    {
-                        if (__instance.itemPriceAndStock[__instance.forSale[index2]].Price > 0)
-                            Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
-                        Game1.playSound("cancel");
-                        return false;
-                    }
-
-                    var storageShop = Reflection.GetField<bool>(__instance, "_isStorageShop").GetValue();
-
-                    if (__instance.heldItem != null &&
-                        (storageShop || Game1.options.SnappyMenus || Game1.oldKBState.IsKeyDown(Keys.LeftShift) &&
-                            __instance.heldItem.maximumStackSize() == 1) && Game1.activeClickableMenu is ShopMenu &&
-                        Game1.player.addItemToInventoryBool(__instance.heldItem as Item))
-                    {
-                        __instance.heldItem = null;
-                        DelayedAction.playSoundAfterDelay("coin", 100);
-                    }
-                }
-
-                __instance.currentItemIndex =
-                    Math.Max(0, Math.Min(__instance.forSale.Count - 4, __instance.currentItemIndex));
-                
-                //android compatibility. code will run if it exists, otherwise ignore
-                var method = __instance.GetType().GetMethod("updateSaleButtonNeighbors");
-                if (method != null)
-                {
-                    method.Invoke(__instance, null);
-                } 
-                
-                Reflection.GetMethod(__instance, "setScrollBarToCurrentIndex").Invoke();
-                return false;
+                sb.Append("       <---- single transpiler");
             }
-
-            return true;
         }
-        catch (Exception e)
-        {
-            Log($"Error: {e}", LogLevel.Error);
-            return true;
-        }
+        Log(sb.ToString(), LogLevel.Info);
+        
+        return codes.AsEnumerable();
     }
 
+    internal static bool TryToPurchaseItem(ShopMenu menu, ISalable item, ISalable held_item, int stockToBuy, int x, int y)
+    {
+        //if og method returns false
+        var tryPurchase = Reflection.GetMethod(menu, "tryToPurchaseItem");
+        var result = tryPurchase.Invoke<bool>(item, held_item, stockToBuy, x, y);
+#if DEBUG
+        Log($"Result: {result}.");
+#endif
+        if (result == false)
+        {
+#if DEBUG
+            Log($"Can't buy {item.QualifiedItemId} with minimum requirements.");
+#endif
+            return false;
+        }
+        
+        if (ExtraBySalable is not { Count: > 0 })
+        {
+#if DEBUG
+            Log("ExtraBySalable is empty.");
+#endif
+            return true;
+        }
+        
+        //if item not in salable list
+        if (!ExtraBySalable.ContainsKey(item))
+        {
+#if DEBUG
+            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
+#endif
+            return true;
+        }
+        
+        var valid = CanPurchase(item, stockToBuy);
+
+        if (stockToBuy > 0 && valid)
+        {
+            ReduceExtraItems(item, stockToBuy);
+            return true;
+        }
+
+        if (menu.itemPriceAndStock[item].Price > 0)
+            Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
+        Game1.playSound("cancel");
+        return false;
+    }
+    
+    private static void Post_tryToPurchaseItem(ShopMenu __instance, ISalable item, ISalable held_item, int stockToBuy, int x, int y, ref bool __result)
+    {
+        if (__result == false)
+        {
+#if DEBUG
+            Log("Result is false.");
+#endif
+            return;
+        }
+        
+        //if no data
+        if (ExtraBySalable is not { Count: > 0 })
+        {
+#if DEBUG
+            Log("ExtraBySalable is empty.");
+#endif
+            return;
+        }
+        
+        //if item not in salable list
+        if (!ExtraBySalable.ContainsKey(item))
+        {
+#if DEBUG
+            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
+            return;
+#endif
+        }
+        
+        var valid = CanPurchase(item, stockToBuy);
+
+        if (valid)
+        {
+            ReduceExtraItems(item, stockToBuy);
+        }
+        else
+        {
+            if (__instance.itemPriceAndStock[item].Price > 0)
+                Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
+            Game1.playSound("cancel");
+            __result = false;
+        }
+    }
+    
     private static List<ExtraTrade> GetData(ISalable item)
     {
         //if extrabysalable has no data
@@ -146,6 +202,9 @@ public partial class ShopMenuPatches
 
         foreach (var extra in data)
         {
+#if DEBUG
+            Log($"Checking match for {extra.QualifiedItemId}...");
+#endif
             if (HasMatch(Game1.player, extra, stockToBuy))
                 continue;
             
@@ -180,6 +239,9 @@ public partial class ShopMenuPatches
 
         foreach (var item in all)
         {
+#if DEBUG
+            Log($"item {item.QualifiedItemId}, stack {item.Stack}");
+#endif
             if (item.QualifiedItemId != c.QualifiedItemId)
                 continue;
 
@@ -187,6 +249,10 @@ public partial class ShopMenuPatches
         }
 
         var withStock = c.Count * bought;
+        
+#if DEBUG
+        Log($"total {total}, withStock {withStock}, total >= withStock {total >= withStock}");
+#endif
         return total >= withStock;
     }
 }
