@@ -6,6 +6,7 @@ using ItemExtensions.Models.Internal;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
+using StardewValley.Triggers;
 
 namespace ItemExtensions.Patches;
 
@@ -17,26 +18,23 @@ public partial class ShopMenuPatches
     {
         //new one
         var codes = new List<CodeInstruction>(instructions);
-        var instructionsToInsert = new List<CodeInstruction>();
+        //var instructionsToInsert = new List<CodeInstruction>();
 
         var index = -1;
         for (var i = 2; i < codes.Count - 1; i++)
         {
-            if (codes[i-1].opcode != OpCodes.Ldloc_0)
+            if (codes[i-1].opcode != OpCodes.Ldarg_2)
                 continue;
             
-            if(codes[i].opcode != OpCodes.Ldfld)
+            if(codes[i].opcode != OpCodes.Call)
                 continue;
             
             if(codes[i + 1].opcode != OpCodes.Brfalse_S)
                 continue;
 
-            index = i + 1;
+            index = i;
             break;
         }
-        
-        var redirectTo = codes.Find(ci => codes.IndexOf(ci) == index);
-        
 #if DEBUG
         Log($"index: {index}", LogLevel.Info);
 #endif
@@ -44,29 +42,20 @@ public partial class ShopMenuPatches
         if (index <= -1) 
             return codes.AsEnumerable();
         
-        //add label for brtrue
-        var brtrueLabel = il.DefineLabel();
-        redirectTo.labels ??= new List<Label>();
-        redirectTo.labels.Add(brtrueLabel);
-        
-        /* if (stock.TradeItem != null)
-           {
-               ...
-           }
-           if (CanExtraTrade(item, held_item, stockToBuy) == false)
-               return;
+        /* if (TryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y))
+         * {
+         *      ...etc
+         * }
          */
 
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_1));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_2));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_3));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(CanExtraTrade))));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Brtrue, brtrueLabel));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldc_I4_0));
-        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ret));
+        var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
+        foreach (var label in codes[index].labels)
+        {
+            newInstruction.labels.Add(label);
+        }
         
         Log("Inserting method");
-        codes.InsertRange(index, instructionsToInsert);
+        codes[index] = newInstruction;
         
         /* print the IL code
          * courtesy of atravita
@@ -86,7 +75,212 @@ public partial class ShopMenuPatches
         return codes.AsEnumerable();
     }
 
-    internal static bool CanExtraTrade(ISalable item, ISalable heldItem, int stockToBuy)
+    internal static bool TryToPurchaseItem(ShopMenu menu, ISalable item, ISalable heldItem, int stockToBuy, int x, int y)
+    {
+        if (menu.readOnly)
+        {
+            return false;
+        }
+        ItemStockInformation stock = menu.itemPriceAndStock[item];
+        var isStorageShop = ModEntry.Help.Reflection.GetField<bool>(menu, "_isStorageShop").GetValue();
+
+        if (heldItem == null)
+        {
+            if (stock.Stock == 0)
+            {
+                menu.hoveredItem = null;
+                return true;
+            }
+            if (stockToBuy > item.GetSalableInstance().maximumStackSize())
+            {
+                stockToBuy = Math.Max(1, item.GetSalableInstance().maximumStackSize());
+            }
+            int price = stock.Price * stockToBuy;
+            string extraTradeItem = null;
+            int extraTradeItemCount = 5;
+            int stacksToBuy = stockToBuy * item.Stack;
+            if (stock.TradeItem != null)
+            {
+                extraTradeItem = stock.TradeItem;
+                if (stock.TradeItemCount.HasValue)
+                {
+                    extraTradeItemCount = stock.TradeItemCount.Value;
+                }
+                extraTradeItemCount *= stockToBuy;
+            }
+            if (ShopMenu.getPlayerCurrencyAmount(Game1.player, menu.currency) >= price && (extraTradeItem == null || menu.HasTradeItem(extraTradeItem, extraTradeItemCount)) && IsExtraTradeValid(item, stockToBuy)) //<-- NEW CODE
+            {
+                menu.heldItem = item.GetSalableInstance();
+                menu.heldItem.Stack = stacksToBuy;
+                if (!menu.heldItem.CanBuyItem(Game1.player) && !item.IsInfiniteStock() && !item.IsRecipe)
+                {
+                    Game1.playSound("smallSelect");
+                    menu.heldItem = null;
+                    return false;
+                }
+                if (menu.CanBuyback() && menu.buyBackItems.Contains(item))
+                {
+                    menu.BuyBuybackItem(item, price, stacksToBuy);
+                    BuyBackExtraTrades(item, stacksToBuy);
+                }
+                ShopMenu.chargePlayer(Game1.player, menu.currency, price);
+                if (!string.IsNullOrEmpty(extraTradeItem))
+                {
+                    menu.ConsumeTradeItem(extraTradeItem, extraTradeItemCount);
+                }
+
+                ReduceExtraItems(item, stockToBuy); //<-- NEW LINE
+                
+                if (!isStorageShop && item.actionWhenPurchased(menu.ShopId))
+                {
+                    if (item.IsRecipe)
+                    {
+                        (item as Item)?.LearnRecipe();
+                        Game1.playSound("newRecipe");
+                    }
+                    heldItem = null;
+                    menu.heldItem = null;
+                }
+                else
+                {
+                    if ((menu.heldItem as Item)?.QualifiedItemId == "(O)858")
+                    {
+                        Game1.player.team.addQiGemsToTeam.Fire(menu.heldItem.Stack);
+                        menu.heldItem = null;
+                    }
+                    if (Game1.mouseClickPolling > 300)
+                    {
+                        if (menu.purchaseRepeatSound != null)
+                        {
+                            Game1.playSound(menu.purchaseRepeatSound);
+                        }
+                    }
+                    else if (menu.purchaseSound != null)
+                    {
+                        Game1.playSound(menu.purchaseSound);
+                    }
+                }
+                if (stock.Stock != int.MaxValue && !item.IsInfiniteStock())
+                {
+                    menu.HandleSynchedItemPurchase(item, Game1.player, stockToBuy);
+                    if (stock.ItemToSyncStack != null)
+                    {
+                        stock.ItemToSyncStack.Stack = stock.Stock;
+                    }
+                }
+                List<string> actionsOnPurchase = stock.ActionsOnPurchase;
+                if (actionsOnPurchase != null && actionsOnPurchase.Count > 0)
+                {
+                    foreach (string action in stock.ActionsOnPurchase)
+                    {
+                        if (!TriggerActionManager.TryRunAction(action, out var error, out var ex))
+                        {
+                            Log($"({ex}) Shop {menu.ShopId} ignored invalid action '{action}' on purchase of item '{item.QualifiedItemId}': {error}", LogLevel.Error);
+                        }
+                    }
+                }
+                if (menu.onPurchase != null && menu.onPurchase(item, Game1.player, stockToBuy, stock))
+                {
+                    menu.exitThisMenu();
+                }
+            }
+            else
+            {
+                if (price > 0)
+                {
+                    Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
+                }
+                Game1.playSound("cancel");
+            }
+        }
+        else if (heldItem.canStackWith(item))
+        {
+            stockToBuy = Math.Min(stockToBuy, (heldItem.maximumStackSize() - heldItem.Stack) / item.Stack);
+            int stacksToBuy2 = stockToBuy * item.Stack;
+            if (stockToBuy > 0)
+            {
+                int price2 = stock.Price * stockToBuy;
+                string extraTradeItem2 = null;
+                int extraTradeItemCount2 = 5;
+                if (stock.TradeItem != null)
+                {
+                    extraTradeItem2 = stock.TradeItem;
+                    if (stock.TradeItemCount.HasValue)
+                    {
+                        extraTradeItemCount2 = stock.TradeItemCount.Value;
+                    }
+                    extraTradeItemCount2 *= stockToBuy;
+                }
+                ISalable salableInstance = item.GetSalableInstance();
+                salableInstance.Stack = stacksToBuy2;
+                if (!salableInstance.CanBuyItem(Game1.player))
+                {
+                    Game1.playSound("cancel");
+                    return false;
+                }
+                if (ShopMenu.getPlayerCurrencyAmount(Game1.player, menu.currency) >= price2 && (extraTradeItem2 == null || menu.HasTradeItem(extraTradeItem2, extraTradeItemCount2)) && IsExtraTradeValid(item, stockToBuy))
+                {
+                    menu.heldItem.Stack += stacksToBuy2;
+                    if (menu.CanBuyback() && menu.buyBackItems.Contains(item))
+                    {
+                        menu.BuyBuybackItem(item, price2, stacksToBuy2);
+                    }
+                    ShopMenu.chargePlayer(Game1.player, menu.currency, price2);
+                    if (Game1.mouseClickPolling > 300)
+                    {
+                        if (menu.purchaseRepeatSound != null)
+                        {
+                            Game1.playSound(menu.purchaseRepeatSound);
+                        }
+                    }
+                    else if (menu.purchaseSound != null)
+                    {
+                        Game1.playSound(menu.purchaseSound);
+                    }
+                    if (extraTradeItem2 != null)
+                    {
+                        menu.ConsumeTradeItem(extraTradeItem2, extraTradeItemCount2);
+                    }
+
+                    ReduceExtraItems(item, stockToBuy); //<-- NEW LINE
+
+                    if (!isStorageShop && item.actionWhenPurchased(menu.ShopId))
+                    {
+                        menu.heldItem = null;
+                    }
+                    if (stock.Stock != int.MaxValue && !item.IsInfiniteStock())
+                    {
+                        menu.HandleSynchedItemPurchase(item, Game1.player, stockToBuy);
+                        if (stock.ItemToSyncStack != null)
+                        {
+                            stock.ItemToSyncStack.Stack = stock.Stock;
+                        }
+                    }
+                    if (menu.onPurchase != null && menu.onPurchase(item, Game1.player, stockToBuy, stock))
+                    {
+                        menu.exitThisMenu();
+                    }
+                }
+                else
+                {
+                    if (price2 > 0)
+                    {
+                        Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
+                    }
+                    Game1.playSound("cancel");
+                }
+            }
+        }
+        if (stock.Stock <= 0)
+        {
+            menu.buyBackItems.Remove(item);
+            menu.hoveredItem = null;
+            return true;
+        }
+        return false;
+    }
+
+    private static bool IsExtraTradeValid(ISalable item, int stockToBuy)
     {
         if (ExtraBySalable is not { Count: > 0 })
         {
@@ -106,45 +300,49 @@ public partial class ShopMenuPatches
         }
         
         var valid = CanPurchase(item, stockToBuy);
+        return valid;
+    }
 
-        if (stockToBuy <= 0 || !valid) 
-            return false;
+    private static void BuyBackExtraTrades(ISalable item, int stacksToBuy)
+    {
+        Log($"Restoring {stacksToBuy} '{item.DisplayName}' ({item.QualifiedItemId}) extra trades...");
         
-        ReduceExtraItems(item, stockToBuy);
-        return true;
+        var data = GetData(item);
+        
+        if (data is null)
+            return;
 
+        foreach (var extra in data)
+        {
+            Log($"Adding {extra.Data.DisplayName} by {extra.Count * stacksToBuy}...");
+
+            Game1.player.addItemByMenuIfNecessaryElseHoldUp(ItemRegistry.Create(extra.QualifiedItemId, extra.Count * stacksToBuy));
+        }
     }
     
-    private static List<ExtraTrade> GetData(ISalable item)
+    private static void ReduceExtraItems(ISalable item, int stockToBuy)
     {
-        //if extrabysalable has no data
-        if (ExtraBySalable is not { Count: > 0 })
-        {
-            #if DEBUG
-            Log("No data found in mod Salable list.");
-            #endif
-        }
+        Log($"Buying {stockToBuy} {item.DisplayName}...");
         
+        var data = GetData(item);
         
-        //if data wasn't in salable
-        if (ExtraBySalable.TryGetValue(item, out var data) == false)
-        {
-            #if DEBUG
-            Log("Id not found in mod Salables.");
-            #endif
-        }
+        if (data is null)
+            return;
 
-        return data;
+        foreach (var extra in data)
+        {
+            Log($"Reducing {extra.Data.DisplayName} by {extra.Count * stockToBuy}...");
+
+            Compensation.Pre_ConsumeTradeItem(extra.QualifiedItemId, extra.Count * stockToBuy);
+            Game1.player.Items.ReduceId(extra.QualifiedItemId, extra.Count * stockToBuy);
+        }
     }
     
     private static bool CanPurchase(ISalable item, int stockToBuy)
     {
-        if (Game1.player.Money < item.salePrice() * stockToBuy)
-            return false;
-        
-        #if DEBUG
+#if DEBUG
         Log($"item: {item.DisplayName}, stockToBuy {stockToBuy}, in _extraSaleItems {ExtraBySalable.Count}");
-        #endif
+#endif
 
         var data = GetData(item);
         
@@ -165,22 +363,26 @@ public partial class ShopMenuPatches
         return true;
     }
 
-    private static void ReduceExtraItems(ISalable item, int stockToBuy)
+    private static List<ExtraTrade> GetData(ISalable item)
     {
-        Log($"Buying {stockToBuy} {item.DisplayName}...");
-        
-        var data = GetData(item);
-        
-        if (data is null)
-            return;
-
-        foreach (var extra in data)
+        //if extrabysalable has no data
+        if (ExtraBySalable is not { Count: > 0 })
         {
-            Log($"Reducing {extra.Data.DisplayName} by {extra.Count * stockToBuy}...");
-
-            Compensation.Pre_ConsumeTradeItem(extra.QualifiedItemId, extra.Count * stockToBuy);
-            Game1.player.Items.ReduceId(extra.QualifiedItemId, extra.Count * stockToBuy);
+#if DEBUG
+            Log("No data found in mod Salable list.");
+#endif
         }
+        
+        
+        //if data wasn't in salable
+        if (ExtraBySalable.TryGetValue(item, out var data) == false)
+        {
+#if DEBUG
+            Log("Id not found in mod Salables.");
+#endif
+        }
+
+        return data;
     }
     
     private static bool HasMatch(Farmer farmer, ExtraTrade c, int bought = 1)
