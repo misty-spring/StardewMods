@@ -17,23 +17,26 @@ public partial class ShopMenuPatches
     {
         //new one
         var codes = new List<CodeInstruction>(instructions);
-        //var instructionsToInsert = new List<CodeInstruction>();
+        var instructionsToInsert = new List<CodeInstruction>();
 
         var index = -1;
         for (var i = 2; i < codes.Count - 1; i++)
         {
-            if (codes[i-1].opcode != OpCodes.Ldarg_2)
+            if (codes[i-1].opcode != OpCodes.Ldloc_0)
                 continue;
             
-            if(codes[i].opcode != OpCodes.Call)
+            if(codes[i].opcode != OpCodes.Ldfld)
                 continue;
             
             if(codes[i + 1].opcode != OpCodes.Brfalse_S)
                 continue;
 
-            index = i;
+            index = i + 1;
             break;
         }
+        
+        var redirectTo = codes.Find(ci => codes.IndexOf(ci) == index);
+        
 #if DEBUG
         Log($"index: {index}", LogLevel.Info);
 #endif
@@ -41,24 +44,33 @@ public partial class ShopMenuPatches
         if (index <= -1) 
             return codes.AsEnumerable();
         
-        /* if (TryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y))
-         * {
-         *      ...etc
-         * }
+        //add label for brtrue
+        var brtrueLabel = il.DefineLabel();
+        redirectTo.labels ??= new List<Label>();
+        redirectTo.labels.Add(brtrueLabel);
+        
+        /* if (stock.TradeItem != null)
+           {
+               ...
+           }
+           if (CanExtraTrade(item, held_item, stockToBuy) == false)
+               return;
          */
 
-        var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
-        foreach (var label in codes[index].labels)
-        {
-            newInstruction.labels.Add(label);
-        }
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_1));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_2));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldarg_3));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(CanExtraTrade))));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Brtrue, brtrueLabel));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldc_I4_0));
+        instructionsToInsert.Add(new CodeInstruction(OpCodes.Ret));
         
         Log("Inserting method");
-        codes[index] = newInstruction;
+        codes.InsertRange(index, instructionsToInsert);
         
         /* print the IL code
          * courtesy of atravita
-         */
+         
         StringBuilder sb = new();
         sb.Append("ILHelper for: ShopMenu.receiveLeftClick");
         for (int i = 0; i < codes.Count; i++)
@@ -70,98 +82,37 @@ public partial class ShopMenuPatches
             }
         }
         Log(sb.ToString(), LogLevel.Info);
-        
+        */
         return codes.AsEnumerable();
     }
 
-    internal static bool TryToPurchaseItem(ShopMenu menu, ISalable item, ISalable held_item, int stockToBuy, int x, int y)
+    internal static bool CanExtraTrade(ISalable item, ISalable heldItem, int stockToBuy)
     {
-        //if og method returns false
-        var tryPurchase = Reflection.GetMethod(menu, "tryToPurchaseItem");
-        var result = tryPurchase.Invoke<bool>(item, held_item, stockToBuy, x, y);
-#if DEBUG
-        Log($"Result: {result}.");
-#endif
-        if (result == false)
+        if (ExtraBySalable is not { Count: > 0 })
         {
 #if DEBUG
-            Log($"Can't buy {item.QualifiedItemId} with minimum requirements.");
+            Log("ExtraBySalable is empty.");
 #endif
+            return true;
+        }
+        
+        //if item not in salable list
+        if (!ExtraBySalable.ContainsKey(item))
+        {
+#if DEBUG
+            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
+#endif
+            return true;
+        }
+        
+        var valid = CanPurchase(item, stockToBuy);
+
+        if (stockToBuy <= 0 || !valid) 
             return false;
-        }
         
-        if (ExtraBySalable is not { Count: > 0 })
-        {
-#if DEBUG
-            Log("ExtraBySalable is empty.");
-#endif
-            return true;
-        }
-        
-        //if item not in salable list
-        if (!ExtraBySalable.ContainsKey(item))
-        {
-#if DEBUG
-            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
-#endif
-            return true;
-        }
-        
-        var valid = CanPurchase(item, stockToBuy);
+        ReduceExtraItems(item, stockToBuy);
+        return true;
 
-        if (stockToBuy > 0 && valid)
-        {
-            ReduceExtraItems(item, stockToBuy);
-            return true;
-        }
-
-        if (menu.itemPriceAndStock[item].Price > 0)
-            Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
-        Game1.playSound("cancel");
-        return false;
-    }
-    
-    private static void Post_tryToPurchaseItem(ShopMenu __instance, ISalable item, ISalable held_item, int stockToBuy, int x, int y, ref bool __result)
-    {
-        if (__result == false)
-        {
-#if DEBUG
-            Log("Result is false.");
-#endif
-            return;
-        }
-        
-        //if no data
-        if (ExtraBySalable is not { Count: > 0 })
-        {
-#if DEBUG
-            Log("ExtraBySalable is empty.");
-#endif
-            return;
-        }
-        
-        //if item not in salable list
-        if (!ExtraBySalable.ContainsKey(item))
-        {
-#if DEBUG
-            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
-            return;
-#endif
-        }
-        
-        var valid = CanPurchase(item, stockToBuy);
-
-        if (valid)
-        {
-            ReduceExtraItems(item, stockToBuy);
-        }
-        else
-        {
-            if (__instance.itemPriceAndStock[item].Price > 0)
-                Game1.dayTimeMoneyBox.moneyShakeTimer = 1000;
-            Game1.playSound("cancel");
-            __result = false;
-        }
     }
     
     private static List<ExtraTrade> GetData(ISalable item)
