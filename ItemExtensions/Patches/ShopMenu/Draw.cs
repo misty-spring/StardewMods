@@ -16,7 +16,7 @@ public partial class ShopMenuPatches
     private static (Item, List<ExtraTrade>) _lastHoverItem;
     
     // ReSharper disable once UnusedParameter.Global
-    internal static void Post_drawHoverText(IClickableMenu __instance, 
+    internal static bool Pre_drawHoverText(IClickableMenu __instance, 
         SpriteBatch b, 
         StringBuilder text, 
         SpriteFont font, 
@@ -45,20 +45,20 @@ public partial class ShopMenuPatches
         int boxHeightOverride = -1) 
     { 
         if(Game1.activeClickableMenu is not ShopMenu) 
-            return;
+            return true;
         
         if(extraItemToShowIndex == null || hoveredItem == null) 
-            return;
+            return true;
         
         //if no salable data
         if(ExtraBySalable is not { Count: > 0 })
-            return;
+            return true;
         
         List<ExtraTrade> data;
         if (_lastHoverItem is (null,null) || _lastHoverItem.Item1 is null || _lastHoverItem.Item2?.Any() == false || _lastHoverItem.Item1 != hoveredItem)
         {
             if(!InDictionary(hoveredItem, out data))
-                return;
+                return true;
 
             _lastHoverItem = (hoveredItem, data);
         }
@@ -79,7 +79,7 @@ public partial class ShopMenuPatches
         local2 = color2;
         
         if (text == null || text.Length == 0) 
-            return;
+            return true;
         
         var text1 = (string) null;
         
@@ -448,11 +448,12 @@ public partial class ShopMenuPatches
         }
         
         if (craftingIngredients == null || !Game1.options.showAdvancedCraftingInformation)
-            return;
+            return false;
         
         Utility.drawTextWithShadow(b, craftingIngredients.getCraftCountText(), font, new Vector2(x + 16, y2 + 16 + 4), Game1.textColor, horizontalShadowOffset: 2, verticalShadowOffset: 2);
         // ReSharper disable once RedundantAssignment
         y2 += (int) font.MeasureString("T").Y + 4;
+        return false;
     }
 
     private static string GiveSameWidth(string requirements, string text)

@@ -118,6 +118,10 @@ public class MineShaftPatches
 
     private static bool CanClumpsSpawnHere(MineShaft mineShaft)
     {
+        //don't force-spawn in normal mines or below 120
+        if (mineShaft.mineLevel <= 120 || mineShaft.GetAdditionalDifficulty() == 0)
+            return true;
+        
         //if there's no clumps here, return to false. this will force them to spawn per our code
         if (mineShaft.resourceClumps?.Count <= 0)
         {

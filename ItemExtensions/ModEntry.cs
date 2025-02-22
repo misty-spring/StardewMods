@@ -91,7 +91,7 @@ public sealed class ModEntry : Mod
                 VolcanoPatches.Apply(harmony);
         }
 
-        if (Config.ShopTrades && OperatingSystem.IsAndroid() == false)
+        if (Config.ShopTrades)
         {
             ShopMenuPatches.Apply(harmony);
         }
@@ -132,7 +132,6 @@ public sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("count_clumps", "Count clumps in this location.", Debugging.CountClumps);
         #endif
         helper.ConsoleCommands.Add("fixclumps", "Fixes any missing clumps, like in the case of removed mod packs. (Usually, this won't be needed unless it's an edge-case)", Debugging.Fix);
-        helper.ConsoleCommands.Add("stairs", "Gives the player a staircase item.", Debugging.Stairs);
     }
 
     public override object GetApi() =>new Api();
@@ -224,15 +223,12 @@ public sealed class ModEntry : Mod
             setValue: value => Config.FishPond = value
         );
 
-        if (OperatingSystem.IsAndroid() == false)
-        {
-            configMenu?.AddBoolOption(
-                mod: ModManifest,
-                name: () => Help.Translation.Get("config.ShopTrades.name"),
-                getValue: () => Config.ShopTrades,
-                setValue: value => Config.ShopTrades = value
-            );
-        }
+        configMenu?.AddBoolOption(
+            mod: ModManifest,
+            name: () => Help.Translation.Get("config.ShopTrades.name"),
+            getValue: () => Config.ShopTrades,
+            setValue: value => Config.ShopTrades = value
+        );
 
         //extra drops
 

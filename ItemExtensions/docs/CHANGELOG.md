@@ -1,10 +1,13 @@
 # CHANGELOG
 
 ## 1.14.0
-- Changed how clumps are saved/loaded internally.
+- Changed how clumps are loaded/saved internally.
 - Further android compatibility and fixes
 - Fixed issue in MineShaft.cs and Volcano.cs where adding a resource twice would skip it. Instead, now if a resource is added twice it ups the chances of spawning
 - *Might* be compatible with Save Anywhere mods
+- Removes a debug command due to implemented features making it unnecessary
+- Fixed bug where clumps would force-spawn in normal mines (which is unnecessary, as they already spawn clumps)
+- Fixed bug where clicking a shop item (without vanilla requirements) would remove the extra requirements from inventory
 
 ## 1.13.0
 - Android compatibility (beta) thanks to YourJeiJi

@@ -11,68 +11,6 @@ namespace ItemExtensions.Patches;
 
 public partial class ShopMenuPatches
 {
-    private static IEnumerable<CodeInstruction> Transpiler_Android(IEnumerable<CodeInstruction> instructions, ILGenerator il)
-    {
-        var codes = new List<CodeInstruction>(instructions);
-
-        //find the index of the code instruction we want
-        var index = -1;
-        for (var i = 2; i < codes.Count - 1; i++)
-        {
-            if (codes[i-1].opcode != OpCodes.Ldc_I4_0)
-                continue;
-            
-            if(codes[i].opcode != OpCodes.Call)
-                continue;
-            
-            if(codes[i + 1].opcode != OpCodes.Brfalse_S)
-                continue;
-
-            index = i;
-            break;
-        }
-#if DEBUG
-        Log($"index: {index}", LogLevel.Info);
-#endif
-        
-        //if not found return original
-        if (index <= -1) 
-            return codes.AsEnumerable();
-        
-        /* if (TryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y))
-         * {
-         *      ...etc
-         * }
-         */
-
-        //create call instruction with our method
-        var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
-        foreach (var label in codes[index].labels)
-        {
-            newInstruction.labels.Add(label);
-        }
-        
-        Log("Inserting method");
-        codes[index] = newInstruction;
-        
-        /* print the IL code
-         * courtesy of atravita
-
-        StringBuilder sb = new();
-        sb.Append("ILHelper for: ShopMenu.receiveLeftClick");
-        for (int i = 0; i < codes.Count; i++)
-        {
-            sb.AppendLine().Append(codes[i]);
-            if (index == i)
-            {
-                sb.Append("       <---- single transpiler");
-            }
-        }
-        Log(sb.ToString(), LogLevel.Info);
-        */
-        return codes.AsEnumerable();
-    }
-
     /// <summary>
     /// Tries to purchase an item including extra item trades.
     /// </summary>
