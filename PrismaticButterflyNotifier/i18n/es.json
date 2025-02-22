@@ -1,0 +1,5 @@
+{
+  "ButterflyLocation": "La mariposa está aquí...",
+  "ButterflyLocationCoords": "La mariposa está en {0}...",
+  "config.ShowCoords.name": "Mostrar coordenadas"
+}
