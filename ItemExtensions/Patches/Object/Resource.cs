@@ -138,7 +138,29 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
-    
+
+    internal static bool CheckForImmuneNodes(Object __instance, Farmer who, ref bool __result)
+    {
+        try
+        {
+            if (!ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource))
+                return true;
+
+            if (resource == null)
+                return true;
+
+            if (!resource.ImmuneToBombs) 
+                return true;
+            
+            __result = false;
+            return false;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
     internal static void Pre_onExplosion(Object __instance, Farmer who)
     {
         try

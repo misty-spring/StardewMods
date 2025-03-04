@@ -1,7 +1,6 @@
 using ItemExtensions.Events;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Enums;
-using ItemExtensions.Models.Internal;
 using ItemExtensions.Models.Items;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
@@ -11,7 +10,6 @@ using StardewValley.Extensions;
 using StardewValley.GameData.Objects;
 using StardewValley.Internal;
 using StardewValley.Locations;
-using StardewValley.TokenizableStrings;
 using StardewValley.Tools;
 
 namespace ItemExtensions.Additions;
@@ -31,16 +29,14 @@ public static class GeneralResource
     internal static readonly string[] VanillaClumps = { "600", "602", "622", "672", "752", "754", "756", "758" };
     private static readonly int[] VanillaStones =
     {
-        2, 4, 6, 8, 10, 12, 14, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 75, 76, 77, 95, 290, 343, 390,
-        450, 668, 670, 751, 760, 762, 764, 765, 25, 816, 817, 818, 819, 843, 844, 845, 846, 847, 849, 850
+        2, 4, 6, 8, 10, 12, 14, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 75, 76, 77, 95, 290, 343, 390, 450, 668, 670, 751, 760, 762, 764, 765, 25, 816, 817, 818, 819, 843, 844, 845, 846, 847, 849, 850
     };
 
     private static readonly int[] VanillaTwigs = { 294, 295 };
 
     private static readonly int[] VanillaWeeds =
     {
-        0, 313, 314, 315, 316, 317, 318, 319, 320, 321, 452, 674, 675, 676, 677, 678, 679, 750, 784, 785, 786, 792, 793,
-        794, 882, 883, 884
+        0, 313, 314, 315, 316, 317, 318, 319, 320, 321, 452, 674, 675, 676, 677, 678, 679, 750, 784, 785, 786, 792, 793, 794, 882, 883, 884
     };
 
     internal static List<int> VanillaIds
@@ -360,13 +356,11 @@ public static class GeneralResource
             //if a vanilla ore
             if (IsVanillaOre(resource.ItemDropped) && HasBuff(who , "dwarfStatue_0"))
             {
-                Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
                 num2++;
             }
             else if (IsGem(resource.ItemDropped) && Game1.player.stats.Get(StatKeys.Mastery(3)) > 0)
             {
-                Log("Found mining mastery and gem item. Multiplying amount by 2...", LogLevel.Trace);
-                num2 = num2 * 2;
+                num2 *= 2;
             }
 
             CreateItemDebris(resource.ItemDropped, num2, (int)tileLocation.X, (int)tileLocation.Y, location);
@@ -394,7 +388,7 @@ public static class GeneralResource
         if (location is not MineShaft shaft) 
             return;
         
-        if (shaft.ladderHasSpawned)
+        if (shaft.ladderHasSpawned || shaft.mineLevel == 77377)
             return;
         
         if (Game1.random.NextDouble() < ModEntry.Config.ChanceForStairs || IsLastNode(shaft))
@@ -452,6 +446,10 @@ public static class GeneralResource
             return false;
         
         var data = ItemRegistry.GetData(item);
+
+        if (data is null)
+            return false;
+        
         return data.Category == -2;
     }
 
@@ -468,8 +466,8 @@ public static class GeneralResource
 
     private static void TryExtraDrops(IEnumerable<ExtraSpawn> data, GameLocation location, Farmer who, Vector2 tileLocation, int multiplier = 1)
     {
-        var geodeChanceMultiplier = HasBuff(who,"dwarfStatue_4") ? 1.25 : 1.0;
-        var addedCoalChance = HasBuff(who, "dwarfStatue_2") ? 0.1 : 0.0;
+        var geodeChanceMultiplier = HasBuff(who ?? Game1.player,"dwarfStatue_4") ? 1.25 : 1.0;
+        var addedCoalChance = HasBuff(who ?? Game1.player, "dwarfStatue_2") ? 0.1 : 0.0;
 
         foreach (var item in data)
         {
@@ -503,15 +501,16 @@ public static class GeneralResource
                 var parsedItem = ItemRegistry.Create(result.Item.QualifiedItemId, result.Item.Stack, result.Item.Quality);
                 parsedItem.Stack *= multiplier;
 
+#if DEBUG
+                Log($"Parsed item: {parsedItem?.DisplayName} ({parsedItem?.QualifiedItemId})");
+#endif
                 if (IsVanillaOre(parsedItem.QualifiedItemId) && HasBuff(who, "dwarfStatue_0"))
                 {
-                    Log("Found dwarf statue buff 0 for an ore. Adding extra stack...", LogLevel.Trace);
                     parsedItem.Stack++;
                 }
                 else if (IsGem(parsedItem.QualifiedItemId) && Game1.player.stats.Get(StatKeys.Mastery(3)) > 0)
                 {
-                    Log("Found mining mastery and gem item. Multiplying amount by 2...", LogLevel.Trace);
-                    parsedItem.Stack = parsedItem.Stack * 2;
+                    parsedItem.Stack *= 2;
                 }
 
                 var x = Game1.random.ChooseFrom(new[] { 64f, 0f, -64f });

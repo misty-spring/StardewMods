@@ -4,7 +4,6 @@ using ItemExtensions.Models.Enums;
 using ItemExtensions.Models.Items;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.TerrainFeatures;
 
 namespace ItemExtensions.Additions;
 

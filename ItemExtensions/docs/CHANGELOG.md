@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.14.1
+- Fixed bug where quarry ores would spawn a ladder
+- Fixed bug in IsGem() that caused error items to not spawn
+- Changed transpiler to a prefix for tryToPurchaseItem
+- (Android) automatically selects the correct tool when a node/clump is tapped
+- Fixed nodes immune to bombs not being immune
+
 ## 1.14.0
 - Changed how clumps are loaded/saved internally.
 - Further android compatibility and fixes

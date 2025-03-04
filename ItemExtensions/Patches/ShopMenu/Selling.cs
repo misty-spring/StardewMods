@@ -12,71 +12,43 @@ namespace ItemExtensions.Patches;
 
 public partial class ShopMenuPatches
 {
+    /// <summary>
+    /// Tries to purchase an item, including extra item trades.
+    /// </summary>
+    /// <param name="__instance"></param>
+    /// <param name="item"></param>
+    /// <param name="held_item"></param>
+    /// <param name="stockToBuy"></param>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="__result">Result this method gives</param>
+    /// <returns>Whether to run original method.</returns>
+    internal static bool Pre_tryToPurchaseItem(ShopMenu __instance, ISalable item, ISalable held_item, int stockToBuy, int x, int y, ref bool __result)
+    {
+        if (ExtraBySalable is not { Count: > 0 })
+        {
+#if DEBUG
+            Log("ExtraBySalable is empty.");
+#endif
+            return true;
+        }
+        
+        //if item not in salable list
+        if (!ExtraBySalable.ContainsKey(item))
+        {
+#if DEBUG
+            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
+#endif
+            return true;
+        }
+        
+        __result = TryToPurchaseItem(__instance, item, held_item, stockToBuy, x, y);
+        return false;
+    }
+    
     private static Dictionary<ISalable, List<ExtraTrade>> ExtraBySalable { get; set; }
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
-    {
-        var codes = new List<CodeInstruction>(instructions);
-
-        //find the index of the code instruction we want
-        var index = -1;
-        for (var i = 2; i < codes.Count - 1; i++)
-        {
-            if (codes[i-1].opcode != OpCodes.Ldarg_2)
-                continue;
-            
-            if(codes[i].opcode != OpCodes.Call)
-                continue;
-            
-            if(codes[i + 1].opcode != OpCodes.Brfalse_S)
-                continue;
-
-            index = i;
-            break;
-        }
-#if DEBUG
-        Log($"index: {index}", LogLevel.Info);
-#endif
-        
-        //if not found return original
-        if (index <= -1) 
-            return codes.AsEnumerable();
-        
-        /* if (TryToPurchaseItem(ISalable item, ISalable held_item, int stockToBuy, int x, int y))
-         * {
-         *      ...etc
-         * }
-         */
-
-        //create call instruction with our method
-        var newInstruction = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ShopMenuPatches), nameof(TryToPurchaseItem)));
-        foreach (var label in codes[index].labels)
-        {
-            newInstruction.labels.Add(label);
-        }
-        
-        Log("Inserting method");
-        codes[index] = newInstruction;
-        
-        /* print the IL code
-         * courtesy of atravita
-         
-        StringBuilder sb = new();
-        sb.Append("ILHelper for: ShopMenu.receiveLeftClick");
-        for (int i = 0; i < codes.Count; i++)
-        {
-            sb.AppendLine().Append(codes[i]);
-            if (index == i)
-            {
-                sb.Append("       <---- single transpiler");
-            }
-        }
-        Log(sb.ToString(), LogLevel.Info);
-        */
-        return codes.AsEnumerable();
-    }
-
-    internal static bool TryToPurchaseItem(ShopMenu menu, ISalable item, ISalable heldItem, int stockToBuy, int x, int y)
+    private static bool TryToPurchaseItem(ShopMenu menu, ISalable item, ISalable heldItem, int stockToBuy, int x, int y)
     {
         if (menu.readOnly)
         {

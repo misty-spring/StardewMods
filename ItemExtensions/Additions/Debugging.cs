@@ -4,7 +4,6 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
-using StardewValley.Tools;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Additions;

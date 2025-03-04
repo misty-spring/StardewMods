@@ -13,11 +13,8 @@ namespace ItemExtensions.Additions;
 public class LetterWithImage : LetterViewerMenu
 {
     private static void Log(string msg, LogLevel lv = LogLevel.Trace) => ModEntry.Mon.Log(msg, lv);
-
-    private NoteData RawData { get; set; }
     private bool HasImage { get; set; }
     private Vector2 ImagePosition { get; set; } = new Vector2(-999, -999);
-    private Vector2 TextPosition { get; set; } = new Vector2(-999, -999);
     private string Text { get; set; }
     
     public LetterWithImage(NoteData note) : base(note.Message)
@@ -45,19 +42,6 @@ public class LetterWithImage : LetterViewerMenu
         
         secretNoteImageTexture = Game1.temporaryContent.Load<Texture2D>(note.Image);
         ImagePosition = hasText ? GetPosition(note.ImagePosition, secretNoteImageTexture) : GetCentered(secretNoteImageTexture);
-    }
-
-    private static string GetOpposite(string pos)
-    {
-        var result = pos switch
-        {
-            "left" => "right",
-            "top" => "bot",
-            "bottom" or "bot" => "top",
-            "right" => "left",
-            _ => "mid"
-        };
-        return result;
     }
 
     /// <summary>

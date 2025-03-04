@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using HarmonyLib;
 using ItemExtensions.Events;
@@ -108,10 +107,7 @@ public static class InventoryPatches
         {
             return;
         }
-
-#if DEBUG
-        Log("It works!", LogLevel.Warn);
-#endif
+        
         //trigger on attached
         TriggerActionManager.Raise($"{ModEntry.Id}_OnItemAttached");
 
@@ -203,7 +199,6 @@ public static class InventoryPatches
                     sb.Append(". Skipping... (Make sure the format is valid)");
                     Log(sb.ToString(), LogLevel.Info);
                 }
-                return;
             }
 #if DEBUG
             else
@@ -361,7 +356,7 @@ public static class InventoryPatches
             if (data.TargetId != target.QualifiedItemId)
                 continue;
 
-            if (data.Parse(out var rightInfo) == false)
+            if (data.Parse(out _) == false)
             {
                 var sb = new StringBuilder("There was an error while validating ");
                 sb.Append(id ?? "this action");

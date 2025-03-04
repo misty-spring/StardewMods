@@ -1,5 +1,4 @@
 using HarmonyLib;
-using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using ItemExtensions.Models.Contained;
 using ItemExtensions.Models.Items;

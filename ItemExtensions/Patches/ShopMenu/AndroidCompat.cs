@@ -11,40 +11,6 @@ namespace ItemExtensions.Patches;
 
 public partial class ShopMenuPatches
 {
-    /// <summary>
-    /// Tries to purchase an item including extra item trades.
-    /// </summary>
-    /// <param name="__instance"></param>
-    /// <param name="item"></param>
-    /// <param name="held_item"></param>
-    /// <param name="stockToBuy"></param>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <param name="__result">Result this method gives</param>
-    /// <returns>Whether to run original method.</returns>
-    internal static bool Pre_tryToPurchaseItem(ShopMenu __instance, ISalable item, ISalable held_item, int stockToBuy, int x, int y, ref bool __result)
-    {
-        if (ExtraBySalable is not { Count: > 0 })
-        {
-#if DEBUG
-            Log("ExtraBySalable is empty.");
-#endif
-            return true;
-        }
-        
-        //if item not in salable list
-        if (!ExtraBySalable.ContainsKey(item))
-        {
-#if DEBUG
-            Log($"ExtraBySalable doesn't have a key for item {item.QualifiedItemId}.");
-#endif
-            return true;
-        }
-        
-        __result = TryToPurchaseItem(__instance, item, held_item, stockToBuy, x, y);
-        return false;
-    }
-
     private static void Post_drawMobileToolTip(IClickableMenu __instance, SpriteBatch b, int x, int y, int width, int height, int paragraphGap, string hoverText, string hoverTitle, Item hoveredItem, bool heldItem = false, int healAmountToDisplay = -1, int currencySymbol = 0, string extraItemToShowIndexStr = null, int extraItemToShowAmount = -1, CraftingRecipe craftingIngredients = null, int moneyAmountToShowAtBottom = -1, int currency = 0, bool inStockAndBuyable = true, bool drawSmall = false)
     {
         // in android's ShopMenu.cs: 

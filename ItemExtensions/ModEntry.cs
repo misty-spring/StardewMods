@@ -34,6 +34,11 @@ public sealed class ModEntry : Mod
         helper.Events.World.ObjectListChanged += World.ObjectListChanged;
         
         helper.Events.Content.LocaleChanged += LocaleChanged;
+
+        if (OperatingSystem.IsAndroid())
+        {
+            helper.Events.Input.ButtonPressed += Mobile.OnButtonPressed;
+        }
         
         Mon = Monitor;
         Help = Helper;
@@ -85,10 +90,14 @@ public sealed class ModEntry : Mod
             ResourceClumpPatches.Apply(harmony);
 
             if (Config.ResourcesMtn)
+            {
                 MountainPatches.Apply(harmony);
+            }
 
             if (Config.ResourcesVolcano)
+            {
                 VolcanoPatches.Apply(harmony);
+            }
         }
 
         if (Config.ShopTrades)
@@ -96,14 +105,20 @@ public sealed class ModEntry : Mod
             ShopMenuPatches.Apply(harmony);
         }
 
-        if(helper.ModRegistry.Get("Esca.FarmTypeManager") is not null)
+        if (helper.ModRegistry.Get("Esca.FarmTypeManager") is not null)
+        {
             FarmTypeManagerPatches.Apply(harmony);
-        
-        if(helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
+        }
+
+        if (helper.ModRegistry.Get("mistyspring.dynamicdialogues") is null)
+        {
             NpcPatches.Apply(harmony);
-        
-        if(helper.ModRegistry.Get("Pathoschild.TractorMod") is not null)
+        }
+
+        if (helper.ModRegistry.Get("Pathoschild.TractorMod") is not null)
+        {
             TractorModPatches.Apply(harmony);
+        }
         
         //GSQ
         GameStateQuery.Register($"{Id}_ToolUpgrade", Queries.ToolUpgrade);

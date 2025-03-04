@@ -6,7 +6,6 @@ using StardewValley.Internal;
 using StardewValley;
 using StardewValley.GameData;
 using StardewValley.Monsters;
-using xTile.Dimensions;
 
 namespace ItemExtensions.Additions;
 

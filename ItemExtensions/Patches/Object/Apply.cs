@@ -72,6 +72,12 @@ public partial class ObjectPatches
                 original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
                 prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_onExplosion))
             );
+            
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.onExplosion\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
+                prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(CheckForImmuneNodes))
+            );
         }
 
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.initializeLightSource\".");

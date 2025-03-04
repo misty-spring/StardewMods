@@ -2,6 +2,7 @@ using HarmonyLib;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
+// ReSharper disable UnusedParameter.Local
 
 namespace ItemExtensions.Patches;
 

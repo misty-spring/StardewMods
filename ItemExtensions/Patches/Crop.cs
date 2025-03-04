@@ -1,5 +1,3 @@
-using System.Text;
-using HarmonyLib;
 using ItemExtensions.Additions;
 using ItemExtensions.Models.Contained;
 using StardewModdingAPI;

@@ -70,14 +70,14 @@ public partial class ShopMenuPatches
            typeof(int)
        };
 
+       Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.tryToPurchaseItem\".");
+       harmony.Patch(
+           original: AccessTools.Method(typeof(ShopMenu), "tryToPurchaseItem"),
+           prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_tryToPurchaseItem))
+       );
+       
         if (OperatingSystem.IsAndroid())
         {
-            Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": prefixing SDV method \"ShopMenu.tryToPurchaseItem\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(ShopMenu), "tryToPurchaseItem"),
-                prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_tryToPurchaseItem))
-            );
-            
             Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": postfixing SDV method \"IClickableMenu.drawMobileToolTip\".");
             harmony.Patch(
                 original: AccessTools.Method(typeof(IClickableMenu), "drawMobileToolTip"),
@@ -90,18 +90,6 @@ public partial class ShopMenuPatches
             harmony.Patch(
                 original: AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.drawHoverText), types),
                 prefix: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Pre_drawHoverText))
-            );
-            
-            Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": transpiling SDV method \"ShopMenu.receiveLeftClick\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveLeftClick)),
-                transpiler: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Transpiler))
-            );
-        
-            Log($"Applying Harmony patch \"{nameof(ShopMenuPatches)}\": transpiling SDV method \"ShopMenu.receiveRightClick\".");
-            harmony.Patch(
-                original: AccessTools.Method(typeof(ShopMenu), nameof(ShopMenu.receiveRightClick)),
-                transpiler: new HarmonyMethod(typeof(ShopMenuPatches), nameof(Transpiler))
             );
         }
     }

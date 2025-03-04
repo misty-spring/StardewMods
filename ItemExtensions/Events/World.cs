@@ -2,7 +2,6 @@ using ItemExtensions.Additions;
 using ItemExtensions.Models;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewValley.TerrainFeatures;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Events;

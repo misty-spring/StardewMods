@@ -267,7 +267,7 @@ public class Save
             if (howLong > days) 
                 continue;
             
-            removalQueue.Add(obj); ;
+            removalQueue.Add(obj);
         }
 
         //remove all that have more days than allowed
