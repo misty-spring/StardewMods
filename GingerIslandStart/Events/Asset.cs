@@ -158,7 +158,7 @@ public static class Asset
                     TradeItemId = "(O)336",
                     TradeItemAmount = 2,
                     Price = (int)(5000 * ModEntry.ShopMultiplier),
-                    AvailableStock = 1,
+                    //AvailableStock = 1,
                     UseObjectDataPrice = false,
                     CustomFields = new Dictionary<string, string>
                     {

@@ -7,7 +7,7 @@ namespace GingerIslandStart.Events;
 
 public static class Save
 {
-    private  static bool JustCreated { get; set; }
+    private static bool JustCreated { get; set; }
     
     /// <summary>
     /// Actions done when save is created.
