@@ -21,12 +21,9 @@ public class ModEntry : Mod
     private static void Log(string msg, LogLevel lv = Level) => Mon.Log(msg, lv);
     private static IMonitor Mon { get; set; }
     private static IModHelper Help { get; set; }
-    private static Dictionary<string,List<string>> CachedCategories { get; set; } = new();
     
     public override void Entry(IModHelper helper)
     {
-        helper.Events.GameLoop.ReturnedToTitle += OnTitleReturn;
-        
         Mon = Monitor;
         Help = Helper;
         
@@ -36,11 +33,6 @@ public class ModEntry : Mod
             original: AccessTools.Method(typeof(HungryFrogCompanion), nameof(HungryFrogCompanion.Update)),
             transpiler: new HarmonyMethod(typeof(ModEntry), nameof(Transpiler))
         );
-    }
-
-    private void OnTitleReturn(object? sender, ReturnedToTitleEventArgs e)
-    {
-        CachedCategories.Clear();
     }
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
@@ -91,25 +83,6 @@ public class ModEntry : Mod
         codes.InsertRange(insertAt, instructionsToInsert);
         codes.InsertRange(insertAgain, instructionsToInsert);
         
-        /* print the IL code
-         * courtesy of atravita
-         *
-        StringBuilder sb = new();
-        sb.Append("ILHelper for: GameLocation.spawnObjects");
-        for (int i = 0; i < codes.Count; i++)
-        {
-            sb.AppendLine().Append(codes[i]);
-            if (index + 3 == i)
-            {
-                sb.Append("       <---- start of transpiler");
-            }
-            if (index + 3 + instructionsToInsert.Count == i)
-            {
-                sb.Append("       <----- end of transpiler");
-            }
-        }
-        Log(sb.ToString(), LogLevel.Info);
-        */
         return codes.AsEnumerable();
     }
 
@@ -122,45 +95,8 @@ public class ModEntry : Mod
 #endif
             return;
         }
-        foreach (var item in attachedMonster.objectsToDrop)
-        {
-            if (string.IsNullOrWhiteSpace(item))
-                continue;
 
-            var vector = attachedMonster.Position;
-            
-            var vector2 = Game1.random.Next(4) switch
-            {
-                0 => new Vector2(-64f, 0f),
-                1 => new Vector2(64f, 0f),
-                2 => new Vector2(0f, 64f),
-                _ => new Vector2(0f, -64f),
-            };
-            
-            var item2 = item.StartsWith('-') ? GetItemFromCategory(item) : ItemRegistry.Create(item);
-            attachedMonster.currentLocation.debris.Add(new Debris(item2, vector, vector + vector2));
-        }
-    }
-
-    private static Item GetItemFromCategory(string category)
-    {
-        if (CachedCategories.TryGetValue(category, out var allItems))
-        {
-            return ItemRegistry.Create(Game1.random.ChooseFrom(allItems));
-        }
-        
-        var items = new List<string>();
-        foreach (var objectData in Game1.objectData)
-        {
-            if (int.TryParse(category, out var cat) == false)
-                continue;
-            
-            if (objectData.Value.Category.Equals(cat))
-                items.Add(objectData.Key);
-        }
-
-        CachedCategories.TryAdd(category, items);
-        
-        return ItemRegistry.Create(Game1.random.ChooseFrom(items));
+        attachedMonster.currentLocation.monsterDrop(attachedMonster, (int)attachedMonster.Position.X, (int)attachedMonster.Position.Y,
+            Game1.player);
     }
 }
