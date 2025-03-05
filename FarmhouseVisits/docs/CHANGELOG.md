@@ -1,5 +1,8 @@
 ([versión en español aquí](https://github.com/misty-spring/StardewMods/blob/main/FarmhouseVisits/docs/CHANGELOG_es.md))
 
+## 1.8.3
+- Updated korean by donutbunnybunny
+
 ## 1.8.2
 - Bug fixes
 - Villagers won't visit on Town's passive festivals
