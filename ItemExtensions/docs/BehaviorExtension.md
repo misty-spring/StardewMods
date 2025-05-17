@@ -133,9 +133,9 @@ Behaviors follow the following format:
 | Reject             | `string`                  | Requires `Message`. Option to reject this behavior.  |
 | ReduceBy           | `int`                     | Reduce the item by this count.                       |
 | PlaySound          | `string`                  | Plays a sound.                                       |
-| ChangeMoney        | `string`                  | Changes money\*.                                     |
-| Health             | `string`                  | Changes health\*.                                    |
-| Stamina            | `string`                  | Changes stamina\*.                                   |
+| ChangeMoney        | `string`                  | Changes money¹.                                      |
+| Health             | `string`                  | Changes health¹.                                     |
+| Stamina            | `string`                  | Changes stamina¹.                                    |
 | AddItems           | `Dictionary<string, int>` | Adds the following items (uses Qualified Id).        |
 | RemoveItems        | `Dictionary<string, int>` | Removes the following items (uses Qualified Id).     |
 | PlayMusic          | `string`                  | Changes map track to this one.                       |
@@ -143,12 +143,17 @@ Behaviors follow the following format:
 | AddSpecialOrder    | `string`                  | Adds a special order.                                |
 | RemoveQuest        | `string`                  | Removes a quest                                      |
 | RemoveSpecialOrder | `string`                  | Removes a special order.                             |
-| Condition          | `string`                  | Condition for this behavior to trigger.              |
+| Conditions         | `string`                  | Condition for this behavior to trigger.              |
 | TriggerAction      | `string`                  | Trigger action to call.                              |
-| ShowNote           | `NoteData`                | (ADVANCED) Shows a note.\**                          |
+| ShowNote           | `NoteData`                | (ADVANCED) Shows a note.²                            |
+| AddFlags           | `List<string>`            | Mail flags to add.                                   |
+| RemoveFlags        | `List<string>`            | Mail flags to remove.                                |
+| AddBuffs           | `List<ObjectBuffData>`    | Adds the following buffs.                            |
+| SpawnMonsters      | `List<MonsterSpawnData>`  | Monsters to spawn.³                                  |
 
-\*= These use a special format: set/add, followed by amount. e.g, `add 50` to add 50 to current value
-\**= This is advanced: The fields for NoteData are [found here]().
+¹= These use a special format: set/add, followed by amount. e.g, `add 50` to add 50 to current value
+²= This is advanced: The fields for NoteData are [found here]().
+³= If using it with OnDestroy (resources) it will take the resource's position as reference. Otherwise, it will take the player's position as reference. MonsterSpawnData can be found [here](https://github.com/misty-spring/StardewMods/blob/main/ItemExtensions/docs/CustomResource.md).
 
 ## Examples
 

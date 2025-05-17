@@ -13,6 +13,7 @@ For C# modders: By default, resources are treated as objects. Anything bigger th
     * [For ore customization](#for-ore-customization)
     * [For EXP/stats](#for-expstats)
     * [Spawning in the mines](#spawning-in-the-mines)
+    * [OnDestroy field](#ondestroy-field)
 * [Debris](#debris)
   * [Pre-defined](#pre-defined-debris-types)
   * [Use item texture](#item-debris)
@@ -91,13 +92,13 @@ Fields for LightData can be found [here](https://github.com/misty-spring/Stardew
 
 You can make mine spawns with `MineSpawns` (which is a `List<MineSpawn>`):
 
-| name                     | type     | Required | description                                                                                                                |
-|--------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------|
-| Floors                   | `string` | Yes      | Floors to spawn in. Must be slash separated. For example, "5, 7/9, 13/25" will spawn it on floors 5, 7 to 9, and 13 to 25. |
-| Condition                | `string` | No       | A GSQ for these spawns to apply. (optional) Calculated on mine generation.                                                 |
-| Type                     | `string` | No       | Can be: `All` (always spawns in mines),  `Qi` (danger mines only), `Normal` (regular mines only), `Volcano`, `Mountain`, or `Frenzy` (similar to mushroom levels) . Default "All"                           |
-| SpawnFrequency           | `double` | No       | How likely it is for this ore to appear in the mines. **Goes from 0 to 1** (e.g, 0.8 = 80%)					                                                                |
-| AdditionalChancePerLevel | `double` | No       | Extra chance to spawn per mine level                  					                                                                |
+| name                     | type     | Required | description                                                                                                                                                                       |
+|--------------------------|----------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Floors                   | `string` | Yes      | Floors to spawn in. Must be slash separated. For example, "5, 7/9, 13/25" will spawn it on floors 5, 7 to 9, and 13 to 25.                                                        |
+| Condition                | `string` | No       | A GSQ for these spawns to apply. (optional) Calculated on mine generation.                                                                                                        |
+| Type                     | `string` | No       | Can be: `All` (always spawns in mines),  `Qi` (danger mines only), `Normal` (regular mines only), `Volcano`, `Mountain`, or `Frenzy` (similar to mushroom levels) . Default "All" |
+| SpawnFrequency           | `double` | No       | How likely it is for this ore to appear in the mines. **Goes from 0 to 1** (e.g, 0.8 = 80%)					                                                                                  |
+| AdditionalChancePerLevel | `double` | No       | Extra chance to spawn per mine level                  					                                                                                                                       |
 
 Note: To spawn until infinite floors, use `"<desired floor>/-999"` E.g., "150/-999".
 
@@ -111,6 +112,24 @@ So, for example:
   }
 ]
 ```
+### OnDestroy Field
+
+You can make events occur when the resource is destroyed. OnDestroy has all the same fields as [OnBehavior](https://github.com/misty-spring/StardewMods/blob/main/ItemExtensions/docs/BehaviorExtension.md).
+
+SpawnMonsters has the following fields:
+
+| Name                 | Type               | Required | Description                                                       |
+|----------------------|--------------------|----------|-------------------------------------------------------------------|
+| Name                 | `string`           | Yes      | The monster's internal name.                                      |
+| Health               | `int`              | Yes      | The monster's health points.                                      |
+| Hardmode             | `bool`             | No       | Whether it's a hardmode monster, for those that have the variant. |
+| Distance             | `Vector2`          | Yes      | Distance from spawning point (the resource position).             |
+| ExcludeOriginalDrops | `bool`             | No       | Whether to exclude original drops. (experimental)                 |
+| ExtraDrops           | `List<ExtraSpawn>` | No       | Extra drops to add.                                               |
+| Color                | `Color?`           | No       | Color. Used with slimes.                                          |
+| FollowPlayer         | `bool`             | No       | Whether to follow the player.                                     |
+| RangedAttacks        | `bool`             | No       | Whether to allow ranged attacks, for the monsters that have them. |
+| GracePeriod          | `int`              | No       | Grace period before attacking.                                    |
 
 ## Debris
 

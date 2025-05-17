@@ -78,6 +78,12 @@ public partial class ObjectPatches
                 original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
                 prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(CheckForImmuneNodes))
             );
+            
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.IsBreakableStone()\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Object), nameof(Object.IsBreakableStone)),
+                postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_IsBreakableStone))
+            );
         }
 
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.initializeLightSource\".");
@@ -85,6 +91,13 @@ public partial class ObjectPatches
             original: AccessTools.Method(typeof(Object), "initializeLightSource"),
             postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_initializeLightSource))
         );
+        
+        /*
+        Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.checkForAction\".");
+        harmony.Patch(
+            original: AccessTools.Method(typeof(Object), nameof(Object.checkForAction)),
+            postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_checkForAction))
+        );*/
 
         if(ModEntry.Config.QualityChanges)
         {
@@ -100,6 +113,15 @@ public partial class ObjectPatches
                 postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_newFromId))
             );
         }
+    }
+
+    public virtual void Post_checkForAction(Object __instance, Farmer who, bool __result, bool justCheckingForActivity = false)
+    {
+        if (__result == true)
+            return;
+
+        if (__instance.lightSource != null)
+            __instance.lightSource = null;
     }
     
     private static void Post_initializeLightSource(Object __instance, Vector2 tileLocation, bool mineShaft = false)
@@ -131,7 +153,7 @@ public partial class ObjectPatches
             var position = new Vector2(tileLocation.X * 64f + 16f, tileLocation.Y * 64f + 16f);
 
             //var identifier = (int)(tileLocation.X * 2000f + tileLocation.Y);
-            __instance.lightSource = new LightSource($"{Game1.random.NextInt64()}",1, position, rad, color);
+            __instance.lightSource = new LightSource($"ItemExtensions_{Game1.random.NextInt64()}",1, position, rad, color);
         }
         catch (Exception e)
         {

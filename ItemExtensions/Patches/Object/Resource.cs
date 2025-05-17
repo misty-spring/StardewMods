@@ -186,4 +186,10 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
+
+    private static void Post_IsBreakableStone(Object __instance, ref bool __result)
+    {
+        if (ModEntry.Ores.ContainsKey(__instance.ItemId))
+            __result = true;
+    }
 }
