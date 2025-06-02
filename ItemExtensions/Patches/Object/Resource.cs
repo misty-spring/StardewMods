@@ -4,6 +4,7 @@ using StardewValley;
 using StardewValley.Tools;
 using Object = StardewValley.Object;
 using static ItemExtensions.Additions.GeneralResource;
+using StardewModdingAPI.Utilities;
 
 namespace ItemExtensions.Patches;
 
@@ -12,16 +13,17 @@ public partial class ObjectPatches
     //used so weapon msg isn't repeated 5 times
     private static bool CanShowMessage { get; set; } = true;
     private static void Reset() => CanShowMessage = true;
-    
+    private static PerScreen<bool> InPickaxeDoFunction = new() { Value = false };
+
     internal static void Postfix_performToolAction(Object __instance, Tool t)
     {
         try
         {
             if (ModEntry.Ores.TryGetValue(__instance.ItemId, out var resource) == false)
             {
-                #if DEBUG
+#if DEBUG
                 Log("Not a node.");
-                #endif
+#endif
                 return;
             }
 
@@ -97,7 +99,7 @@ public partial class ObjectPatches
                     animationLength = 8
                 };
                 Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, dust);
-                
+
                 //do drops & destroy
                 CheckDrops(resource, location, tileLocation, t);
                 Destroy(__instance);
@@ -113,7 +115,7 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
-    
+
     internal static void Destroy(Object o, bool onlySetDestroyable = false)
     {
         try
@@ -122,12 +124,12 @@ public partial class ObjectPatches
             {
                 var id = o.lightSource.Id;
                 o.Location.removeLightSource(id);
-            }    
-        
+            }
+
             o.CanBeSetDown = true;
             o.CanBeGrabbed = true;
             o.IsSpawnedObject = true; //by default false IIRC
-        
+
             if(onlySetDestroyable)
                 return;
         
@@ -149,9 +151,9 @@ public partial class ObjectPatches
             if (resource == null)
                 return true;
 
-            if (!resource.ImmuneToBombs) 
+            if (!resource.ImmuneToBombs)
                 return true;
-            
+
             __result = false;
             return false;
         }
@@ -173,7 +175,7 @@ public partial class ObjectPatches
 
             if (resource.ImmuneToBombs)
                 return;
-            
+
             var where = __instance.Location;
             var tile = __instance.TileLocation;
 
@@ -189,7 +191,14 @@ public partial class ObjectPatches
 
     private static void Post_IsBreakableStone(Object __instance, ref bool __result)
     {
-        if (ModEntry.Ores.ContainsKey(__instance.ItemId))
+        if (!InPickaxeDoFunction.Value && ModEntry.Ores.ContainsKey(__instance.ItemId))
             __result = true;
     }
+
+    /// <summary>
+    // This pair of patches help <see cref="Post_IsBreakableStone"/> detect being Pickaxe.DoFunction.
+    // This allow pickaxe action to reach Object.performToolAction rather than being trapped into the vanilla one.
+    //  </summary>
+    private static void Pre_Pickaxe_DoFunction() => InPickaxeDoFunction.Value = true;
+    private static void Fin_Pickaxe_DoFunction() => InPickaxeDoFunction.Value = false;
 }
