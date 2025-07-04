@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Objects;
+using StardewValley.Tools;
 using Object = StardewValley.Object;
 
 namespace ItemExtensions.Patches;
@@ -15,9 +16,9 @@ public partial class ObjectPatches
 #else
     private const LogLevel Level =  LogLevel.Trace;
 #endif
-    
+
     private static void Log(string msg, LogLevel lv = Level) => ModEntry.Mon.Log(msg, lv);
-    
+
     internal static void Apply(Harmony harmony)
     {
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.IsHeldOverHead()\".");
@@ -25,14 +26,14 @@ public partial class ObjectPatches
             original: AccessTools.Method(typeof(Object), nameof(Object.IsHeldOverHead)),
             prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_IsHeldOverHead))
         );
-        
+
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.maximumStackSize()\".");
         harmony.Patch(
             original: AccessTools.Method(typeof(Object), nameof(Object.maximumStackSize)),
             prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_maximumStackSize))
         );
-        
-        if(ModEntry.Config.OnBehavior)
+
+        if (ModEntry.Config.OnBehavior)
         {
             Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.actionWhenBeingHeld(Farmer)\".");
             harmony.Patch(
@@ -58,7 +59,7 @@ public partial class ObjectPatches
               postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_dropItem))
             );
         }
-        
+
         if(ModEntry.Config.Resources)
         {
             Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.performToolAction\".");
@@ -66,23 +67,29 @@ public partial class ObjectPatches
                 original: AccessTools.Method(typeof(Object), "performToolAction"),
                 postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Postfix_performToolAction))
             );
-        
+
             Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.onExplosion\".");
             harmony.Patch(
                 original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
                 prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_onExplosion))
             );
-            
+
             Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefixing SDV method \"Object.onExplosion\".");
             harmony.Patch(
                 original: AccessTools.Method(typeof(Object), nameof(Object.onExplosion)),
                 prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(CheckForImmuneNodes))
             );
-            
+
             Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.IsBreakableStone()\".");
             harmony.Patch(
                 original: AccessTools.Method(typeof(Object), nameof(Object.IsBreakableStone)),
                 postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_IsBreakableStone))
+            );
+            Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": prefix/finalize SDV method \"Pickaxe.DoFunction()\".");
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Pickaxe), nameof(Pickaxe.DoFunction)),
+                prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(Pre_Pickaxe_DoFunction)),
+                finalizer: new HarmonyMethod(typeof(ObjectPatches), nameof(Fin_Pickaxe_DoFunction))
             );
         }
 
@@ -91,7 +98,7 @@ public partial class ObjectPatches
             original: AccessTools.Method(typeof(Object), "initializeLightSource"),
             postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(Post_initializeLightSource))
         );
-        
+
         /*
         Log($"Applying Harmony patch \"{nameof(ObjectPatches)}\": postfixing SDV method \"Object.checkForAction\".");
         harmony.Patch(
@@ -123,7 +130,7 @@ public partial class ObjectPatches
         if (__instance.lightSource != null)
             __instance.lightSource = null;
     }
-    
+
     private static void Post_initializeLightSource(Object __instance, Vector2 tileLocation, bool mineShaft = false)
     {
         try
@@ -160,7 +167,7 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
-    
+
     internal static void Post_new(ref Object __instance, Vector2 tileLocation, string itemId, bool isRecipe = false)
     {
         try
@@ -172,7 +179,7 @@ public partial class ObjectPatches
             Log($"Error: {e}", LogLevel.Error);
         }
     }
-    
+
     internal static void Post_newFromId(ref Object __instance, string itemId, int initialStack, bool isRecipe = false, int price = -1, int quality = 0)
     {
         try
@@ -190,7 +197,7 @@ public partial class ObjectPatches
         //don't force quality on these items, as they don't have one to start with
         if (obj is Furniture || obj is Wallpaper || obj.bigCraftable.Value)
             return;
-            
+
 
         if (Game1.objectData.TryGetValue(obj.ItemId, out var data) == false)
             return;
