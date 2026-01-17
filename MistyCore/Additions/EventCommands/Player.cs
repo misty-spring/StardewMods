@@ -1,7 +1,7 @@
 ﻿using StardewModdingAPI;
 using StardewValley;
 
-namespace DynamicDialogues.Commands;
+namespace MistyCore.Additions.EventCommands;
 
 internal static class Player
 {
@@ -182,6 +182,25 @@ internal static class Player
             @event.farmer.stamina = amt;
         }
 
+        @event.CurrentCommand++;
+    }
+
+    internal static void MakeInvincible(Event @event, string[] args, EventContext context)
+    {
+        //makeInvincible [return]
+
+        if(args.Length >= 2)
+        {
+            var returnToNormal = bool.Parse(args[1]);
+            if(returnToNormal)
+            {
+                Game1.player.temporarilyInvincible = false;
+                @event.CurrentCommand++;
+                return;
+            }
+        }
+
+        Game1.player.temporarilyInvincible = true;
         @event.CurrentCommand++;
     }
 }

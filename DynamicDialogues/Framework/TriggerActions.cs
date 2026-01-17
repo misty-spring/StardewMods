@@ -1,4 +1,5 @@
-﻿using DynamicDialogues.Framework;
+﻿using System.Text;
+using DynamicDialogues.Framework;
 using DynamicDialogues.Models;
 using StardewModdingAPI;
 using StardewValley;
@@ -20,9 +21,9 @@ internal static class TriggerActions
 
     private static void TestInput(IEnumerable<string> args)
     {
-        var fullString = "";
+        var fullString = new StringBuilder();
         foreach (var s in args)
-            fullString += ' ' + s;
+            fullString.Append(' ' + s);
 
         Monitor.Log($"Args: {fullString}", LogLevel.Debug);
     }
@@ -195,63 +196,5 @@ internal static class TriggerActions
         Game1.drawDialogue(npc);
 
         return true;
-    }
-
-    /// <summary>
-    /// Adds experience to the given skill.
-    /// </summary>
-    /// <param name="args">Arguments.</param>
-    /// <param name="context">Trigger context.</param>
-    /// <param name="error">Error, if any.</param>
-    /// <returns>Whether the action was run.</returns>
-    /// <see cref="TriggerActionManager.DefaultActions.AddCookingRecipe"/>
-    public static bool AddExp(string[] args, TriggerActionContext context, out string error)
-    {
-        TestInput(args);
-        
-        //command <who> <skill> <amt>
-        
-        var p = !ArgUtility.TryGet(args, 1, out var playerKey, out error);
-        var t = !ArgUtility.TryGet(args, 2, out var skillRaw, out error);
-        var i = !ArgUtility.TryGetOptionalInt(args, 3, out var amount, out error, defaultValue: 50);
-        var invalid = p || t || i;
-
-        if (invalid || string.IsNullOrWhiteSpace(skillRaw))
-            return false;
-
-        int skill;
-        if (int.TryParse(skillRaw, out var parsedSkill))
-            skill = parsedSkill;
-        else
-        {
-            skill = skillRaw.ToLower() switch {
-                "farming" => 0,
-                "fishing" => 1,
-                "foraging" => 2,
-                "mining" => 3,
-                "combat" => 4,
-                "luck" => 5,
-                _ => 0
-            };
-        }
-
-#if DEBUG
-        Monitor.Log($"Values:\namount = {amount}\nwho = {playerKey}, \nskill = {skill}({skillRaw})", LogLevel.Debug);
-#endif
-        var success = GameStateQuery.Helpers.WithPlayer(Game1.player, playerKey, target =>
-        {
-            try
-            {
-                target.gainExperience(skill, amount);
-            }
-            catch (Exception e)
-            {
-                Monitor.Log("Error:" + e);
-                return false;
-            }
-            return true;
-        });
-        
-        return success;
     }
 }

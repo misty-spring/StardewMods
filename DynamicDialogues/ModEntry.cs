@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using DynamicDialogues.Commands;
 using DynamicDialogues.Framework;
 using DynamicDialogues.Models;
 using DynamicDialogues.Patches;
@@ -43,36 +42,12 @@ public class ModEntry : Mod
         var harmony = new Harmony(this.ModManifest.UniqueID);
 
         DialoguePatches.Apply(harmony);
-        EventPatches.Apply(harmony);
         NPCPatches.Apply(harmony);
-
-        // TAS related
-        Event.RegisterCommand("AddScene", AnimatedSprites.AddScene);
-        Event.RegisterCommand("RemoveScene", AnimatedSprites.RemoveScene);
-        Event.RegisterCommand("addFire", AnimatedSprites.AddFire);
-
-        // world related
-        Event.RegisterCommand("objectHunt", World.ObjectHunt);
-
-        // event extension
-        Event.RegisterCommand("if", Extensions.IfElse);
-        Event.RegisterCommand("append", Extensions.Append);
-
-        // character related
-        Event.RegisterCommand("resetName", Characters.ResetName);
-        Event.RegisterCommand("changeDating", Characters.SetDating);
-        
-        // player related
-        Event.RegisterCommand("health", Player.Health);
-        Event.RegisterCommand("stamina", Player.Stamina);
-        Event.RegisterCommand("multiplayerMail", Player.MultiplayerMail);
-        Event.RegisterCommand("addExp", Player.AddExp);
         
         // trigger actions
         TriggerActionManager.RegisterAction("mistyspring.dynamicdialogues_DoEvent", TriggerActions.DoEvent);
         TriggerActionManager.RegisterAction("mistyspring.dynamicdialogues_SendNotification", TriggerActions.SendNotification);
         TriggerActionManager.RegisterAction("mistyspring.dynamicdialogues_Speak", TriggerActions.Speak);
-        TriggerActionManager.RegisterAction("mistyspring.dynamicdialogues_Exp", TriggerActions.AddExp);
 
         // game state queries
         GameStateQuery.Register("mistyspring.dynamicdialogues_EventLocked", Queries.EventLocked);

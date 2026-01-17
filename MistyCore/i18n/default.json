@@ -1,0 +1,13 @@
+{
+	"Points": "Score: {0}",
+	"config.CustomHoeDirt.name":"Enable custom hoe dirt",
+	"config.CustomHoeDirt.description":"Applies a custom texture to hoe dirt.",
+	"config.CustomBackgrounds.name":"Enable custom backgrounds",
+	"config.CustomBackgrounds.description":"Allows to customize map backgrounds, just like the island north's background.",
+	"config.CritterSpawning.name":"Enable critter spawning",
+	"config.CritterSpawning.description":"Enables to spawn critters in maps.",
+	"config.FishingOverrides.name":"Fishing overrides",
+	"config.FishingOverrides.description":"Enables custom fishing overrides.",
+	"config.TreeChopEvents.name":"Tree chop events",
+	"config.TreeChopEvents.description":"Enables custom actions on tree chopping."
+}

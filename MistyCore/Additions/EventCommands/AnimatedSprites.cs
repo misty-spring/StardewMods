@@ -5,11 +5,10 @@ using StardewModdingAPI;
 using StardewValley;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
-namespace DynamicDialogues.Commands;
+namespace MistyCore.Additions.EventCommands;
 
 internal static class AnimatedSprites
 {
-    private static ModConfig Cfg => ModEntry.Config;
     private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
     
     /// <summary>
@@ -22,29 +21,27 @@ internal static class AnimatedSprites
 	public static void AddScene(Event @event, string[] args, EventContext context)
     {
         /* if values exist, use. if not, use defaults
-			 * legend: <required>, [optional]
-			 * 
-			 * AddScene <filename> <ID> [frames] [milliseconds per frame] [pos] [l]
-			 *    0          1      2      3                4               5    6
-			 *    
-			 * width/height is img's (old: defaults to 112 x 112 (older:480 x 270))
-			 * pos: middle,top,bottom [left,right]
-			 * 
-			 */
+		 * 
+		 * AddScene <filename> <ID> [frames] [milliseconds per frame] [pos] [loop]
+         *    0          1      2      3                4               5     6
+		 *    
+		 * width/height is img's (old: defaults to 112 x 112 (older:480 x 270))
+		 * pos: middle,top,bottom [left,right]
+		 * 
+		 */
 
         try
         {
-            if (Cfg.Debug)
-            {
-                string splitdata = null;
+#if DEBUG
+                StringBuilder splitData = new();
                 // ReSharper disable once LoopCanBeConvertedToQuery
                 foreach (var text in args)
                 {
-                    splitdata += text + "<>";
+                    splitData.Append(text + "<>");
                 }
-                Log("split= " + splitdata, LogLevel.Info);
-            }
-            var tex = Game1.temporaryContent.Load<Texture2D>(@"mistyspring.dynamicdialogues\Scenes\" + args[1]);
+                Log("split= " + splitData, LogLevel.Info);
+#endif
+            var tex = Game1.temporaryContent.Load<Texture2D>($"Mods/{ModEntry.ModId}/Scenes/{args[1]}");
 
             ArgUtility.TryGetOptionalInt(args,2,out var id, out _, 69420);
             ArgUtility.TryGetOptionalInt(args,3,out var frames, out _, 1);
@@ -86,17 +83,15 @@ internal static class AnimatedSprites
                 overrideLocationDestroy = true
             }; //)
 
-            if (Cfg.Debug)
-            {
+#if DEBUG
                 //log stuff
-                var text = "TemporaryAnimatedSprite: \n";
-                text += $" texture = {tex.Name},\r\n sourceRect = ({scene.sourceRect.X}, {scene.sourceRect.Y}, {scene.sourceRect.Width}, {scene.sourceRect.Height}),\r\n animationLength = {frames},\r\n sourceRectStartingPos = (0,0),\r\n interval = {milliseconds},\r\n totalNumberOfLoops = {loops},\r\n id = {id},\r\n position = ({pos.X},{pos.Y}),\r\n local = true,\r\n scale = 4f,\r\n  destroyable = false,\r\n overrideLocationDestroy = true";
-                Log(text);
-            }
+                var debugText = $"TemporaryAnimatedSprite: \n texture = {tex.Name},\r\n sourceRect = ({scene.sourceRect.X}, {scene.sourceRect.Y}, {scene.sourceRect.Width}, {scene.sourceRect.Height}),\r\n animationLength = {frames},\r\n sourceRectStartingPos = (0,0),\r\n interval = {milliseconds},\r\n totalNumberOfLoops = {loops},\r\n id = {id},\r\n position = ({pos.X},{pos.Y}),\r\n local = true,\r\n scale = 4f,\r\n  destroyable = false,\r\n overrideLocationDestroy = true";
+                Log(debugText);
+#endif
 
             scene.layerDepth = 99f; //ref: in carolineTea stars are 1f depth, elizabeth's fireworks are 99f
 
-            //if it doesnt exist we create it
+            //if it doesn't exist we create it
             if (@event.aboveMapSprites == null || @event.aboveMapSprites?.Count == 0)
             {
                 @event.aboveMapSprites = new TemporaryAnimatedSpriteList();
@@ -232,25 +227,7 @@ internal static class AnimatedSprites
     /// <param name="event">Event.</param>
     /// <param name="args">Parameters</param>
     /// <param name="context">Event context.</param>
-    public static void RemoveScene(Event @event, string[] args, EventContext context)
-    {
-        try
-        {
-            ArgUtility.TryGetOptionalInt(args, 1, out var tempId, out _, 69420);
-
-            //foreach (var TAS in @event.aboveMapSprites)
-			//{
-			//	if(TAS.id == tempId)
-			//		@event.aboveMapSprites.Remove(TAS);
-			//}
-            context.Location.removeTemporarySpritesWithID(tempId);
-            @event.CurrentCommand++;
-        }
-        catch (Exception ex)
-        {
-            Log("Error: " + ex, LogLevel.Error);
-        }
-    }
+    public static void RemoveScene(Event @event, string[] args, EventContext context) => RemoveTemporaryAnimatedSprite(@event, args, context);
 
     /// <summary>
     /// Add fire TAS at the given coords.
@@ -308,6 +285,35 @@ internal static class AnimatedSprites
         catch(Exception ex)
         {
             context.LogErrorAndSkip($"Error: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// Removes a fire TAS using the ID.
+    /// </summary>
+    /// <param name="event"></param>
+    /// <param name="args"></param>
+    /// <param name="context"></param>
+    public static void RemoveFire(Event @event, string[] args, EventContext context) => RemoveTemporaryAnimatedSprite(@event, args, context);
+    
+    /// <summary>
+    /// Removes a TAS with the given ID.
+    /// </summary>
+    /// <param name="event"></param>
+    /// <param name="args"></param>
+    /// <param name="context"></param>
+    private static void RemoveTemporaryAnimatedSprite(Event @event, string[] args, EventContext context)
+    {
+        try
+        {
+            ArgUtility.TryGetOptionalInt(args, 1, out var tempId, out _, 69420);
+
+            context.Location.removeTemporarySpritesWithID(tempId);
+            @event.CurrentCommand++;
+        }
+        catch (Exception ex)
+        {
+            Log("Error: " + ex, LogLevel.Error);
         }
     }
 }

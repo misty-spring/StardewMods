@@ -1,0 +1,42 @@
+using StardewValley;
+using StardewValley.Delegates;
+
+namespace MistyCore.Additions;
+
+public static class Queries
+{
+    public static bool Wearing(string[] query, GameStateQueryContext context)
+    {
+        //<q> <player> <type> <item> [only worn]
+
+        var p = !ArgUtility.TryGet(query, 1, out var playerKey, out var error);
+        var t = !ArgUtility.TryGet(query, 2, out var type, out error);
+        var i = !ArgUtility.TryGet(query, 3, out var item, out error);
+        ArgUtility.TryGetOptionalBool(query, 4, out var onlyWorn, out _);
+        var invalid = p || t || i;
+
+        type = type.Replace("(", "");
+        
+        var hat = type.StartsWith("H", StringComparison.OrdinalIgnoreCase);
+        var shirt = type.StartsWith("S", StringComparison.OrdinalIgnoreCase);
+        var ring = type.StartsWith("R", StringComparison.OrdinalIgnoreCase);
+        var pants = type.StartsWith("P", StringComparison.OrdinalIgnoreCase);
+        var boots = type.StartsWith("B", StringComparison.OrdinalIgnoreCase);
+        
+        return invalid ? GameStateQuery.Helpers.ErrorResult(query, error) : GameStateQuery.Helpers.WithPlayer(context.Player, playerKey, target =>
+        {
+            if(hat)
+                return target.hat.Value.ItemId == item;
+            if (shirt)
+                return onlyWorn ? target.shirtItem.Value.ItemId == item : target.GetShirtId() == item;
+            if (ring)
+                return target.isWearingRing(item);
+            if (pants)
+                return onlyWorn ? target.pantsItem.Value.ItemId == item : target.GetPantsId() == item;
+            if (boots)
+                return target.boots.Value.ItemId == item;
+            
+            return false;
+        });
+    }
+}

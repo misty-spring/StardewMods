@@ -1,0 +1,15 @@
+{
+	"Points": "Puntaje: {0}",
+	"config.CustomHoeDirt.name":"Activar tierra personalizada",
+	"config.CustomHoeDirt.description":"Te permite aplicar una textura personalizada a la tierra arada.",
+	"config.CustomBackgrounds.name":"Activar fondos personalizados",
+	"config.CustomBackgrounds.description":"Permite personalizar el fondo de los mapas, justo como el fondo del norte de la isla.",
+	"config.CritterSpawning.name":"Activar invocación de criaturas",
+	"config.CritterSpawning.description":"Te permite agregar criaturas a los mapas, como los cangrejos o mariposas.",
+	"config.FishingOverrides.name":"Fishing overrides",
+	"config.FishingOverrides.description":"Enables custom fishing overrides.",
+	"config.TreeChopEvents.name":"Eventos de corte de árbol",
+	"config.TreeChopEvents.description":"Permite eventos y acciones al cortar un árbol.",
+	"config.TreeFallEvents.name":"Eventos de caída de árbol",
+	"config.TreeFallEvents.description":"Permite eventos y acciones al hacer caer un árbol."
+}

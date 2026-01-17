@@ -1,14 +1,14 @@
-﻿using DynamicDialogues.Models;
+﻿using MistyCore.Models;
 using StardewModdingAPI;
 using StardewValley;
 
-namespace DynamicDialogues.Commands;
+namespace MistyCore.Additions.EventCommands;
 
 internal static class World
 {
     private static void Log(string msg, LogLevel lvl = ModEntry.Level) => ModEntry.Mon.Log(msg, lvl);
 
-    internal const string HuntSequenceId = "mistyspring.dynamicdialogues.objectHunt:";
+    internal const string HuntSequenceId = "mistyspring.mistycore.objectHunt:";
 
     /*
     * will require postfixing receiveActionPress, and if ID matches our custom one
@@ -47,8 +47,11 @@ internal static class World
                 return;
             }
 
-            var mainData = ModEntry.Help.GameContent.Load<Dictionary<string,HuntContext>>(@"mistyspring.dynamicdialogues\Commands\objectHunt");
-            var data = mainData[args[1]];
+            if (ModEntry.ObjectHunt.TryGetValue(args[1], out var data) == false)
+            {
+                context.LogErrorAndSkip($"Couldn't find the object hunting data. ({args[1]})");
+                return;
+            }
 
             //add objects
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
@@ -60,7 +63,7 @@ internal static class World
                 var x = obj.X;
                 var y = obj.Y;
 
-                var itemdata = ItemRegistry.GetDataOrErrorItem(itemId);
+                var itemdata = ItemRegistry.GetDataOrErrorItem("(O)" + itemId);
                 //var item = new Object(itemId, 1);
 
                 var prop = new Prop(
@@ -79,16 +82,17 @@ internal static class World
 
             //if timer was given by player, set it. otherwise, unlimited
             var timer = data.Timer;
-            if (timer != 0)
+            if (timer > 0)
             {
-                context.Location.playSound("");
                 @event.festivalTimer = timer;
             }
 
+            Game1.player.festivalScore = 0;
+            Game1.player.canOnlyWalk = !data.CanPlayerRun;
+            
             //set up
             var ownId = $"{HuntSequenceId}{args[1]}";
             @event.setUpPlayerControlSequence(ownId);
-            Game1.player.canOnlyWalk = !data.CanPlayerRun;
         }
         catch (Exception ex)
         {
