@@ -66,25 +66,25 @@ You can add multiple critters to the same location. Like this:
   "Action": "EditData",
   "Target": "Mods/mistyspring.mistycore/Locations/Critters",
   "Entries": {
-    "{{ModId}}_MyCustomLocation": [
-      {
+    "{{ModId}}_MyCustomLocation": {
+      "{{ModId}}_Critter1": {
         "X": 10,
         "Y": 10,
         "Critter": "CrabCritter",
         "Chance": 0.5,
         "Condition": "PLAYER_HAS_MAIL Current SomeCustomFlag"
       },
-      {
+      "{{ModId}}_Critter2": {
         "X": 12,
         "Y": 20,
         "Critter": "Crow",
         "Chance": 0.1
       }
-    ]
+    }
   }
 }
 ```
-And so on. It's a list, so you can add as many as you want without limits.
+And so on. It's a dictionary, so you can add as many as you want without limits.
 
 ## Custom backgrounds
 
