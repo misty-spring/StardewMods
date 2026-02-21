@@ -97,4 +97,15 @@ public static class TriggerActions
         
         return true;
     }
+
+    public static bool PlaySound(string[] args, TriggerActionContext context, out string error)
+    {
+        // get args
+        if (!ArgUtility.TryGet(args, 1, out var soundId, out error, allowBlank: false))
+            return false;
+
+        // apply
+        Game1.playSound(soundId);
+        return true;
+    }
 }

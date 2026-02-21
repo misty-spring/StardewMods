@@ -22,6 +22,7 @@ public class ModEntry : Mod
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoad;
         helper.Events.Content.AssetRequested += Events.Asset.OnRequest;
+        helper.Events.Content.AssetsInvalidated += Events.Asset.OnInvalidate;
         helper.Events.Player.Warped += Events.Player.OnWarp;
         helper.Events.Display.RenderedHud += Events.Display.RenderedHud;
         
@@ -52,14 +53,16 @@ public class ModEntry : Mod
         Event.RegisterCommand("addExp", Player.AddExp); 
         Event.RegisterCommand("makeInvincible", Player.MakeInvincible);
 
-        GameStateQuery.Register(ModId + "_PlayerWearing", Queries.Wearing);
+        GameStateQuery.Register(ModId + "_PLAYER_WEARING", Queries.Wearing);
+        GameStateQuery.Register(ModId + "_PLAYER_ACTIVE_ITEM", Queries.ActiveItem);
         
         TriggerActionManager.RegisterAction(ModId + "_AddExp", TriggerActions.AddExp);
-        TriggerActionManager.RegisterAction(ModId + "_addItemHoldUp", TriggerActions.AddItemHoldUp);
+        TriggerActionManager.RegisterAction(ModId + "_AddItemHoldUp", TriggerActions.AddItemHoldUp);
+        TriggerActionManager.RegisterAction(ModId + "_PlaySound", TriggerActions.PlaySound);
         
         GameLocation.RegisterTileAction(ModId + "_AddItem", TileAction.AddItem); 
         GameLocation.RegisterTileAction(ModId + "_Question", TileAction.Question);
-        GameLocation.RegisterTileAction(ModId + "_ConditionalWarp", TileAction.ConditionalWarp);
+        GameLocation.RegisterTileAction(ModId + "_ConditionalMove", TileAction.ConditionalMove);
 
         var harmony = new Harmony(ModManifest.UniqueID);
 
@@ -162,7 +165,7 @@ public class ModEntry : Mod
 
         CustomCursors = Help.ModContent.Load<Texture2D>("assets/Cursors-export.png");
         
-        ConditionalWarpTileAction = Helper.GameContent.Load<Dictionary<string,QuestionTileActionData>>($"Mods/{ModId}/TileActions/ConditionalWarp");
+        ConditionalWarpTileAction = Helper.GameContent.Load<Dictionary<string,QuestionTileActionData>>($"Mods/{ModId}/TileActions/ConditionalMove");
 
         if (Config.TreeFallEvents)
         {

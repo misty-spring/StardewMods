@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.TokenizableStrings;
 using StardewValley.Triggers;
+using Object = StardewValley.Object;
 
 namespace MistyCore.Additions;
 
@@ -46,12 +47,14 @@ public static class TileAction
 
                 foreach (var tileChange in data.TileRemovals)
                 {
-                    arg1.removeMapTile(tileChange.X, tileChange.Y, tileChange.Layer);
+                    if (GameStateQuery.CheckConditions(tileChange.Condition))
+                        arg1.removeMapTile(tileChange.X, tileChange.Y, tileChange.Layer);
                 }
                 
                 foreach (var tileChange in data.TileChanges)
                 {
-                    arg1.setMapTile(tileChange.X, tileChange.Y, tileChange.Index, tileChange.Layer, tileChange.TileSheetId);
+                    if (GameStateQuery.CheckConditions(tileChange.Condition))
+                        arg1.setMapTile(tileChange.X, tileChange.Y, tileChange.Index, tileChange.Layer, tileChange.TileSheetId);
                 }
 
                 foreach (var trigger in data.TriggerActions)
@@ -64,11 +67,7 @@ public static class TileAction
                 
                 foreach (var item in data.Items)
                 {
-                    var createdItem = ItemRegistry.Create(item.QualifiedItemId, item.Stack, item.Quality);
-                    if (createdItem is StardewValley.Object)
-                    {
-                        createdItem.IsRecipe = item.IsRecipe;
-                    }
+                    var createdItem = item.IsRecipe ? new Object(item.QualifiedItemId.Remove(0,3), item.Stack, item.IsRecipe, -1, item.Quality) : ItemRegistry.Create(item.QualifiedItemId, item.Stack, item.Quality);
                     
                     Game1.player.addItemByMenuIfNecessaryElseHoldUp(createdItem);
                 }
@@ -137,6 +136,11 @@ public static class TileAction
     	{
             if (whichanswer == "No")
             	return;
+
+            if (string.IsNullOrWhiteSpace(data.MessageAfterSuccess) == false)
+            {
+                Game1.drawObjectDialogue(TokenParser.ParseText(data.MessageAfterSuccess));
+            }
             
             foreach (var action in data.TriggerActions)
             {
@@ -148,7 +152,7 @@ public static class TileAction
     	}
     }
 
-    public static bool ConditionalWarp(GameLocation arg1, string[] arg2, Farmer arg3, Point arg4)
+    public static bool ConditionalMove(GameLocation arg1, string[] arg2, Farmer arg3, Point arg4)
     { 
         //command dataName location x y
         if (arg2 is null || arg2.Length < 4 || ModEntry.ConditionalWarpTileAction.TryGetValue(arg2[1], out var data) == false)
@@ -183,6 +187,17 @@ public static class TileAction
         }
         else
         {
+            if (string.IsNullOrWhiteSpace(data.MessageAfterSuccess) == false)
+            {
+                Game1.drawObjectDialogue(TokenParser.ParseText(data.MessageAfterSuccess));
+            }
+            foreach (var action in data.TriggerActions)
+            {
+                if (TriggerActionManager.TryRunAction(action, out var error, out var exception) == false)
+                {
+                    Log($"Error while running action: {error}. {exception}");
+                }
+            }
             Game1.warpFarmer(arg2[2], int.Parse(arg2[3]), int.Parse(arg2[4]),false);
         }
         return true;
@@ -192,6 +207,17 @@ public static class TileAction
             if (whichanswer == "No")
             	return;
             
+            if (string.IsNullOrWhiteSpace(data.MessageAfterSuccess) == false)
+            {
+                Game1.drawObjectDialogue(TokenParser.ParseText(data.MessageAfterSuccess));
+            }
+            foreach (var action in data.TriggerActions)
+            {
+                if (TriggerActionManager.TryRunAction(action, out var error, out var exception) == false)
+                {
+                    Log($"Error while running action: {error}. {exception}");
+                }
+            }
             Game1.warpFarmer(arg2[2], int.Parse(arg2[3]), int.Parse(arg2[4]),false);
     	}
     }

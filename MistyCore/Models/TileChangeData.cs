@@ -7,4 +7,6 @@ public class TileChangeData
     public int Y { get; set; }
     public int Index { get; set; }
     public string TileSheetId { get; set; }
+
+    public string Condition { get; set; } = "TRUE";
 }

@@ -39,4 +39,12 @@ public static class Queries
             return false;
         });
     }
+
+    public static bool ActiveItem(string[] query, GameStateQueryContext context)
+    {
+        var invalid = !ArgUtility.TryGet(query, 1, out var item, out var error);
+        ArgUtility.TryGetOptionalInt(query, 2, out var itemCount, out error, 1);
+        
+        return invalid ? GameStateQuery.Helpers.ErrorResult(query, error) : context.Player.ActiveItem.QualifiedItemId == item && context.Player.ActiveItem.Stack >= itemCount;
+    }
 }

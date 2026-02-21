@@ -41,7 +41,8 @@ public partial class GameLocationPatches
         var location = Game1.player.currentLocation;
         var horizontal_parallax = data.HorizontalParallax;
         
-        var texture = Game1.content.Load<Texture2D>(data.TexturePath);
+        //load either night texture path or normal path depending on time
+        var texture = Game1.content.Load<Texture2D>(Game1.isDarkOut(__instance) && string.IsNullOrWhiteSpace(data.NightTexturePath) == false ? data.NightTexturePath : data.TexturePath);
         var num1 = 4f;
 
         if (texture == null || texture.IsDisposed)

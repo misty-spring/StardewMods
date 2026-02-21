@@ -9,4 +9,5 @@ public class QuestionTileActionData
     public string Yes { get; set; } = "[LocalizedText Strings/Lexicon:QuestionDialogue_Yes]";
     public string No { get; set; } = "[LocalizedText Strings/Lexicon:QuestionDialogue_No]";
     public List<string> TriggerActions { get; set; } = new();
+    public string MessageAfterSuccess { get; set; }
 }
