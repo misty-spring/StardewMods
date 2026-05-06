@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using SpousesIsland.Additions;
 using StardewModdingAPI;
@@ -14,7 +14,7 @@ public static class Time
     internal static void OnChange(object sender, TimeChangedEventArgs e)
     {
         //avoid running unnecessary code
-        if (IslandToday == false)
+        if (!IslandToday || !Unlocked)
             return;
 
         //in the future, make this a general calculation of "if directions to new location (count) is bigger than x, set addedspeed to this. if bigger than (e.g count*2), set to this + 0.2. for a little more ease of travelling?? perhaps.
